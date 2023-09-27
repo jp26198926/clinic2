@@ -503,4 +503,33 @@ class Custom_function
 		$data = '1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZabcefghijklmnopqrstuvwxyz!@#';
 		return substr(str_shuffle($data), 0, $chars);
 	}
+
+	function compute_gst($amount, $gst_percent, $gst_inclusive = true){
+		$result = [];
+
+		if ($gst_percent == 0){
+			$tax_base = $amount;
+			$gst_value = 0;
+			$total = $tax_base + $gst_value;
+		}else{
+			if ($gst_inclusive){
+				$gst = floatval($gst_percent/100);
+				$divisor = 1 + $gst;
+				$tax_base = floatval($amount) / $divisor; //ex: 75total / 1.10 <--this is 110% because we added 10% gst to 100%base price
+				$gst_value = $tax_base * $gst;
+				$total = $tax_base + $gst_value;
+			}else{
+				$gst = floatval($gst_percent/100);
+				$tax_base = $amount;
+				$gst_value = $tax_base * $gst;
+				$total = $tax_base + $gst_value;
+			}
+		}
+
+		$result["tax_base"] = $tax_base;
+		$result["gst_value"] = $gst_value;
+		$result["total"] = $total;
+
+		return $result;
+	}
 }

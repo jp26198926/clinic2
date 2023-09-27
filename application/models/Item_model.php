@@ -8,6 +8,10 @@ class Item_model extends CI_Model
 	function add($data, $current_user = 0)
 	{
 		$this->db->trans_start();
+		//store this data for transaction update
+		$transaction_id = $data['transaction_id'];
+		$total = $data['total'];
+
 		//store this product name for logging
 		$product = $data["product"];
 		$uom = $data["uom"];
@@ -21,12 +25,28 @@ class Item_model extends CI_Model
 
 		if ($this->db->insert($this->tablename, $data)) {
 
+			//get the current totals of all items in this transaction
+			$this->db->reset_query();
+			$this->db->select_sum('total');
+			$this->db->where("status_id > 1");
+			$this->db->where("transaction_id", $transaction_id);
+			$query = $this->db->get('items');
+			$total = $query->row()->total;
+
+			//update transaction's total
+			$this->db->reset_query();
+			$this->db->set("subtotal", $total); //tax based amount
+			$this->db->set("total", $total);
+			$this->db->where("id", $transaction_id);
+			$this->db->update("transactions");
+
+
 			//write log - transaction
 			$this->db->reset_query();
 			$log_data = array(
 				"action" => "Add Item",
 				"created_by" => $current_user,
-				"transaction_id" => $data["transaction_id"],
+				"transaction_id" => $transaction_id,
 				"item_id" => 0,
 				"item_name" => "",
 				"item_status" => "",
@@ -71,6 +91,21 @@ class Item_model extends CI_Model
 			$this->db->set("deleted_reason", $reason);
 			$this->db->where("id", $id);
 			$this->db->update($this->tablename);
+
+			//get the current totals of all items in this transaction
+			$this->db->reset_query();
+			$this->db->select_sum('total');
+			$this->db->where("status_id > 1");
+			$this->db->where("transaction_id", $transaction_id);
+			$query = $this->db->get('items');
+			$total = $query->row()->total;
+
+			//update transaction's total
+			$this->db->reset_query();
+			$this->db->set("subtotal", $total); //tax based amount
+			$this->db->set("total", $total);
+			$this->db->where("id", $transaction_id);
+			$this->db->update("transactions");
 
 			//write log - transaction
 			$this->db->reset_query();
@@ -120,4 +155,6 @@ class Item_model extends CI_Model
 			throw new Exception("Error: " . $error['message']);
 		}
 	}
+
+
 }

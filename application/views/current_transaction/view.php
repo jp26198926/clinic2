@@ -4,6 +4,7 @@ $subtotal_amount = 0;
 $subtotal_commission = 0;
 $subtotal_insurance = 0;
 $subtotal_total = 0;
+//$total_paid = $total_paid;
 $total_amount_due = $subtotal_total;
 ?>
 
@@ -285,10 +286,24 @@ $total_amount_due = $subtotal_total;
 
                                     <div class="row" style="margin-bottom:1em;">
                                         <div class="col-md-2 text-right">Remarks</div>
-                                        <div class="col-md-10">
-                                            <textarea id="remarks_update" name="remarks_update"
+                                        <div class="col-md-5">
+                                            <textarea
+												id="remarks_update"
+												name="remarks_update"
                                                 class="form-control field_update"
-                                                <?= $disabled_field; ?>><?= $record->remarks; ?></textarea>
+                                                <?= $disabled_field; ?>
+											><?= $record->remarks; ?></textarea>
+                                        </div>
+
+										<div class="col-md-2 text-right">Diagnosis</div>
+                                        <div class="col-md-3">
+											<textarea
+												id="diagnosis_update"
+												name="diagnosis_update"
+                                                class="form-control field_update"
+                                                <?= $disabled_field; ?>
+
+											><?= $record->diagnosis; ?></textarea>
                                         </div>
                                     </div>
 
@@ -296,21 +311,62 @@ $total_amount_due = $subtotal_total;
                                     <div class="row" style="margin-bottom:1em;">
                                         <div class="col-md-12 text-center">
                                             <?php
-                                            echo "<a href='" . base_url() . "current_transaction' class='btn btn-default'>Back to List</a> ";
+                                            echo "<a href='" . base_url() . "current_transaction' class='btn btn-default'>
+                                                    <i class='fa fa-arrow-left fa-fw'></i>
+                                                    Back
+                                                  </a> ";
 
-                                            if ($transaction_status_id == 2) { //draft
+                                            if ($transaction_status_id >= 2) { //draft
                                                 //echo "<button id='btn_package' class='btn btn-info'>Add Package</button> ";
 
-                                                if (count($items) > 0) {
-                                                    //export to pdf shown
-                                                    echo "<a href='" . base_url() . "current_transaction/export_pdf/{$transaction_id}' class='btn btn-warning' target='_blank'>
-                                                            <i class='fa fa-pdf'></i>
-                                                            Print
+                                                //if (count($items) > 0) {
+                                                if ($transaction_status_id == 2) { //draft
+                                                    echo "<a id='btn_confirm' class='btn btn-primary'>
+                                                            <i class='fa fa-check fa-fw'></i>
+                                                            Confirm
                                                         </a> ";
                                                 }
 
-                                                echo "<button id='btn_send_to' class='btn btn-warning'>Sent To</button> ";
-                                                echo "<button id='btn_transaction_cancel' class='btn btn-danger'>Cancel this Transaction</button> ";
+                                                //export to pdf shown
+                                                echo "<a
+                                                            id='btn_print'
+                                                            href='" . base_url() . "current_transaction/export_pdf/{$transaction_id}' class='btn btn-warning'
+                                                            target='_blank'
+                                                          >
+                                                            <i class='fa fa-print fa-fw'></i>
+                                                            Print
+                                                        </a> ";
+                                                // }
+
+                                                echo "<button id='btn_send_to' class='btn btn-info'>
+                                                        <i class='fa fa-arrow-right fa-fw'></i>
+                                                        Sent To
+                                                      </button> ";
+
+												echo "<button id='btn_payment' class='btn btn-info'>
+														<i class='fa fa-credit-card fa-fw'></i>
+														Payment
+													 </button> ";
+
+												echo "<button id='btn_lab' class='btn btn-info'>
+														<i class='fa fa-flask fa-fw'></i>
+														Lab Result
+													 </button> ";
+
+												echo "<button id='btn_prescription' class='btn btn-info'>
+														<i class='fa fa-glass fa-fw'></i>
+														Prescription
+													  </button> ";
+
+												echo "<button id='btn_completed' class='btn btn-info'>
+														<i class='fa fa-check fa-fw'></i>
+														Completed
+													  </button> ";
+
+                                                echo "<button id='btn_transaction_cancel' class='btn btn-danger'>
+                                                        <i class='fa fa-times fa-fw'></i>
+                                                        Cancel
+                                                     </button> ";
                                             }
                                             ?>
                                         </div>
@@ -345,6 +401,8 @@ $total_amount_due = $subtotal_total;
 
                                                     if (count($items) > 0) {
                                                         $i = 0;
+
+
                                                         foreach ($items as $key => $value) {
                                                             $i++;
                                                             $series = str_pad($value->id, 5, "0", STR_PAD_LEFT);
@@ -386,7 +444,8 @@ $total_amount_due = $subtotal_total;
                                                             $subtotal_commission += $value->commission_amount;
                                                             $subtotal_insurance += $value->insurance_amount;
                                                             $subtotal_total += $value->total;
-                                                            $total_amount_due = $subtotal_total;
+															//$total_paid = 0;
+                                                            $total_amount_due = $subtotal_total - $total_paid;
 
                                                             echo "<tr class='{$tr_class}'>";
                                                             echo "  <td class='text-center'>{$i}</td>";
@@ -442,6 +501,15 @@ $total_amount_due = $subtotal_total;
                                                             </b>
                                                         </td>
                                                     </tr>
+													<tr style='font-size:larger;'>
+                                                        <td colspan='7' align='right'><b>TOTAL PAID</b></td>
+                                                        <td Colspan='4' align='right'>
+                                                            <b>
+                                                                <span
+                                                                    id='lbl_total_paid'><?= number_format($total_paid, 2, '.', ','); ?></span>
+                                                            </b>
+                                                        </td>
+                                                    </tr>
                                                     <tr style='font-size:x-large;'>
                                                         <td colspan='7' align='right'><b>TOTAL AMOUNT DUE</b></td>
                                                         <td Colspan='4' align='right'>
@@ -459,7 +527,7 @@ $total_amount_due = $subtotal_total;
 
 
 
-                                    <div class="row">
+                                    <!-- <div class="row">
                                         <div class="col-md-12">
                                             <div class="page-header">
                                                 <h1>Trail</h1>
@@ -470,7 +538,7 @@ $total_amount_due = $subtotal_total;
                                             }
                                             ?>
                                         </div>
-                                    </div>
+                                    </div> -->
                                 </div>
                             </div><!-- /.row -->
 
@@ -485,6 +553,7 @@ $total_amount_due = $subtotal_total;
         $this->load->view("current_transaction/modal_modify");
         $this->load->view("current_transaction/modal_info");
         $this->load->view("current_transaction/modal_items");
+		$this->load->view("current_transaction/modal_payment");
 
         $this->load->view('template/footer');
         $this->load->view('template/loading');
@@ -521,6 +590,7 @@ $total_amount_due = $subtotal_total;
     let subtotal_commission = 0;
     let subtotal_insurance = 0;
     let subtotal_total = 0;
+	let total_paid = <?= $total_paid; ?>;
     let total_amount_due = 0;
 
     const new_entry_field = `   <tr>
@@ -571,11 +641,22 @@ $total_amount_due = $subtotal_total;
         $("#lbl_total_commission").text(subtotal_commission.toFixed(2));
         $("#lbl_total_insurance").text(subtotal_insurance.toFixed(2));
         $("#lbl_total_subtotal").text(subtotal_total.toFixed(2));
+		$("#lbl_total_paid").text(total_paid.toFixed(2));
+
+		total_amount_due = subtotal_total - total_paid;
+
         $("#lbl_amount_due").text(total_amount_due.toFixed(2));
     }
 
     function item_list(items) {
         let list = ``;
+
+		subtotal_amount = 0;
+    	subtotal_commission = 0;
+    	subtotal_insurance = 0;
+    	subtotal_total = 0;
+		// total_paid = 0;
+    	total_amount_due = 0;
 
         if (items.length > 0) {
             let i = 0;
@@ -631,12 +712,6 @@ $total_amount_due = $subtotal_total;
                     action = "";
                 }
 
-                subtotal_amount += Number(item.amount);
-                subtotal_commission += Number(item.commission_amount);
-                subtotal_insurance += Number(item.insurance_amount);
-                subtotal_total += Number(item.total);
-                total_amount_due = subtotal_total;
-
                 list += `<tr class='${tr_class}'>
                                 <td class='text-center'>${i}</td>
                                 <td class='text-center'>${series}</td>
@@ -653,6 +728,11 @@ $total_amount_due = $subtotal_total;
                                 <td class='text-center'>${action}</td>
                             <tr>`;
 
+				subtotal_amount += Number(item.amount);
+                subtotal_commission += Number(item.commission_amount);
+                subtotal_insurance += Number(item.insurance_amount);
+                subtotal_total += Number(item.total);
+                total_amount_due = subtotal_total;
 
             });
         }
@@ -779,6 +859,8 @@ $total_amount_due = $subtotal_total;
             fieldtext = $('option:selected', this).text()
         }
 
+
+
         if (id && fieldvalue) {
             $.post("<?= base_url(); ?>current_transaction/auto_save", {
                 id: id,
@@ -836,6 +918,195 @@ $total_amount_due = $subtotal_total;
             compute_entry();
         }
     });
+
+    //region transaction buttons
+    $(document).on("click", "#btn_confirm", function() {
+        let transaction_id = $("#id_update").val();
+
+        if (transaction_id) {
+            bootbox.confirm("Are you sure you want to confirm this transaction?", function(result) {
+                if (result) {
+                    $.post("<?= base_url(); ?>current_transaction/confirm", {
+                        transaction_id: transaction_id
+                    }, function(data) {
+                        if (data.indexOf("<!DOCTYPE html>") > -1) {
+                            alert("Error: Session Time-Out, You must login again to continue.");
+                            location.reload(true);
+                        } else {
+                            let result = JSON.parse(data);
+
+                            if (result.success == true) {
+                                $("#tbl_list tbody").html(item_list(result.result));
+                                $("#tbl_list tbody").append(new_entry_field);
+                                $("#product_id_new").trigger("select", "focus");
+
+                                display_total();
+
+                            } else {
+                                bootbox.alert(result.message);
+                            }
+                        }
+                    });
+                }
+            });
+
+        } else {
+            bootbox.alert("Error: Critical Error Encountered!");
+        }
+
+    });
+
+	$(document).on("click", "#btn_payment", function(){
+		let transaction_id = $("#id_update").val();
+
+		//show loading screen
+		$("#loading").modal("show");
+
+		//get total amount due
+		//get list of payment history entries
+		$.post("<?= base_url(); ?>current_transaction/check_payment", {
+            transaction_id: transaction_id
+        }, function(data) {
+			$("#loading").modal("hide");
+
+            if (data.indexOf("<!DOCTYPE html>") > -1) {
+                alert("Error: Session Time-Out, You must login again to continue.");
+                location.reload(true);
+            } else {
+                let result = JSON.parse(data);
+
+                if (result.success == true) {
+					$("#lbl_payment_amount_due").text(result.amount_due.toFixed(2));
+					$("#txt_payment_pay").val(result.amount_due.toFixed(2));
+					$("#badge_payment_count").text(result.payment_list.length);
+
+					let table_payment = "";
+
+					if (result.payment_list.length > 0) {
+						$.each(result.payment_list, function(idx, payment){
+							table_payment += "<tr>";
+							table_payment += "	<td align='center'>";
+							// table_payment += "		<span id='" + payment.id + "' class='btn_payment_print fa fa-print text-primary' title='Print'></span>";
+							// table_payment += "		<span id='" + payment.id + "' class='btn_payment_cancel fa fa-times text-danger' title='Cancel Payment'></span>";
+							table_payment += "	</td>";
+							table_payment += "	<td align='center'>" + payment.payment_no + "</td>";
+							table_payment += "	<td align='center'>" + payment.date + "</td>";
+							table_payment += "	<td align='center'>" + payment.payment_type + "</td>";
+							table_payment += "	<td align='right'>" + Number(payment.amount).toFixed(2) + "</td>";
+							table_payment += "	<td align='center'>" + payment.reference + "</td>";
+							table_payment += "	<td align='center'>" + payment.created.toUpperCase() + "</td>"
+							table_payment += "	<td align='center'>" + payment.status + "</td>";
+							table_payment += "</tr>";
+						});
+					}else{
+						table_payment += "	<tr><td align='center' colspan='8'>No Payment Done Yet</td></tr>";
+					}
+
+					$("#tbl_payment_list tbody").html(table_payment);
+
+					//show payment modal window
+					$("#modal_payment").modal("show");
+                } else {
+                    bootbox.alert(result.error);
+                }
+            }
+        });
+
+
+	});
+
+	$("#txt_payment_tender, #txt_payment_pay").on("keyup", function(){
+		if ($(this).val()) {
+			let pay_amount = Number($("#txt_payment_pay").val()) || 0;
+			let tender_amount = Number($("#txt_payment_tender").val()) || 0;
+			let change_amount = 0;
+
+			change_amount = Number(tender_amount) - Number(pay_amount);
+
+			$("#txt_payment_change").val(change_amount.toFixed(2));
+		}
+	});
+
+	$(document).on("click", "#btn_payment_save", function(){
+		let transaction_id = $("#id_update").val();
+		let amount_due = Number($("#lbl_payment_amount_due").text()) || 0;
+		let date = $("#txt_payment_date").val();
+		let payment_type_id = $("#txt_payment_type").val();
+		let pay_amount = Number($("#txt_payment_pay").val()) || 0;
+		let tender_amount = Number($("#txt_payment_tender").val()) || 0;
+		let change_amount = Number($("#txt_payment_change").val()) || 0;
+		let reference = $("#txt_payment_reference").val();
+		let this_modal = "#modal_payment";
+
+        if (date && payment_type_id && pay_amount > 0.01 && tender_amount > 0.01){
+
+			if (tender_amount >= pay_amount){
+				$(this_modal + " .modal_error").hide();
+				$(this_modal + " .modal_button").hide();
+				$(this_modal + " .modal-body").hide();
+				$(this_modal + " .modal_waiting").show();
+
+				$.post("<?= base_url(); ?>current_transaction/save_payment", {
+					transaction_id: transaction_id,
+					date:date,
+					amount_due: amount_due,
+					payment_type_id: payment_type_id,
+					pay_amount: pay_amount,
+					tender_amount: tender_amount,
+					change_amount: change_amount,
+					reference: reference
+				}, function(data) {
+					$(this_modal + " .modal_error").hide();
+					$(this_modal + " .modal_button").show();
+					$(this_modal + " .modal-body").show();
+					$(this_modal + " .modal_waiting").hide();
+
+					if (data.indexOf("<!DOCTYPE html>") > -1) {
+						alert("Error: Session Time-Out, You must login again to continue.");
+						location.reload(true);
+					}else{
+						let result = JSON.parse(data);
+
+						if (result.success == true) {
+							total_paid = Number(result.total_paid);
+							$("#lbl_total_paid").text(Number(result.total_paid).toFixed(2));
+							$("#lbl_amount_due").text(Number(result.amount_due).toFixed(2));
+
+							$(this_modal).modal("hide");
+							$(".txt_payment_field").val("");
+
+							bootbox.alert("Payment Successfully Saved!");
+						}else{
+							$(this_modal + " .modal_error_msg").text(result.error);
+							$(this_modal + " .modal_error").stop(true, true).show().delay(15000).fadeOut("slow");
+						}
+					}
+				});
+			}else{
+				$(this_modal + " .modal_error_msg").text("Tender amount is less than the amount to be paid!");
+            	$(this_modal + " .modal_error").stop(true, true).show().delay(15000).fadeOut("slow");
+			}
+
+        }else{
+            $(this_modal + " .modal_error_msg").text("Error: Fields with red asterisk are required!");
+            $(this_modal + " .modal_error").stop(true, true).show().delay(15000).fadeOut("slow");
+        }
+
+	});
+
+	$(document).on('click', '.btn_payment_cancel', function(){
+		let id = $(this).attr('id');
+
+		bootbox.alert(id);
+	});
+
+	$(document).on('click', '.btn_payment_print', function(){
+		let id = $(this).attr('id');
+
+		bootbox.alert(id);
+	});
+    //endregion transaction buttons
+
 
     //QTY CHANGE
     $(document).on("keyup", "#qty_new", function() {
@@ -998,7 +1269,7 @@ $total_amount_due = $subtotal_total;
         }
     });
 
-    // //ITEM MODIFY
+    //ITEM MODIFY
     // $(document).on("click", ".btn_item_modify", function(e) {
     //     e.preventDefault();
     //     let id = $(this).attr("id");

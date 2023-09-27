@@ -73,7 +73,7 @@ class Transaction_model extends CI_Model
 		);
 
 		$this->db->from("transactions x");
-		$this->db->join("trans_types tt","tt.id=x.trans_type_id", "left");
+		$this->db->join("trans_types tt", "tt.id=x.trans_type_id", "left");
 		$this->db->join("patients p", "p.id=x.patient_id", "left");
 		$this->db->join("clients c", "c.id=x.client_id", "left");
 		$this->db->join("charging_types ct", "ct.id=x.charging_type_id", "left");
@@ -85,7 +85,7 @@ class Transaction_model extends CI_Model
 		$this->db->join("user u", "u.id=x.updated_by", "left");
 		$this->db->join("user d", "d.id=x.deleted_by", "left");
 		$this->db->join("transaction_status s", "s.id=x.status_id", "left");
-		$this->db->join("queues q","q.id=x.queue_id", "left");
+		$this->db->join("queues q", "q.id=x.queue_id", "left");
 		$this->db->where("x.id", $id);
 
 		if ($query = $this->db->get()) {
@@ -121,7 +121,7 @@ class Transaction_model extends CI_Model
 		);
 
 		$this->db->from("transactions x");
-		$this->db->join("trans_types tt","tt.id=x.trans_type_id", "left");
+		$this->db->join("trans_types tt", "tt.id=x.trans_type_id", "left");
 		$this->db->join("patients p", "p.id=x.patient_id", "left");
 		$this->db->join("clients c", "c.id=x.client_id", "left");
 		$this->db->join("charging_types ct", "ct.id=x.charging_type_id", "left");
@@ -133,7 +133,7 @@ class Transaction_model extends CI_Model
 		$this->db->join("user u", "u.id=x.updated_by", "left");
 		$this->db->join("user d", "d.id=x.deleted_by", "left");
 		$this->db->join("transaction_status s", "s.id=x.status_id", "left");
-		$this->db->join("queues q","q.id=x.queue_id", "left");
+		$this->db->join("queues q", "q.id=x.queue_id", "left");
 		$this->db->where("x.created_by", $current_user);
 		$this->db->order_by('x.id');
 
@@ -185,7 +185,7 @@ class Transaction_model extends CI_Model
 		);
 
 		$this->db->from("transactions x");
-		$this->db->join("trans_types tt","tt.id=x.trans_type_id", "left");
+		$this->db->join("trans_types tt", "tt.id=x.trans_type_id", "left");
 		$this->db->join("patients p", "p.id=x.patient_id", "left");
 		$this->db->join("clients c", "c.id=x.client_id", "left");
 		$this->db->join("charging_types ct", "ct.id=x.charging_type_id", "left");
@@ -197,7 +197,7 @@ class Transaction_model extends CI_Model
 		$this->db->join("user u", "u.id=x.updated_by", "left");
 		$this->db->join("user d", "d.id=x.deleted_by", "left");
 		$this->db->join("transaction_status s", "s.id=x.status_id", "left");
-		$this->db->join("queues q","q.id=x.queue_id", "left");
+		$this->db->join("queues q", "q.id=x.queue_id", "left");
 		$this->db->where("x.created_by", $current_user);
 
 
@@ -326,6 +326,174 @@ class Transaction_model extends CI_Model
 		// 		$this->db->insert("trails", $log_data);
 		// 	}
 		// }
+
+		$this->db->trans_complete();
+
+		if ($this->db->trans_status() === FALSE) {
+			// generate an error... or use the log_message() function to log your error
+			//$error = $this->db->error();
+			throw new Exception("Error: Database problem, Please contact your System Administrator!");
+		} else {
+			return true;
+		}
+	}
+
+	function confirm($transaction_id, $current_user = 0)
+	{
+		$this->db->trans_start();
+
+		$data = array(
+			'status_id' => 3 //confirmed
+		);
+
+		//update transaction
+		$this->db->where("id", $transaction_id);
+		$this->db->update("transactions", $data);
+
+		$this->db->reset_query();
+
+		//write log - transaction
+		$log_data = array(
+			"action" => "Confirmed Transaction",
+			"created_by" => $current_user,
+			"transaction_id" => $transaction_id,
+			"item_id" => 0,
+			"item_name" => "",
+			"item_status" => "",
+			"remarks" => "Transaction has been confirmed!"
+		);
+		$this->db->insert("trails", $log_data);
+
+		// $this->db->reset_query();
+
+		// //get all items in the transaction
+		// $this->db->select("x.id, x.qty, x.description, s.status");
+		// $this->db->from("items x");
+		// $this->db->join("item_status s", "s.id = x.status_id", "left");
+		// $this->db->where("x.transaction_id", $transaction_id);
+		// $this->db->where("x.status_id <=", 7); //for gm approval or below
+
+		// if ($query = $this->db->get()){
+		// 	$results = $query->result();
+
+		// 	$this->db->reset_query();
+
+		// 	foreach ($results as $key => $value) {
+		// 		//update item status
+		// 		$this->db->reset_query();
+
+		// 		$this->db->where("id", $value->id);
+		// 		$this->db->update("items", $data);
+
+		// 		//write log
+		// 		$this->db->reset_query();
+
+		// 		$series_no = str_pad($value->id, 5, "0", STR_PAD_LEFT);
+
+		// 		$log_data = array(
+		// 			"action" => "Cancel Item",
+		// 			"created_by" => $current_user,
+		// 			"transaction_id" => $transaction_id,
+		// 			"item_id" => $value->id,
+		// 			"item_name" => $value->description,
+		// 			"item_status" => $value->status,
+		// 			"remarks" => $series_no . " : " . $value->qty . " x " . $value->description . " -> " . $reason
+		// 		);
+
+		// 		$this->db->insert("trails", $log_data);
+		// 	}
+		// }
+
+		$this->db->trans_complete();
+
+		if ($this->db->trans_status() === FALSE) {
+			// generate an error... or use the log_message() function to log your error
+			//$error = $this->db->error();
+			throw new Exception("Error: Database problem, Please contact your System Administrator!");
+		} else {
+			return true;
+		}
+	}
+
+	function get_total_charges($transaction_id) {
+		$this->db->select_sum('total');
+		$this->db->where("status_id > 1");
+		$this->db->where("transaction_id", $transaction_id);
+		$query = $this->db->get('items');
+		$total = $query->row()->total;
+
+		return $total;
+	}
+
+	function get_total_paid($transaction_id){
+		$this->db->select_sum('amount');
+		$this->db->where("status_id > 1");
+		$this->db->where("transaction_id", $transaction_id);
+		$query = $this->db->get('payments');
+		$total = $query->row()->amount;
+
+		return $total;
+	}
+
+	function get_payment_list($transaction_id){
+		$this->db->select("p.id, p.date, p.amount, p.reference");
+		$this->db->select("CONCAT('PMT',LPAD(p.id,3,'0')) as payment_no");
+		$this->db->select("t.payment_type");
+		$this->db->select("s.status");
+		$this->db->select("CONCAT(e.lname,', ', e.fname,' ', e.mname) as created");
+		$this->db->from("payments p");
+		$this->db->join("user e", "e.id=p.created_by", "left");
+		$this->db->join("payment_types t", "t.id=p.payment_type_id", "left");
+		$this->db->join("payment_status s", "s.id=p.status_id", "left");
+		$this->db->where("p.transaction_id", $transaction_id);
+
+		if ($query = $this->db->get()) {
+			return $query->result();
+		} else {
+			$error = $this->db->error();
+			throw new Exception("Error: " . $error['message']);
+		}
+	}
+
+	function save_payment(
+		$transaction_id,
+		$date,
+		$payment_type_id,
+		$amount_due,
+		$pay_amount,
+		$tender_amount,
+		$change_amount,
+		$reference,
+		$current_user=0
+	){
+		$data = array(
+			"transaction_id" => $transaction_id,
+			"date" => $date,
+			"payment_type_id" => $payment_type_id,
+			"amount_due" => $amount_due,
+			"amount" => $pay_amount,
+			"tender_amount" => $tender_amount,
+			"change_amount" => $change_amount,
+			"reference" => $reference,
+			"created_by" => $current_user
+		);
+
+		$this->db->trans_start();
+
+		//save payment
+		$this->db->insert("payments", $data);
+
+		// 	//write log - transaction
+		$log_data = array(
+			"action" => "Add Payment",
+			"created_by" => $current_user,
+			"transaction_id" => $transaction_id,
+			"item_id" => 0,
+			"item_name" => "",
+			"item_status" => "",
+			"remarks" => "Amount: " . $pay_amount
+		);
+		$this->db->insert("trails", $log_data);
 
 		$this->db->trans_complete();
 

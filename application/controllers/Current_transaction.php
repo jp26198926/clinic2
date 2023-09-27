@@ -67,6 +67,7 @@ class Current_transaction extends CI_Controller
 					$this->load->model("data_trans_type_model");
 					$this->load->model("data_patient_model");
 					$this->load->model("data_payment_method_model");
+					$this->load->model("data_payment_type_model");
 					$this->load->model("data_client_model");
 					$this->load->model("data_charging_type_model");
 					$this->load->model("data_insurance_model");
@@ -251,70 +252,6 @@ class Current_transaction extends CI_Controller
 		}
 	}
 
-	// function attachment_add()
-	// {
-	// 	$transaction_id = $this->input->post("transaction_id_new");
-
-	// 	if ($transaction_id) {
-	// 		$filename = $_FILES["attachment_update"]["name"];
-
-	// 		if ($filename) {
-
-	// 			$upload = $this->do_upload("attachment_update", $transaction_id);
-
-	// 			if (!$upload["error"]) {
-	// 				echo json_encode($this->attachment_list($transaction_id));
-
-	// 				//write to log
-	// 				$log_remarks = "Attachment : {$filename}";
-	// 				$this->shared_model->write_to_log("Add Attachment", $this->uid, $transaction_id, 0, "", "", $log_remarks);
-	// 			}
-	// 		}
-	// 	}
-	// }
-
-	// function attachment_remove()
-	// {
-	// 	$transaction_id = $this->input->post("transaction_id");
-	// 	$filename = $this->input->post("filename");
-	// 	$file = "./upload/" . $transaction_id . "/" . $filename;
-
-	// 	if ($transaction_id && $filename) {
-	// 		if (file_exists($file)) {
-	// 			if (!unlink($file)) {
-	// 				echo "Error: Unable to delete attachment!";
-	// 			} else {
-	// 				//write to log
-	// 				$log_remarks = "Attachment : {$filename}";
-	// 				$this->shared_model->write_to_log("Removed Attachment", $this->uid, $transaction_id, 0, "", "", $log_remarks);
-	// 			}
-	// 		} else {
-	// 			echo "Error: File does not exist!";
-	// 		}
-	// 	} else {
-	// 		echo $this->default_error_msg;
-	// 	}
-	// }
-
-	// private function attachment_list($transaction_id)
-	// {
-	// 	$path = "./upload/" . $transaction_id;
-	// 	$files = array();
-
-	// 	if (file_exists($path)) {
-	// 		$arrFiles = scandir($path);
-
-	// 		foreach ($arrFiles as $file) {
-	// 			//disregard if the result is a directory
-	// 			if (!is_dir($path . "/" . $file)) {
-	// 				array_push($files, $file);
-	// 			}
-	// 		}
-	// 	}
-
-	// 	return $files;
-	// }
-
 	function view($transaction_id)
 	{
 		if ($transaction_id) {
@@ -348,6 +285,7 @@ class Current_transaction extends CI_Controller
 						$data["trans_types"] = $this->data_trans_type_model->search();
 						$data["patients"] = $this->data_patient_model->search("");
 						$data["payment_methods"] = $this->data_payment_method_model->search();
+						$data["payment_types"] = $this->data_payment_type_model->search();
 						$data["clients"] = $this->data_client_model->search();
 						$data["charging_types"] = $this->data_charging_type_model->search();
 						$data["insurances"] = $this->data_insurance_model->search();
@@ -357,6 +295,13 @@ class Current_transaction extends CI_Controller
 
 						$data["products"] = $this->data_product_model->search();
 						$data["packages"] = $this->data_package_model->search();
+
+						//get total charges
+						$data["total_charges"] = $this->main_model->get_total_charges($transaction_id);
+						//get total paid
+						$data["total_paid"] = $this->main_model->get_total_paid($transaction_id);
+
+						$data["amount_due"] = $data["total_charges"] - $data["total_paid"];
 
 						$data["trails"] = $this->shared_model->get_logs($transaction_id);
 
@@ -377,6 +322,189 @@ class Current_transaction extends CI_Controller
 			}
 		} else {
 			$this->session->set_flashdata("error", "Error: Critical Error Encountered!");
+		}
+	}
+
+	//TRANS CONFIRM
+	function confirm()
+	{
+		$transaction_id = $this->input->post("transaction_id");
+
+		if ($transaction_id) {
+			try {
+
+				$save = $this->main_model->confirm($transaction_id, $this->uid);
+
+				if ($save) {
+					$transaction_no = str_pad($transaction_id, 5, "0", STR_PAD_LEFT);
+					$this->session->set_flashdata("message", $transaction_no . " has been confirmed!");
+
+					echo $transaction_no;
+				} else {
+					echo "Error: Failed! Please try again!";
+				}
+			} catch (Exception $ex) {
+				echo $ex->getMessage();
+			}
+		} else {
+			echo $this->default_error_msg;
+		}
+	}
+
+	//TRANS CHECK PAYMENT
+	function check_payment() {
+		$transaction_id = $this->input->post("transaction_id");
+		$result["success"] = false;
+
+		if ($transaction_id) {
+			try {
+				//get total charges
+				$total_charges = $this->main_model->get_total_charges($transaction_id);
+				//get total paid
+				$total_paid = $this->main_model->get_total_paid($transaction_id);
+				//get payment history list
+				$payment_list = $this->main_model->get_payment_list($transaction_id);
+
+				$amount_due = $total_charges - $total_paid;
+
+				$result["success"] = true;
+				$result["amount_due"] = $amount_due;
+				$result["payment_list"] = $payment_list;
+
+			} catch(Exception $ex) {
+				$result["error"] = $ex->getMessage();
+			}
+		}else{
+			$result["error"] = $this->default_error_msg;
+		}
+
+		echo json_encode($result);
+	}
+
+	//TRANS SAVE PAYMENT
+	function save_payment() {
+		$transaction_id = $this->input->post("transaction_id");
+		$date = $this->input->post("date");
+		$amount_due = $this->input->post("amount_due");
+        $payment_type_id = $this->input->post("payment_type_id");
+		$pay_amount = $this->input->post("pay_amount");
+        $tender_amount = $this->input->post("tender_amount");
+        $change_amount = $this->input->post("change_amount");
+        $reference = $this->input->post("reference");
+
+		$result["success"] = false;
+
+
+		if ($transaction_id){
+			if ($date && $payment_type_id && $pay_amount > 0.01 && $tender_amount > 0.01){
+
+				if ($tender_amount >= $pay_amount){
+					try{
+						$save = $this->main_model->save_payment(
+							$transaction_id,
+							$date,
+							$payment_type_id,
+							$amount_due,
+							$pay_amount,
+							$tender_amount,
+							$change_amount,
+							$reference,
+							$this->uid
+						);
+						if ($save){
+							//get total charges
+							$total_charges = $this->main_model->get_total_charges($transaction_id);
+							//get total paid
+							$total_paid = $this->main_model->get_total_paid($transaction_id);
+
+							$amount_due = $total_charges - $total_paid;
+
+							$result["success"] = true;
+							$result["total_paid"] = $total_paid;
+							$result["amount_due"] = $amount_due;
+						}
+					}catch(Exception $ex){
+						$result["error"] = $ex->getMessage();
+					}
+				}else{
+					$result["error"] = "Tender amount is less than the amount to be paid!";
+				}
+
+			}else{
+				$result["error"] = "All fields with asterisk are required!";
+			}
+		}else{
+			$result["error"] = $this->default_error_msg;
+		}
+
+		echo json_encode($result);
+	}
+
+
+	//TRANS CANCEL
+	function cancel()
+	{
+		$transaction_id = $this->input->post("transaction_id");
+		$reason = $this->input->post("reason");
+
+		if ($transaction_id) {
+			if ($reason) {
+				try {
+					//$check = $this->main_model->cancel_check($transaction_id);
+
+					//if ($check) {
+
+					$save = $this->main_model->cancel($transaction_id, $reason, $this->uid);
+
+					if ($save) {
+						$transaction_no = str_pad($transaction_id, 5, "0", STR_PAD_LEFT);
+						$this->session->set_flashdata("message", $transaction_no . " has been cancelled!");
+
+						echo $transaction_no;
+					} else {
+						echo "Error: Failed! Please try again!";
+					}
+					//} else {
+					//	echo "Error: Some items are not cancellable, you need to cancel the item one by one!";
+					//}
+				} catch (Exception $ex) {
+					echo $ex->getMessage();
+				}
+			} else {
+				echo "Error: Please provide reason!";
+			}
+		} else {
+			echo $this->default_error_msg;
+		}
+	}
+
+	//TRANS EXPORT
+	function export_pdf($transaction_id)
+	{
+		if ($transaction_id) {
+			try {
+				$record = $this->main_model->view($transaction_id, $this->uid);
+
+				if ($record) {
+					$data["transaction_no"] = str_pad($transaction_id, 5, "0", STR_PAD_LEFT);
+					$data["app_name"] = $this->app_name;
+					$data["company_name"] = $this->company_name;
+					$data["company_address"] = $this->company_address;
+					$data["company_contact"] = $this->company_contact;
+					$data["record"] = $record;
+					$data["items"] = $this->item_model->search_by_transaction($transaction_id);
+
+					$this->load->library('Pdf');
+					$this->load->view('pdf/export_to_pdf', $data);
+				} else {
+					$this->session->set_flashdata("error", "Error: Request no. REQ-" . str_pad($transaction_id, 5, "0", STR_PAD_LEFT) . " is unavailable!");
+					redirect(base_url() . "current_transaction");
+				}
+			} catch (Exception $ex) {
+				echo $ex->getMessage();
+			}
+		} else {
+			echo $this->default_error_msg;
 		}
 	}
 
@@ -452,6 +580,7 @@ class Current_transaction extends CI_Controller
 		}
 	}
 
+	//ITEM UPDATE
 	function item_update()
 	{
 		$errors = [];
@@ -502,6 +631,7 @@ class Current_transaction extends CI_Controller
 		echo json_encode($data);
 	}
 
+	//ITEM CANCEL
 	function item_cancel()
 	{
 		$errors = [];
@@ -543,309 +673,4 @@ class Current_transaction extends CI_Controller
 
 		echo json_encode($data);
 	}
-
-	// private function do_upload($file, $transaction_id)
-	// {
-	// 	$result = array("error" => false);
-
-	// 	//prepare upload path
-	// 	if (!file_exists("./upload/" . $transaction_id)) {
-	// 		mkdir("./upload/" . $transaction_id, 0777, true);
-	// 	}
-
-	// 	$config["upload_path"]          = "./upload/{$transaction_id}/";
-	// 	$config["allowed_types"]        = "txt|pdf|gif|jpg|png|doc|docx|xls|xlsx|ppt|pptx";
-	// 	$config["max_size"]             = 10000;
-	// 	// $config["max_width"]            = 1024;
-	// 	// $config["max_height"]           = 768;
-
-	// 	$this->load->library("upload", $config);
-
-	// 	if (!$this->upload->do_upload($file)) {
-	// 		$result["error"] = true;
-	// 		$result["error_msg"] =  $this->upload->display_errors();
-	// 	} else {
-	// 		$result["upload_data"] = $this->upload->data();
-	// 	}
-
-	// 	return $result;
-	// }
-
-	//transactions
-	function cancel()
-	{
-		$transaction_id = $this->input->post("transaction_id");
-		$reason = $this->input->post("reason");
-
-		if ($transaction_id) {
-			if ($reason) {
-				try {
-					//$check = $this->main_model->cancel_check($transaction_id);
-
-					//if ($check) {
-
-					$save = $this->main_model->cancel($transaction_id, $reason, $this->uid);
-
-					if ($save) {
-						$transaction_no = str_pad($transaction_id, 5, "0", STR_PAD_LEFT);
-						$this->session->set_flashdata("message", $transaction_no . " has been cancelled!");
-
-						echo $transaction_no;
-					} else {
-						echo "Error: Failed! Please try again!";
-					}
-					//} else {
-					//	echo "Error: Some items are not cancellable, you need to cancel the item one by one!";
-					//}
-				} catch (Exception $ex) {
-					echo $ex->getMessage();
-				}
-			} else {
-				echo "Error: Please provide reason!";
-			}
-		} else {
-			echo $this->default_error_msg;
-		}
-	}
-
-	// function for_dept_approval()
-	// {
-	// 	$transaction_id = $this->input->post("transaction_id");
-	// 	$approver_id = $this->input->post("approver_id");
-	// 	$approver_name = $this->input->post("approver_name");
-
-	// 	if ($transaction_id) {
-	// 		if ($approver_id) {
-	// 			try {
-	// 				$save = $this->main_model->for_dept_approval($transaction_id, $approver_id, $approver_name, $this->uid);
-	// 				if ($save) {
-	// 					$transaction_no = str_pad($transaction_id, 5, "0", STR_PAD_LEFT);
-	// 					$link = base_url() . "approval_dept_approval/view/" . $transaction_id;
-
-	// 					//get approver details
-	// 					$approver_details = $this->shared_model->get_user_details($approver_id);
-
-	// 					if ($approver_details) {
-	// 						//send mail
-	// 						$mail_msg = [];
-	// 						$mail_msg["to"] = $approver_details->email;
-	// 						$mail_msg["subject"] = "[RMS] {$transaction_no} FOR DEPT APPROVAL";
-
-	// 						$msg = "Dear " . ucwords($approver_details->fname) . ",\n\n";
-	// 						$msg .= "<a href='{$link}'>{$transaction_no}</a> has been sent to you for approval. Please login to your account to review the request. \n\n";
-	// 						$msg .= "Link: <a href='{$link}'>{$link}</a>\n\n\n";
-	// 						$msg .= "This is system auto-generated message. Please DO NOT reply.";
-
-	// 						$mail_msg["message"] = nl2br($msg);
-
-	// 						$send_error = mail_send($mail_msg);
-	// 						if ($send_error) {
-	// 							echo $send_error;
-	// 						}
-	// 					}
-
-	// 					$this->session->set_flashdata("message", $transaction_no . " has been sent for Dept Approval! - {$approver_name}");
-
-	// 					echo $transaction_no;
-	// 				} else {
-	// 					echo "Error: Send failed! Try again later!";
-	// 				}
-	// 			} catch (Exception $ex) {
-	// 				echo $ex->getMessage();
-	// 			}
-	// 		} else {
-	// 			echo "Error: Please select approver!";
-	// 		}
-	// 	} else {
-	// 		echo $this->default_error_msg;
-	// 	}
-	// }
-
-	// function transfer_dept_approver()
-	// {
-	// 	$transaction_id = $this->input->post("transaction_id");
-	// 	$approver_id = $this->input->post("approver_id");
-	// 	$approver_name = $this->input->post("approver_name");
-
-	// 	if ($transaction_id) {
-	// 		if ($approver_id) {
-	// 			try {
-	// 				$save = $this->main_model->transfer_dept_approver($transaction_id, $approver_id, $approver_name, $this->uid);
-	// 				if ($save) {
-	// 					$transaction_no = str_pad($transaction_id, 5, "0", STR_PAD_LEFT);
-	// 					$link = base_url() . "approval_dept_approval/view/" . $transaction_id;
-
-	// 					//get approver details
-	// 					$approver_details = $this->shared_model->get_user_details($approver_id);
-
-	// 					if ($approver_details) {
-	// 						//send mail
-	// 						$mail_msg = [];
-	// 						$mail_msg["to"] = $approver_details->email;
-	// 						$mail_msg["subject"] = "[RMS] {$transaction_no} FOR DEPT APPROVAL";
-
-	// 						$msg = "Dear " . ucwords($approver_details->fname) . "\n\n";
-	// 						$msg .= "<a href='{$link}'>{$transaction_no}</a> has been sent to you for approval. Please login to your account to review the request. \n\n";
-	// 						$msg .= "Link: <a href='{$link}'>{$link}</a>\n\n\n";
-	// 						$msg .= "This is system auto-generated message. Please DO NOT reply.";
-
-	// 						$mail_msg["message"] = nl2br($msg);
-
-	// 						$send_error = mail_send($mail_msg);
-	// 						if ($send_error) {
-	// 							echo $send_error;
-	// 						}
-	// 					}
-
-	// 					$this->session->set_flashdata("message", $transaction_no . " has been transferred to new Dept Approver - {$approver_name}");
-
-	// 					echo $transaction_no;
-	// 				} else {
-	// 					echo "Error: Send failed! Try again later!";
-	// 				}
-	// 			} catch (Exception $ex) {
-	// 				echo $ex->getMessage();
-	// 			}
-	// 		} else {
-	// 			echo "Error: Please select approver!";
-	// 		}
-	// 	} else {
-	// 		echo $this->default_error_msg;
-	// 	}
-	// }
-
-	// function for_gm_approval()
-	// {
-	// 	$transaction_id = $this->input->post("transaction_id");
-	// 	$approver_id = $this->input->post("approver_id");
-	// 	$approver_name = $this->input->post("approver_name");
-
-	// 	if ($transaction_id) {
-	// 		if ($approver_id) {
-	// 			try {
-	// 				$save = $this->main_model->for_gm_approval($transaction_id, $approver_id, $approver_name, $this->uid);
-	// 				if ($save) {
-	// 					$transaction_no = str_pad($transaction_id, 5, "0", STR_PAD_LEFT);
-	// 					$link = base_url() . "approval_gm_approval/view/" . $transaction_id;
-
-	// 					//get approver details
-	// 					$approver_details = $this->shared_model->get_user_details($approver_id);
-
-	// 					if ($approver_details) {
-	// 						//send mail
-	// 						$mail_msg = [];
-	// 						$mail_msg["to"] = $approver_details->email;
-	// 						$mail_msg["subject"] = "[RMS] {$transaction_no} FOR GM APPROVAL";
-
-	// 						$msg = "Dear " . ucwords($approver_details->fname) . "\n\n";
-	// 						$msg .= "<a href='{$link}'>{$transaction_no}</a> has been sent to you for approval. Please login to your account to review the request. \n\n";
-	// 						$msg .= "Link: <a href='{$link}'>{$link}</a>\n\n\n";
-	// 						$msg .= "This is system auto-generated message. Please DO NOT reply.";
-
-	// 						$mail_msg["message"] = nl2br($msg);
-
-	// 						$send_error = mail_send($mail_msg);
-	// 						if ($send_error) {
-	// 							echo $send_error;
-	// 						}
-	// 					}
-
-	// 					$this->session->set_flashdata("message", $transaction_no . " has been sent for GM Approval! - {$approver_name}");
-
-	// 					echo $transaction_no;
-	// 				} else {
-	// 					echo "Error: Send failed! Try again later!";
-	// 				}
-	// 			} catch (Exception $ex) {
-	// 				echo $ex->getMessage();
-	// 			}
-	// 		} else {
-	// 			echo "Error: Please select approver!";
-	// 		}
-	// 	} else {
-	// 		echo $this->default_error_msg;
-	// 	}
-	// }
-
-	// function transfer_gm_approver()
-	// {
-	// 	$transaction_id = $this->input->post("transaction_id");
-	// 	$approver_id = $this->input->post("approver_id");
-	// 	$approver_name = $this->input->post("approver_name");
-
-	// 	if ($transaction_id) {
-	// 		if ($approver_id) {
-	// 			try {
-	// 				$save = $this->main_model->transfer_gm_approver($transaction_id, $approver_id, $approver_name, $this->uid);
-	// 				if ($save) {
-	// 					$transaction_no = str_pad($transaction_id, 5, "0", STR_PAD_LEFT);
-	// 					$link = base_url() . "approval_gm_approval/view/" . $transaction_id;
-
-	// 					//get approver details
-	// 					$approver_details = $this->shared_model->get_user_details($approver_id);
-
-	// 					if ($approver_details) {
-	// 						//send mail
-	// 						$mail_msg = [];
-	// 						$mail_msg["to"] = $approver_details->email;
-	// 						$mail_msg["subject"] = "[RMS] {$transaction_no} FOR GM APPROVAL";
-
-	// 						$msg = "Dear " . ucwords($approver_details->fname) . "\n\n";
-	// 						$msg .= "<a href='{$link}'>{$transaction_no}</a> has been sent to you for approval. Please login to your account to review the request. \n\n";
-	// 						$msg .= "Link: <a href='{$link}'>{$link}</a>\n\n\n";
-	// 						$msg .= "This is system auto-generated message. Please DO NOT reply.";
-
-	// 						$mail_msg["message"] = nl2br($msg);
-
-	// 						$send_error = mail_send($mail_msg);
-	// 						if ($send_error) {
-	// 							echo $send_error;
-	// 						}
-	// 					}
-
-	// 					$this->session->set_flashdata("message", $transaction_no . " has been transferred to GM Approver - {$approver_name}");
-
-	// 					echo $transaction_no;
-	// 				} else {
-	// 					echo "Error: Send failed! Try again later!";
-	// 				}
-	// 			} catch (Exception $ex) {
-	// 				echo $ex->getMessage();
-	// 			}
-	// 		} else {
-	// 			echo "Error: Please select approver!";
-	// 		}
-	// 	} else {
-	// 		echo $this->default_error_msg;
-	// 	}
-	// }
-
-	// function export_pdf($transaction_id)
-	// {
-	// 	if ($transaction_id) {
-	// 		try {
-	// 			$record = $this->main_model->view($transaction_id, $this->uid);
-
-	// 			if ($record) {
-	// 				$data["transaction_no"] = str_pad($transaction_id, 5, "0", STR_PAD_LEFT);
-	// 				$data["app_name"] = $this->app_name;
-	// 				$data["company_name"] = $this->company_name;
-	// 				$data["company_address"] = $this->company_address;
-	// 				$data["company_contact"] = $this->company_contact;
-	// 				$data["record"] = $record;
-	// 				$data["items"] = $this->item_model->search_by_transaction($transaction_id);
-
-	// 				$this->load->library('Pdf');
-	// 				$this->load->view('pdf/export_to_pdf', $data);
-	// 			} else {
-	// 				$this->session->set_flashdata("error", "Error: Request no. REQ-" . str_pad($transaction_id, 5, "0", STR_PAD_LEFT) . " is unavailable!");
-	// 				redirect(base_url() . "current_transaction");
-	// 			}
-	// 		} catch (Exception $ex) {
-	// 			echo $ex->getMessage();
-	// 		}
-	// 	} else {
-	// 		echo $this->default_error_msg;
-	// 	}
-	// }
 }

@@ -115,7 +115,8 @@
                                             </thead>
                                             <tbody>
                                                 <tr>
-                                                    <td align='center' colspan='11'>Use search button to display record
+                                                    <td align='center' colspan='11'>
+                                                        Use search button to display record
                                                     </td>
                                                 </tr>
                                             </tbody>
