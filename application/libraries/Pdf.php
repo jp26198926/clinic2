@@ -48,8 +48,8 @@ class Pdf extends TCPDF
 
 		$this->SetTopMargin($this->top_margin);
 
-		$image_file = base_url() . "assets/images/logo.jpg";
-		$this->Image($image_file, 10, 6, 14, '', 'JPG', '', 'T', false, 300, '', false, false, 0, false, false, false);
+		$image_file = base_url() . "assets/images/logo.png";
+		$this->Image($image_file, 10, 6, 14, '', 'PNG', '', 'T', false, 300, '', false, false, 0, false, false, false);
 
 		// Set font
 		//$this->SetFont('helvetica', 'B', 12);

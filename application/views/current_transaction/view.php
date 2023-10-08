@@ -330,7 +330,7 @@ $total_amount_due = $subtotal_total;
                                                 //export to pdf shown
                                                 echo "<a
                                                             id='btn_print'
-                                                            href='" . base_url() . "current_transaction/export_pdf/{$transaction_id}' class='btn btn-warning'
+                                                            href='" . base_url() . "current_transaction/print_charges/{$transaction_id}' class='btn btn-warning'
                                                             target='_blank'
                                                           >
                                                             <i class='fa fa-print fa-fw'></i>
@@ -590,7 +590,7 @@ $total_amount_due = $subtotal_total;
     let subtotal_commission = 0;
     let subtotal_insurance = 0;
     let subtotal_total = 0;
-	let total_paid = <?= $total_paid; ?>;
+	let total_paid = Number(<?= $total_paid; ?>);
     let total_amount_due = 0;
 
     const new_entry_field = `   <tr>
