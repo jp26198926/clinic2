@@ -18,7 +18,7 @@ function details($record)
 						<tr>
                             <td align=\"right\" width=\"15%\"><b>TRANS : </b></td>
                             <td align=\"left\" width=\"45%\">{$record->trans_type}</td>
-							<td align=\"right\" width=\"15%\"><b>METHOD : </b></td>
+							<td align=\"right\" width=\"15%\"><b>PAY METHOD : </b></td>
                             <td align=\"left\" width=\"25%\">{$record->payment_method}</td>
                         </tr>
 						<tr>
@@ -28,10 +28,14 @@ function details($record)
                             <td align=\"left\" width=\"25%\">{$record->charging_type}</td>
                         </tr>
 						<tr>
-                            <td align=\"right\" width=\"15%\"><b>DIAGNOSIS : </b></td>
-                            <td align=\"left\" width=\"45%\">{$record->diagnosis}</td>
+                            <td align=\"right\" width=\"15%\"><b>REMARKS : </b></td>
+                            <td align=\"left\" width=\"45%\">{$record->remarks}</td>
 							<td align=\"right\" width=\"15%\"><b>PO # : </b></td>
                             <td align=\"left\" width=\"25%\">{$record->po_no}</td>
+                        </tr>
+						<tr>
+                            <td align=\"right\" width=\"15%\"><b>DIAGNOSIS : </b></td>
+                            <td align=\"left\" width=\"85%\">{$record->diagnosis}</td>
                         </tr>
                     </table>";
 	return $details;
@@ -162,7 +166,7 @@ $remarks = "<table>
 			</table>";
 
 $pdf = new Pdf('P', 'mm', 'A4', true, 'UTF-8', false);
-$pdf->myHeader($company_name, $company_address, $company_contact, "INVOICE", "", 25);
+$pdf->myHeader($company_name, $company_address, $company_contact, "CHARGE SLIP", "", 25);
 $pdf->myFooter("Printed: " . date("Y-m-d H:i:s") . " - " . strtoupper($record->created), "Record ", -15, "");
 
 $pdf->SetAutoPageBreak(true, 15);
@@ -180,8 +184,8 @@ $pdf->writeHTML("CHARGES", true, false, false, false, '');
 $pdf->SetFont('saxmono', 'N', 8);
 $pdf->writeHTML(summary_list($items, $total_paid), true, false, false, false, '');
 
-$pdf->SetFont('saxmono', 'N', 10);
-$pdf->writeHTML($remarks, true, false, false, false, '');
+// $pdf->SetFont('saxmono', 'N', 10);
+// $pdf->writeHTML($remarks, true, false, false, false, '');
 //$pdf->writeHTML(signatory_details($record), true, false, false, false, '');
 
 $pdf->Output($record->transaction_no . '.pdf', 'I');

@@ -291,7 +291,7 @@ $total_amount_due = $subtotal_total;
 												id="remarks_update"
 												name="remarks_update"
                                                 class="form-control field_update"
-                                                <?= $disabled_field; ?>
+                                                <?= $disabled_field2; ?>
 											><?= $record->remarks; ?></textarea>
                                         </div>
 
@@ -301,7 +301,7 @@ $total_amount_due = $subtotal_total;
 												id="diagnosis_update"
 												name="diagnosis_update"
                                                 class="form-control field_update"
-                                                <?= $disabled_field; ?>
+                                                <?= $disabled_field2; ?>
 
 											><?= $record->diagnosis; ?></textarea>
                                         </div>
@@ -609,13 +609,13 @@ $total_amount_due = $subtotal_total;
                                         <input type="text" id="category_new" name="category_new"  class="field_new form-control text-center" disabled />
                                     </td>
                                     <td>
-                                        <input type="number" id="qty_new" name="qty_new" value="1" class="field_new form-control text-center numeric" autocomplete="off" />
+                                        <input type="text" id="qty_new" name="qty_new" value="1" class="field_new form-control text-center numeric" autocomplete="off" />
                                     </td>
                                     <td>
                                         <input type="text" id="uom_new" name="uom_new"   class="field_new form-control text-center" disabled />
                                     </td>
                                     <td>
-                                        <input type="text" id="price_new" name="price_new" value="0.00" class="field_new form-control text-right" disabled />
+                                        <input type="text" id="price_new" name="price_new" value="0.00" class="field_new form-control text-right"  />
                                     </td>
                                     <td>
                                         <input type="text" id="amount_new" name="amount_new" value="0.00" class="field_new form-control text-right" disabled />
@@ -816,12 +816,30 @@ $total_amount_due = $subtotal_total;
         }
     }
 
+    function compute_entry_manual(){
+        let qty = Number($("#qty_new").val());
+        let price = Number($("#price_new").val());
+        let amount = qty * price;
+        let commission = Number($("#commission_amount_new").val());
+        let insurance = Number($("#insurance_amount_new").val());
+
+        let total = amount - (commission + insurance);
+
+        $("#amount_new").val(amount.toFixed(2));
+        $("#total_new").val(total.toFixed(2));
+    }
+
+    $(document).on("keyup", "#qty_new, #price_new, #commission_amount_new, #insurance_amount_new", function(e){
+        compute_entry_manual();
+    });
+
+
     $(document).ready(function() {
         $("#id_update").val("<?= $transaction_id; ?>");
         $("#lbl_transaction_no").text("<?= $transaction_no; ?>");
         $("#insurance_id_update").trigger("change");
 
-        <?php if ($transaction_status_id == 2) { ?>
+        <?php if ($transaction_status_id == 2 || $transaction_status_id == 3 ) { ?>
         $("#tbl_list tbody").append(new_entry_field);
         <?php } ?>
 
@@ -929,23 +947,27 @@ $total_amount_due = $subtotal_total;
                     $.post("<?= base_url(); ?>current_transaction/confirm", {
                         transaction_id: transaction_id
                     }, function(data) {
-                        if (data.indexOf("<!DOCTYPE html>") > -1) {
-                            alert("Error: Session Time-Out, You must login again to continue.");
-                            location.reload(true);
-                        } else {
-                            let result = JSON.parse(data);
+						location.reload(true);
+                        // if (data.indexOf("<!DOCTYPE html>") > -1) {
+                        //     alert("Error: Session Time-Out, You must login again to continue.");
+                        //     location.reload(true);
+                        // } else {
+                        //     let result = JSON.parse(data);
+						// 	alert(result);
 
-                            if (result.success == true) {
-                                $("#tbl_list tbody").html(item_list(result.result));
-                                $("#tbl_list tbody").append(new_entry_field);
-                                $("#product_id_new").trigger("select", "focus");
+                        //     if (result.success == true) {
+                        //         // $("#tbl_list tbody").html(item_list(result.result));
+                        //         // $("#tbl_list tbody").append(new_entry_field);
+                        //         // $("#product_id_new").trigger("select", "focus");
 
-                                display_total();
+                        //         // display_total();
 
-                            } else {
-                                bootbox.alert(result.message);
-                            }
-                        }
+						// 		location.reload(true);
+
+                        //     } else {
+                        //         bootbox.alert(result.message);
+                        //     }
+                        // }
                     });
                 }
             });
@@ -1124,6 +1146,7 @@ $total_amount_due = $subtotal_total;
         e.preventDefault();
 
         let transaction_id = $("#id_update").val();
+		let payment_method_id = $("#payment_method_id_update").val();
         let product_id = $("#product_id_new").val();
         let product = $("#product_id_new option:selected").text();
         let uom = $("#uom_new").val();
@@ -1135,40 +1158,49 @@ $total_amount_due = $subtotal_total;
         let total = $("#total_new").val();
 
         if (transaction_id && product_id) {
-            $("#loading").modal();
+			if (payment_method_id){
+				$("#loading").modal();
 
-            $.post("<?= base_url(); ?>current_transaction/add_item", {
-                transaction_id: transaction_id,
-                product_id: product_id,
-                product: product,
-                uom: uom,
-                qty: qty,
-                price: price,
-                amount: amount,
-                commission_amount: commission_amount,
-                insurance_amount: insurance_amount,
-                total: total
-            }, function(data) {
-                $("#loading").modal("hide");
+				$.post("<?= base_url(); ?>current_transaction/add_item", {
+					transaction_id: transaction_id,
+					product_id: product_id,
+					product: product,
+					uom: uom,
+					qty: qty,
+					price: price,
+					amount: amount,
+					commission_amount: commission_amount,
+					insurance_amount: insurance_amount,
+					total: total
+				}, function(data) {
+					$("#loading").modal("hide");
 
-                if (data.indexOf("<!DOCTYPE html>") > -1) {
-                    alert("Error: Session Time-Out, You must login again to continue.");
-                    location.reload(true);
-                } else {
-                    let result = JSON.parse(data);
+					if (data.indexOf("<!DOCTYPE html>") > -1) {
+						alert("Error: Session Time-Out, You must login again to continue.");
+						location.reload(true);
+					} else {
+						let result = JSON.parse(data);
 
-                    if (result.success == true) {
-                        $("#tbl_list tbody").html(item_list(result.result));
-                        $("#tbl_list tbody").append(new_entry_field);
-                        $("#product_id_new").trigger("select", "focus");
+						if (result.success == true) {
+							$("#tbl_list tbody").html(item_list(result.result));
+							$("#tbl_list tbody").append(new_entry_field);
+							$("#product_id_new").trigger("select", "focus");
 
-                        display_total();
+                            $('.chosen-select').chosen({
+                                allow_single_deselect: true
+                            });
 
-                    } else {
-                        bootbox.alert(result.message);
-                    }
-                }
-            });
+							display_total();
+
+						} else {
+							bootbox.alert(result.message);
+						}
+					}
+				});
+			}else{
+				bootbox.alert("Error: Please select a payment method first!");
+            	$("#payment_method_update").trigger("select", "focus");
+			}
 
         } else {
             bootbox.alert("Error: Fields with * are required!");

@@ -281,6 +281,7 @@ class Current_transaction extends CI_Controller
 						$data["transaction_status_id"] = $record->status_id;
 						$data["record"] = $record;
 						$data["disabled_field"] = $record->status_id == 2 ? "" : "disabled"; //if status not draft then disabled
+						$data["disabled_field2"] = ($record->status_id == 2 || $record->status_id == 3) ? "" : "disabled";
 
 						$data["trans_types"] = $this->data_trans_type_model->search();
 						$data["patients"] = $this->data_patient_model->search("");
