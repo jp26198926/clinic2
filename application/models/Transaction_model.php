@@ -173,8 +173,7 @@ class Transaction_model extends CI_Model
 		$this->db->order_by('x.id');
 
 		if ($search) {
-			$this->db->where(
-				"CONCAT_WS(
+			$this->db->where("CONCAT_WS(
 					' ',
 					LPAD(x.id,5,'0'),
 					x.date,

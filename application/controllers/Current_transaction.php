@@ -596,6 +596,43 @@ class Current_transaction extends CI_Controller
 		echo json_encode($result);
 	}
 
+	//TRANS CANCEL PAYMENT
+	function cancel_payment(){
+		$transaction_id = $this->input->post("transaction_id");
+		$payment_id = $this->input->post("payment_id");
+		$result["success"] = false;
+
+		if ($transaction_id && $payment_id){
+			try {
+				$cancel = $this->payment_model->cancel($payment_id, $transaction_id, $this->uid);
+
+				if ($cancel){
+					//get total charges
+					$total_charges = $this->main_model->get_total_charges($transaction_id);
+					//get total paid
+					$total_paid = $this->main_model->get_total_paid($transaction_id);
+
+					$payment_list = $this->payment_model->get_payment_list($transaction_id);
+
+					$amount_due = $total_charges - $total_paid;
+
+					$result["success"] = true;
+					$result["total_paid"] = $total_paid;
+					$result["amount_due"] = $amount_due;
+					$result["payment_list"] = $payment_list;
+				}else{
+					$result["error"] = "Unable to cancel. Please try again!";
+				}
+			} catch(Exception $ex) {
+				$result["error"] = $ex->getMessage();
+			}
+		}else{
+			$result["error"] = $this->default_error_msg;
+		}
+
+		echo json_encode($result);
+	}
+
 	//TRANS PRINT e-RECEIPT
 	function print_payment($payment_id)
 	{

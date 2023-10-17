@@ -36,7 +36,7 @@ class Payment_model extends CI_Model
 	}
 
 	function get_payment_list($transaction_id){
-		$this->db->select("p.id, p.date, p.amount, p.reference");
+		$this->db->select("p.id, p.date, p.amount, p.reference, p.status_id");
 		$this->db->select("CONCAT('PMT',LPAD(p.id,3,'0')) as payment_no");
 		$this->db->select("t.payment_type");
 		$this->db->select("s.status");
@@ -107,6 +107,43 @@ class Payment_model extends CI_Model
 		} else {
 			//return true;
 			return $payment_id;
+		}
+	}
+
+	function cancel($id, $transaction_id, $current_user = 0){
+		$data = array(
+			"deleted_at" => date('Y-m-d H:i:s'),
+			"deleted_by" => $current_user,
+			"status_id" => 1
+		);
+
+		$this->db->trans_start();
+
+		//update record
+		$this->db->where("id", $id);
+		$this->db->update("payments", $data);
+
+		//write log - transaction
+		$log_data = array(
+			"action" => "Cancel Payment",
+			"created_by" => $current_user,
+			"transaction_id" => $transaction_id,
+			"item_id" => 0,
+			"item_name" => "",
+			"item_status" => "",
+			"remarks" => "Payment No: PMT" . str_pad($id, 3, '0', STR_PAD_LEFT)
+		);
+		$this->db->insert("trails", $log_data);
+
+		$this->db->trans_complete();
+
+		if ($this->db->trans_status() === FALSE) {
+			// generate an error... or use the log_message() function to log your error
+			//$error = $this->db->error();
+			throw new Exception("Error: Database problem, Please contact your System Administrator!");
+		} else {
+			//return true;
+			return true;
 		}
 	}
 

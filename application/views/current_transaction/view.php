@@ -999,10 +999,10 @@ $total_amount_due = $subtotal_total;
 
 					if (result.payment_list.length > 0) {
 						$.each(result.payment_list, function(idx, payment){
-							table_payment += "<tr>";
+							table_payment += (Number(payment.status_id)==1) ? "<tr class='danger'>" : "<tr>";
 							table_payment += "	<td align='center'>";
-							// table_payment += "		<span id='" + payment.id + "' class='btn_payment_print fa fa-print text-primary' title='Print'></span>";
-							// table_payment += "		<span id='" + payment.id + "' class='btn_payment_cancel fa fa-times text-danger' title='Cancel Payment'></span>";
+							table_payment += "		<span id='" + payment.id + "' class='btn_payment_print fa fa-fw fa-print text-primary' title='Print'></span>";
+							table_payment += "		<span id='" + payment.id + "' class='btn_payment_cancel fa fa-fw fa-trash text-danger' title='Cancel Payment'></span>";
 							table_payment += "	</td>";
 							table_payment += "	<td align='center'>" + payment.payment_no + "</td>";
 							table_payment += "	<td align='center'>" + payment.date + "</td>";
@@ -1112,15 +1112,84 @@ $total_amount_due = $subtotal_total;
 	});
 
 	$(document).on('click', '.btn_payment_cancel', function(){
-		let id = $(this).attr('id');
+		let transaction_id = $("#id_update").val();
+		let payment_id = $(this).attr('id');
+		let this_modal = "#modal_payment";
 
-		bootbox.alert(id);
+		if (transaction_id && payment_id){
+			bootbox.confirm("Are you sure you want to cancel this payment - PMT" + payment_id.padStart(3,"0") + " ?", function(result) {
+                if (result) {
+					$(this_modal + " .modal_error").hide();
+					$(this_modal + " .modal_button").hide();
+					$(this_modal + " .modal-body").hide();
+					$(this_modal + " .modal_waiting").show();
+
+                    $.post("<?= base_url(); ?>current_transaction/cancel_payment", {
+                        transaction_id: transaction_id,
+						payment_id: payment_id
+                    }, function(data) {
+						$(this_modal + " .modal_error").hide();
+						$(this_modal + " .modal_button").show();
+						$(this_modal + " .modal-body").show();
+						$(this_modal + " .modal_waiting").hide();
+
+						if (data.indexOf("<!DOCTYPE html>") > -1) {
+							alert("Error: Session Time-Out, You must login again to continue.");
+							location.reload(true);
+						} else {
+							let result = JSON.parse(data);
+
+							if (result.success == true) {
+								let table_payment = "";
+
+								if (result.payment_list.length > 0) {
+									$.each(result.payment_list, function(idx, payment){
+										table_payment += (Number(payment.status_id)==1) ? "<tr class='danger'>" : "<tr>";
+										table_payment += "	<td align='center'>";
+										table_payment += "		<span id='" + payment.id + "' class='btn_payment_print fa fa-fw fa-print text-primary' title='Print'></span>";
+										table_payment += "		<span id='" + payment.id + "' class='btn_payment_cancel fa fa-fw fa-trash text-danger' title='Cancel Payment'></span>";
+										table_payment += "	</td>";
+										table_payment += "	<td align='center'>" + payment.payment_no + "</td>";
+										table_payment += "	<td align='center'>" + payment.date + "</td>";
+										table_payment += "	<td align='center'>" + payment.payment_type + "</td>";
+										table_payment += "	<td align='right'>" + Number(payment.amount).toFixed(2) + "</td>";
+										table_payment += "	<td align='center'>" + payment.reference + "</td>";
+										table_payment += "	<td align='center'>" + payment.created.toUpperCase() + "</td>"
+										table_payment += "	<td align='center'>" + payment.status + "</td>";
+										table_payment += "</tr>";
+									});
+								}else{
+									table_payment += "	<tr><td align='center' colspan='8'>No Payment Done Yet</td></tr>";
+								}
+
+								$("#lbl_total_paid").text(Number(result.total_paid).toFixed(2));
+								$("#lbl_amount_due").text(Number(result.amount_due).toFixed(2));
+
+								$("#tbl_payment_list tbody").html(table_payment);
+
+							} else {
+								bootbox.alert(result.error);
+							}
+						}
+                    });
+                }
+            });
+		}else{
+			$(this_modal + " .modal_error_msg").text("Error: Critical Error Encountered!");
+			$(this_modal + " .modal_error").stop(true, true).show().delay(15000).fadeOut("slow");
+		}
 	});
 
 	$(document).on('click', '.btn_payment_print', function(){
 		let id = $(this).attr('id');
 
-		bootbox.alert(id);
+		if (id){
+			window.open("<?= base_url(); ?>current_transaction/print_payment/" + id,"_blank");
+		}else{
+			let this_modal = "#modal_payment";
+			$(this_modal + " .modal_error_msg").text("Error: Critical Error Encountered!");
+			$(this_modal + " .modal_error").stop(true, true).show().delay(15000).fadeOut("slow");
+		}
 	});
 
 	$(document).on("click","#btn_send", function(){

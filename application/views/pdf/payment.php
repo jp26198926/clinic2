@@ -54,7 +54,7 @@ function summary_list($items, $record, $total_paid=0)
 	$subtotal_commission = 0;
 	$subtotal_insurance = 0;
 	$subtotal_total = 0;
-	$total_amount_due = $subtotal_total - $total_paid;
+
 
 	if (count($items) > 0) {
 		$i = 0;
@@ -68,7 +68,6 @@ function summary_list($items, $record, $total_paid=0)
             $subtotal_commission += $item->commission_amount;
             $subtotal_insurance += $item->insurance_amount;
             $subtotal_total += $item->total;
-            $total_amount_due = $subtotal_total - $total_paid;
 
 			$list .= "<tr>";
 			$list .= "	<td align=\"center\">{$i}</td>";
@@ -84,7 +83,8 @@ function summary_list($items, $record, $total_paid=0)
 		}
 
 		// show totals
-		$balance = $total_amount_due - $record->amount;
+		$previous_payment = $subtotal_total - $record->amount_due;
+		$balance = $record->amount_due - $record->amount;
 
 		$list .= "<tr><td colspan=\"9\"> <hr /> </td></tr>";
 		$list .= "<tr>";
@@ -96,11 +96,11 @@ function summary_list($items, $record, $total_paid=0)
         $list .= "</tr>";
 		$list .= "<tr>";
         $list .= "	<td colspan=\"5\" align=\"right\"><b>PREVIOUS PAYMENT</b></td>";
-        $list .= "  <td colspan=\"4\" align=\"right\">" . number_format($total_paid, 2, '.', ',') . "</td>";
+        $list .= "  <td colspan=\"4\" align=\"right\">" . number_format($previous_payment, 2, '.', ',') . "</td>";
         $list .= "</tr>";
         $list .= "<tr>";
         $list .= "	<td colspan=\"5\" align=\"right\"><b>TOTAL AMOUNT DUE</b></td>";
-        $list .= "	<td colspan=\"4\" align=\"right\">" . number_format($total_amount_due, 2, '.', ',') . "</td>";
+        $list .= "	<td colspan=\"4\" align=\"right\">" . number_format($record->amount_due, 2, '.', ',') . "</td>";
         $list .= "</tr>";
 		$list .= "<tr>";
         $list .= "	<td colspan=\"5\" align=\"right\"><b>AMOUNT PAID</b></td>";
@@ -165,8 +165,6 @@ function signatory_details($record)
 
 $remarks_msg = nl2br($record->remarks . '');
 
-$summary = "Receive payment amounting of ". $record->amount . " for Invoice #: " . $record->transaction_no . ". See Charge Slip for details.";
-
 $remarks = "<table>
 				<tr>
                     <td align=\"left\">REMARKS : {$remarks_msg}</td>
@@ -190,8 +188,7 @@ $pdf->writeHTML(details($record), true, false, false, false, '');
 
 $pdf->writeHTML("SUMMARY", true, false, false, false, '');
 $pdf->SetFont('saxmono', 'N', 8);
-$pdf->writeHTML($summary, true, false, false, false, '');
-//$pdf->writeHTML(summary_list($items, $record, ($total_paid - $record->amount)), true, false, false, false, '');
+$pdf->writeHTML(summary_list($items, $record, ($total_paid - $record->amount)), true, false, false, false, '');
 
 // $pdf->SetFont('saxmono', 'N', 10);
 // $pdf->writeHTML($remarks, true, false, false, false, '');

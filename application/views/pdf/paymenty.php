@@ -165,6 +165,8 @@ function signatory_details($record)
 
 $remarks_msg = nl2br($record->remarks . '');
 
+$summary = "Receive payment amounting of ". $record->amount . " for Invoice #: " . $record->transaction_no . ". See Charge Slip for details.";
+
 $remarks = "<table>
 				<tr>
                     <td align=\"left\">REMARKS : {$remarks_msg}</td>
@@ -188,7 +190,8 @@ $pdf->writeHTML(details($record), true, false, false, false, '');
 
 $pdf->writeHTML("SUMMARY", true, false, false, false, '');
 $pdf->SetFont('saxmono', 'N', 8);
-$pdf->writeHTML(summary_list($items, $record, ($total_paid - $record->amount)), true, false, false, false, '');
+$pdf->writeHTML($summary, true, false, false, false, '');
+//$pdf->writeHTML(summary_list($items, $record, ($total_paid - $record->amount)), true, false, false, false, '');
 
 // $pdf->SetFont('saxmono', 'N', 10);
 // $pdf->writeHTML($remarks, true, false, false, false, '');
