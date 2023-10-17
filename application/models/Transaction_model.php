@@ -21,6 +21,41 @@ class Transaction_model extends CI_Model
 		}
 	}
 
+	function save($data_input, $current_user = 0)
+	{
+		$this->db->trans_start();
+
+		$data = array();
+		$transaction_id = 0;
+
+		$data["created_by"] = $current_user;
+		$data["status_id"] = 3; //confirmed
+		$data["location_id"] = 2; //Triage
+
+		foreach ($data_input as $key => $val) {
+			$col = str_replace("_new", "", $key);
+			$data[$col] = $val;
+		}
+
+		if (!$this->db->insert($this->tablename, $data)) {
+			$error = $this->db->error();
+			throw new Exception("Error: " . $error['message']);
+		} else {
+			$transaction_id = $this->db->insert_id();
+		}
+
+		$this->db->trans_complete();
+
+		if ($this->db->trans_status() === FALSE) {
+			// generate an error... or use the log_message() function to log your error
+			$error = $this->db->error();
+			throw new Exception("Error: Database problem, Please contact your System Administrator!");
+		} else {
+			return $transaction_id;
+		}
+	}
+
+
 	function update($id, $data_input, $current_user = 0)
 	{
 		$this->db->trans_start();
@@ -435,76 +470,6 @@ class Transaction_model extends CI_Model
 		return $total;
 	}
 
-	function get_payment_list($transaction_id){
-		$this->db->select("p.id, p.date, p.amount, p.reference");
-		$this->db->select("CONCAT('PMT',LPAD(p.id,3,'0')) as payment_no");
-		$this->db->select("t.payment_type");
-		$this->db->select("s.status");
-		$this->db->select("CONCAT(e.lname,', ', e.fname,' ', e.mname) as created");
-		$this->db->from("payments p");
-		$this->db->join("user e", "e.id=p.created_by", "left");
-		$this->db->join("payment_types t", "t.id=p.payment_type_id", "left");
-		$this->db->join("payment_status s", "s.id=p.status_id", "left");
-		$this->db->where("p.transaction_id", $transaction_id);
-
-		if ($query = $this->db->get()) {
-			return $query->result();
-		} else {
-			$error = $this->db->error();
-			throw new Exception("Error: " . $error['message']);
-		}
-	}
-
-	function save_payment(
-		$transaction_id,
-		$date,
-		$payment_type_id,
-		$amount_due,
-		$pay_amount,
-		$tender_amount,
-		$change_amount,
-		$reference,
-		$current_user=0
-	){
-		$data = array(
-			"transaction_id" => $transaction_id,
-			"date" => $date,
-			"payment_type_id" => $payment_type_id,
-			"amount_due" => $amount_due,
-			"amount" => $pay_amount,
-			"tender_amount" => $tender_amount,
-			"change_amount" => $change_amount,
-			"reference" => $reference,
-			"created_by" => $current_user
-		);
-
-		$this->db->trans_start();
-
-		//save payment
-		$this->db->insert("payments", $data);
-
-		// 	//write log - transaction
-		$log_data = array(
-			"action" => "Add Payment",
-			"created_by" => $current_user,
-			"transaction_id" => $transaction_id,
-			"item_id" => 0,
-			"item_name" => "",
-			"item_status" => "",
-			"remarks" => "Amount: " . $pay_amount
-		);
-		$this->db->insert("trails", $log_data);
-
-		$this->db->trans_complete();
-
-		if ($this->db->trans_status() === FALSE) {
-			// generate an error... or use the log_message() function to log your error
-			//$error = $this->db->error();
-			throw new Exception("Error: Database problem, Please contact your System Administrator!");
-		} else {
-			return true;
-		}
-	}
 
 
 	// function for_dept_approval($transaction_id, $approver_id, $approver_name = "", $current_user = 0)

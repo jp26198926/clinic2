@@ -1,12 +1,12 @@
 <!-- bootstrap modal -->
-<div id='modal_dept_approval_transfer' class="modal fade" tabindex="-1" users="dialog">
+<div id='modal_send' class="modal fade" tabindex="-1" users="dialog">
     <div class="modal-dialog modal-sm" users="document">
         <div class="modal-content">
             <div class="modal-header">
                 <button type="button" class="close" data-dismiss="modal">&times;</button>
                 <h4 class="blue bigger">
                     <i class="fa fa-check "> </i>
-                    Transfer Dept Approver
+                    Send to Location
                 </h4>
             </div>
             <div class="modal-body">
@@ -26,13 +26,13 @@
 
                 <div class="row" style="margin-bottom: 0.5em;">
                     <div class="col-md-12">
-                        <label for="txt_dept_approver_transfer">Approver</label>
-                        <select id="txt_dept_approver_transfer" name="txt_dept_approver_transfer"
+                        <label for="location_id_send">Location</label>
+                        <select id="location_id_send" name="location_id_send"
                             class="form-control select2">
                             <option value="">-- SELECT --</option>
                             <?php
-                                foreach($dept_approvers as $key => $value){
-                                    $label = strtoupper($value->name);
+                                foreach($locations as $key => $value){
+                                    $label = strtoupper($value->location);
                                     echo "<option value='{$value->id}'>{$label}</option>";
                                 }
                             ?>
@@ -45,9 +45,9 @@
             <div class="modal-footer">
 
                 <div class="pull-right modal_button">
-                    <button type="button" id="btn_dept_approver_transfer_send" class="btn btn-xs btn-primary">
+                    <button type="button" id="btn_send_save" class="btn btn-xs btn-primary">
                         <span class='fa fa-check'></span>
-                        Transfer
+                        Confirm
                     </button>
                     <button type="button" class="btn btn-xs btn-danger" data-dismiss="modal">
                         <span class='fa fa-times'></span>

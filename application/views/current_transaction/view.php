@@ -236,7 +236,7 @@ $total_amount_due = $subtotal_total;
                                         <div class="col-md-2 text-right">Location</div>
                                         <div class="col-md-2">
                                             <select id="location_id_update" name="location_id_update"
-                                                class="chosen-select form-control field_update" disabled>
+                                                class="chosen-select form-control field_update" disabled >
                                                 <option value="">-- SELECT --</option>
                                                 <?php
                                                 foreach ($locations as $key => $value) {
@@ -269,7 +269,7 @@ $total_amount_due = $subtotal_total;
                                         <div class="col-md-2 text-right">Assigned Doctor</div>
                                         <div class="col-md-3">
                                             <select id="doctor_id_update" name="doctor_id_update"
-                                                class="chosen-select form-control field_update" <?= $disabled_field; ?>>
+                                                class="chosen-select form-control field_update" <?= $disabled_field2; ?>>
                                                 <option value="0">NONE</option>
                                                 <?php
                                                 foreach ($doctors as $key => $value) {
@@ -327,6 +327,14 @@ $total_amount_due = $subtotal_total;
                                                         </a> ";
                                                 }
 
+												echo "<a
+														id='btn_modify'
+                                                        href='" . base_url() . "current_transaction/modify/{$transaction_id}' class='btn btn-warning'
+                                                    	>
+                                                            <i class='fa fa-pencil fa-fw'></i>
+                                                            Modify
+                                                        </a> ";
+
                                                 //export to pdf shown
                                                 echo "<a
                                                             id='btn_print'
@@ -338,9 +346,9 @@ $total_amount_due = $subtotal_total;
                                                         </a> ";
                                                 // }
 
-                                                echo "<button id='btn_send_to' class='btn btn-info'>
+                                                echo "<button id='btn_send' class='btn btn-info'>
                                                         <i class='fa fa-arrow-right fa-fw'></i>
-                                                        Sent To
+                                                        Send To
                                                       </button> ";
 
 												echo "<button id='btn_payment' class='btn btn-info'>
@@ -554,6 +562,7 @@ $total_amount_due = $subtotal_total;
         $this->load->view("current_transaction/modal_info");
         $this->load->view("current_transaction/modal_items");
 		$this->load->view("current_transaction/modal_payment");
+		$this->load->view("current_transaction/modal_send");
 
         $this->load->view('template/footer');
         $this->load->view('template/loading');
@@ -938,6 +947,10 @@ $total_amount_due = $subtotal_total;
     });
 
     //region transaction buttons
+	$(document).on("click", "#btn_modify", function(){
+		$("#loading").modal();
+	});
+
     $(document).on("click", "#btn_confirm", function() {
         let transaction_id = $("#id_update").val();
 
@@ -948,26 +961,6 @@ $total_amount_due = $subtotal_total;
                         transaction_id: transaction_id
                     }, function(data) {
 						location.reload(true);
-                        // if (data.indexOf("<!DOCTYPE html>") > -1) {
-                        //     alert("Error: Session Time-Out, You must login again to continue.");
-                        //     location.reload(true);
-                        // } else {
-                        //     let result = JSON.parse(data);
-						// 	alert(result);
-
-                        //     if (result.success == true) {
-                        //         // $("#tbl_list tbody").html(item_list(result.result));
-                        //         // $("#tbl_list tbody").append(new_entry_field);
-                        //         // $("#product_id_new").trigger("select", "focus");
-
-                        //         // display_total();
-
-						// 		location.reload(true);
-
-                        //     } else {
-                        //         bootbox.alert(result.message);
-                        //     }
-                        // }
                     });
                 }
             });
@@ -1098,6 +1091,8 @@ $total_amount_due = $subtotal_total;
 							$(".txt_payment_field").val("");
 
 							bootbox.alert("Payment Successfully Saved!");
+
+							window.open("<?= base_url(); ?>current_transaction/print_payment/" + result.payment_id,"_blank");
 						}else{
 							$(this_modal + " .modal_error_msg").text(result.error);
 							$(this_modal + " .modal_error").stop(true, true).show().delay(15000).fadeOut("slow");
@@ -1126,6 +1121,28 @@ $total_amount_due = $subtotal_total;
 		let id = $(this).attr('id');
 
 		bootbox.alert(id);
+	});
+
+	$(document).on("click","#btn_send", function(){
+		$("#modal_send").modal();
+	});
+
+	$(document).on("click","#btn_send_save",function(){
+		let location_id = $("#location_id_send").val();
+		let location = $("#location_id_send option:selected").text();
+		let this_modal = "#modal_send";
+
+		if (location_id){
+
+			$("#location_id_update").val(location_id).trigger("change").trigger("chosen:updated");
+
+			$(this_modal).modal("hide");
+			bootbox.alert("Successfully sent to " + location);
+		}else{
+			$(this_modal + " .modal_error_msg").text("Error: No location selected!");
+            $(this_modal + " .modal_error").stop(true, true).show().delay(15000).fadeOut("slow");
+		}
+
 	});
     //endregion transaction buttons
 

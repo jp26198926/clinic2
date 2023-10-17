@@ -79,6 +79,7 @@ class Current_transaction extends CI_Controller
 					$this->load->model("data_package_model");
 
 					$this->load->model("item_model");
+					$this->load->model("payment_model");
 
 					$this->load->model("shared_model");
 				}
@@ -186,40 +187,159 @@ class Current_transaction extends CI_Controller
 
 	function new()
 	{
-		$transaction_id = $this->session->flashdata("transaction_id");
+		$prefix = $this->prefix;
 
+		$data["prefix"] = $prefix;
+		$data["app_title"] = $this->app_title;
+		$data["app_version"] = $this->app_version;
+		$data["page_name"] = $this->page_name;
+		$data["parent_menu"] = $this->parent_menu;
+		$data["module"] = $this->module;
+		$data["module_description"] = $this->module_description;
+
+		if ($this->cf->is_allowed_module($this->module, $prefix)) {
+			$data["role_id"] = $this->role_id;
+			$data["module_permission"] = $this->module_permission;
+			$data["uid"] = $this->uid;
+			$data["ufname"] = strtoupper($this->uname);
+
+			$data["uoms"] = $this->data_uom_model->search();
+			$data["trans_types"] = $this->data_trans_type_model->search();
+			$data["patients"] = $this->data_patient_model->search("");
+			$data["payment_methods"] = $this->data_payment_method_model->search();
+			$data["payment_types"] = $this->data_payment_type_model->search();
+			$data["clients"] = $this->data_client_model->search();
+			$data["charging_types"] = $this->data_charging_type_model->search();
+			$data["insurances"] = $this->data_insurance_model->search();
+			$data["doctors"] = $this->shared_model->doctors();
+			$data["locations"] = $this->data_location_model->search();
+			$data["queues"] = $this->data_queue_model->search();
+
+			$this->load->view("current_transaction/new", $data);
+		} else {
+			$this->default_error_msg;
+		}
+	}
+
+	function modify($transaction_id)
+	{
 		if ($transaction_id) {
-			$prefix = $this->prefix;
+			try {
+				$record = $this->main_model->view($transaction_id, $this->uid);
+				if ($record) {
+					$prefix = $this->prefix;
 
-			$data["prefix"] = $prefix;
-			$data["app_title"] = $this->app_title;
-			$data["app_version"] = $this->app_version;
-			$data["page_name"] = $this->page_name;
-			$data["parent_menu"] = $this->parent_menu;
-			$data["module"] = $this->module;
-			$data["module_description"] = $this->module_description;
+					$data["prefix"] = $prefix;
+					$data["app_title"] = $this->app_title;
+					$data["app_version"] = $this->app_version;
+					$data["page_name"] = $this->page_name;
+					$data["parent_menu"] = $this->parent_menu;
+					$data["module"] = $this->module;
+					$data["module_description"] = $this->module_description;
 
-			if ($this->cf->is_allowed_module($this->module, $prefix)) {
-				$data["role_id"] = $this->role_id;
-				$data["module_permission"] = $this->module_permission;
-				$data["uid"] = $this->uid;
-				$data["ufname"] = strtoupper($this->uname);
+					if ($this->cf->is_allowed_module($this->module, $prefix)) {
+						$data["role_id"] = $this->role_id;
+						$data["module_permission"] = $this->module_permission;
+						$data["uid"] = $this->uid;
+						$data["ufname"] = strtoupper($this->uname);
 
-				$data["divisions"] = $this->data_division_model->search();
-				$data["departments"] = $this->data_department_model->search();
-				$data["uoms"] = $this->data_uom_model->search();
-				$data["types"] = $this->data_type_model->search();
-				$data["transaction_id"] = $transaction_id;
-				$data["transaction_no"] = str_pad($transaction_id, 5, "0", STR_PAD_LEFT);
-				$data["trails"] = $this->shared_model->get_logs($transaction_id);
 
-				$this->load->view("current_transaction/new", $data);
-			} else {
-				$this->default_error_msg;
+						$data["uoms"] = $this->data_uom_model->search();
+						$data["transaction_id"] = $transaction_id;
+						$data["transaction_no"] = str_pad($transaction_id, 5, "0", STR_PAD_LEFT);
+						$data["transaction_status_id"] = $record->status_id;
+						$data["record"] = $record;
+
+						$data["trans_types"] = $this->data_trans_type_model->search();
+						$data["patients"] = $this->data_patient_model->search("");
+						$data["payment_methods"] = $this->data_payment_method_model->search();
+						$data["payment_types"] = $this->data_payment_type_model->search();
+						$data["clients"] = $this->data_client_model->search();
+						$data["charging_types"] = $this->data_charging_type_model->search();
+						$data["insurances"] = $this->data_insurance_model->search();
+						$data["doctors"] = $this->shared_model->doctors();
+						$data["locations"] = $this->data_location_model->search();
+						$data["queues"] = $this->data_queue_model->search();
+
+						$data["trails"] = $this->shared_model->get_logs($transaction_id);
+
+						$this->load->view("current_transaction/modify", $data);
+					} else {
+						$this->default_error_msg;
+					}
+				} else {
+					$this->session->set_flashdata("error", "Error: Trans no. " . str_pad($transaction_id, 5, "0", STR_PAD_LEFT) . " is unavailable!");
+					redirect(base_url() . "current_transaction");
+				}
+			} catch (Exception $ex) {
+				$this->session->set_flashdata("error", $ex->getMessage());
+				redirect(base_url() . "current_transaction");
 			}
 		} else {
-			redirect(base_url() . "current_transaction");
+			$this->session->set_flashdata("error", "Error: Critical Error Encountered!");
 		}
+	}
+
+	function save(){
+		$result = array("success" => false);
+		$data = $this->input->post();
+		$dt = $this->input->post("date_new");
+		$trans_type_id = $this->input->post("trans_type_id_new");
+		$patient_id = $this->input->post("patient_id_new");
+		$payment_method_id = $this->input->post("payment_method_id_new");
+		$charging_type_id = $this->input->post("charging_type_id_new");
+
+		if ($dt && $trans_type_id && $patient_id && $payment_method_id && $charging_type_id){
+			try {
+				$save = $this->main_model->save($data, $this->uid);
+				if ($save){
+					$result["success"] = true;
+					$result["data"] = $save;
+
+					$this->session->set_flashdata("transaction_id", $save);
+				}else{
+					$result["error"] = "Unable to save, Please try again!";
+				}
+			} catch (Exception $ex){
+				$result["error"] = $ex->getMessage();
+			}
+		}else{
+			$result["error"] = "Fields with red asterisk are required!";
+		}
+
+		echo json_encode($result);
+	}
+
+	function update(){
+		$result = array("success" => false);
+		$data = $this->input->post();
+		$transaction_id = $this->input->post("id_update");
+		$dt = $this->input->post("date_update");
+		$trans_type_id = $this->input->post("trans_type_id_update");
+		$patient_id = $this->input->post("patient_id_update");
+		$payment_method_id = $this->input->post("payment_method_id_update");
+		$charging_type_id = $this->input->post("charging_type_id_update");
+
+		if ($transaction_id){
+			if ($dt && $trans_type_id && $patient_id && $payment_method_id && $charging_type_id){
+				try {
+					$save = $this->main_model->update( $transaction_id, $data, $this->uid);
+					if ($save){
+						$result["success"] = true;
+						$result["message"] = "Successfully Updated";
+					}else{
+						$result["error"] = "Unable to save, Please try again!";
+					}
+				} catch (Exception $ex){
+					$result["error"] = $ex->getMessage();
+				}
+			}else{
+				$result["error"] = "Fields with red asterisk are required!";
+			}
+		}else{
+			$result["error"] = "Critical Error Encountered!";
+		}
+		echo json_encode($result);
 	}
 
 	function auto_save()
@@ -398,7 +518,7 @@ class Current_transaction extends CI_Controller
 				//get total paid
 				$total_paid = $this->main_model->get_total_paid($transaction_id);
 				//get payment history list
-				$payment_list = $this->main_model->get_payment_list($transaction_id);
+				$payment_list = $this->payment_model->get_payment_list($transaction_id);
 
 				$amount_due = $total_charges - $total_paid;
 
@@ -435,7 +555,7 @@ class Current_transaction extends CI_Controller
 
 				if ($tender_amount >= $pay_amount){
 					try{
-						$save = $this->main_model->save_payment(
+						$save = $this->payment_model->save_payment(
 							$transaction_id,
 							$date,
 							$payment_type_id,
@@ -454,6 +574,7 @@ class Current_transaction extends CI_Controller
 
 							$amount_due = $total_charges - $total_paid;
 
+							$result["payment_id"] = $save;
 							$result["success"] = true;
 							$result["total_paid"] = $total_paid;
 							$result["amount_due"] = $amount_due;
@@ -475,6 +596,38 @@ class Current_transaction extends CI_Controller
 		echo json_encode($result);
 	}
 
+	//TRANS PRINT e-RECEIPT
+	function print_payment($payment_id)
+	{
+		if ($payment_id) {
+			try {
+				$record = $this->payment_model->search_by_id($payment_id);
+
+				if ($record) {
+					$data["payment_no"] = "PMT" . str_pad($payment_id, 3, "0", STR_PAD_LEFT);
+					$data["app_name"] = $this->app_name;
+					$data["company_name"] = $this->company_name;
+					$data["company_address"] = $this->company_address;
+					$data["company_contact"] = $this->company_contact;
+					$data["record"] = $record;
+					$data["items"] = $this->item_model->search_by_transaction($record->transaction_id);
+					//get total paid
+					$data["total_paid"] = $this->main_model->get_total_paid($record->transaction_id);
+
+
+					$this->load->library('Pdf');
+					$this->load->view('pdf/payment', $data);
+				} else {
+					$this->session->set_flashdata("error", "Error: Critical Error Encountered!");
+					redirect(base_url() . "current_transaction");
+				}
+			} catch (Exception $ex) {
+				echo $ex->getMessage();
+			}
+		} else {
+			echo $this->default_error_msg;
+		}
+	}
 
 	//TRANS CANCEL
 	function cancel()
@@ -541,6 +694,37 @@ class Current_transaction extends CI_Controller
 		} else {
 			echo $this->default_error_msg;
 		}
+	}
+
+	//TRANS SEND TO LOCATION
+	function send(){
+		$result = array("success" => false);
+		$transaction_id = $this->input->post("transaction_id");
+		$location_id = $this->input->post("location_id");
+		$location = $this->input->post("location");
+
+		if ($transaction_id) {
+			try {
+
+				$save = $this->main_model->send($transaction_id, $location_id, $this->uid);
+
+				if ($save) {
+					//$transaction_no = str_pad($transaction_id, 5, "0", STR_PAD_LEFT);
+					//$this->session->set_flashdata("message", $transaction_no . " has been transferred to " . $location);
+
+					$result["success"] = true;
+					$result["message"] = "Successfully transferred!";
+				} else {
+					$result["error"] = "Failed to transfer! Please try again!";
+				}
+			} catch (Exception $ex) {
+				$result["error"] = $ex->getMessage();
+			}
+		} else {
+			$result["error"] = "Critical Error Encountered!";
+		}
+
+		echo json_encode($result);
 	}
 
 	//SELECT PRODUCT

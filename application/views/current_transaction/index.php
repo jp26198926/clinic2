@@ -464,21 +464,26 @@
 
     //add
     $(document).on("click", "#btn_new", function() {
-        $("#loading").modal();
-
-        $.get("<?= base_url(); ?>current_transaction/create", function(data) {
-            //$("#loading").modal("hide");
-
-            if (data.indexOf("<!DOCTYPE html>") > -1) {
-                alert("Error: Session Time-Out, You must login again to continue.");
-                location.reload(true);
-            } else if (data.indexOf("Error: ") > -1) {
-                bootbox.alert(data);
-            } else {
-                window.location = "<?= base_url(); ?>current_transaction/view/" + data;
-            }
-        });
+		$("#loading").modal();
+        window.location = "<?= base_url(); ?>current_transaction/new"
     });
+
+	// $(document).on("click", "#btn_new", function() {
+    //     $("#loading").modal();
+
+    //     $.get("<?= base_url(); ?>current_transaction/create", function(data) {
+    //         //$("#loading").modal("hide");
+
+    //         if (data.indexOf("<!DOCTYPE html>") > -1) {
+    //             alert("Error: Session Time-Out, You must login again to continue.");
+    //             location.reload(true);
+    //         } else if (data.indexOf("Error: ") > -1) {
+    //             bootbox.alert(data);
+    //         } else {
+    //             window.location = "<?= base_url(); ?>current_transaction/view/" + data;
+    //         }
+    //     });
+    // });
 
 
 
