@@ -254,6 +254,7 @@ $total_amount_due = $subtotal_total;
                                         <div class="col-md-2">
                                             <select id="queue_id_update" name="queue_id_update"
                                                 class="chosen-select form-control field_update" disabled>
+												<option value="0">NONE</option>
                                                 <?php
                                                 foreach ($queues as $key => $value) {
                                                     if ($value->id == $record->queue_id) {
@@ -468,7 +469,13 @@ $total_amount_due = $subtotal_total;
                                                             echo "  <td class='text-right'>{$value->insurance_amount}</td>";
                                                             echo "  <td class='text-right'>{$value->total}</td>";
                                                             echo "  <td class='text-center'>{$status}</td>";
-                                                            echo "  <td class='text-center'>{$action}</td>";
+
+															if($transaction_status_id > 1) {
+																echo "  <td class='text-center'>{$action}</td>";
+															}else{
+																echo "<td></td>";
+															}
+
                                                             echo "<tr>";
                                                         }
                                                     } else {
@@ -733,16 +740,23 @@ $total_amount_due = $subtotal_total;
                                 <td class='text-right'>${item.commission_amount}</td>
                                 <td class='text-right'>${item.insurance_amount}</td>
                                 <td class='text-right'>${item.total}</td>
-                                <td class='text-center'>${item.status}</td>
-                                <td class='text-center'>${action}</td>
-                            <tr>`;
+                                <td class='text-center'>${item.status}</td>`;
 
-				subtotal_amount += Number(item.amount);
-                subtotal_commission += Number(item.commission_amount);
-                subtotal_insurance += Number(item.insurance_amount);
-                subtotal_total += Number(item.total);
-                total_amount_due = subtotal_total;
+				<?php if($transaction_status_id > 1){ ?>
+                	list +=     `<td class='text-center'>${action}</td>`;
+				<?php } else { ?>
+					list += 	`<td></td>`;
+				<?php } ?>
 
+				list +=     `<tr>`;
+
+				if (parseInt(item.status_id) > 1){
+					subtotal_amount += Number(item.amount);
+                	subtotal_commission += Number(item.commission_amount);
+                	subtotal_insurance += Number(item.insurance_amount);
+                	subtotal_total += Number(item.total);
+					//total_amount_due = subtotal_total;
+				}
             });
         }
 
@@ -1213,6 +1227,85 @@ $total_amount_due = $subtotal_total;
 		}
 
 	});
+
+    $(document).on("click", "#btn_completed", function(){
+        let transaction_id = $("#id_update").val();
+
+        if (transaction_id){
+            $("#loading").modal();
+
+            $.post("<?= base_url(); ?>current_transaction/complete", {transaction_id: transaction_id}, function(data) {
+				$("#loading").modal("hide");
+
+				if (data.indexOf("<!DOCTYPE html>") > -1) {
+					alert("Error: Session Time-Out, You must login again to continue.");
+					location.reload(true);
+				}else{
+					let result = JSON.parse(data);
+
+					if (result.success == true) {
+						$("#loading").modal();
+                        location.reload(true);
+					}else{
+						bootbox.alert(result.error);
+					}
+				}
+			});
+        }else{
+            bootbox.alert("Error: Critical Error Encountered!");
+        }
+    });
+
+	//cancel transaction
+    $(document).on("click", "#btn_transaction_cancel", function() {
+        let transaction_id = $("#id_update").val();
+
+        if (transaction_id) {
+            bootbox.prompt({
+                title: "Provide Cancel Reason!",
+                inputType: 'textarea',
+                buttons: {
+                    cancel: {
+                        label: '<i class="fa fa-times"></i> Cancel'
+                    },
+                    confirm: {
+                        label: '<i class="fa fa-check"></i> Confirm'
+                    }
+                },
+                callback: function(result) {
+
+                    if (result !== null) {
+                        if (result) {
+                            $.post("<?= base_url(); ?>current_transaction/cancel", {
+                                transaction_id: transaction_id,
+                                reason: result
+                            }, function(data) {
+                                if (data.indexOf("<!DOCTYPE html>") > -1) {
+                                    alert("Error: Session Time-Out, You must login again to continue.");
+                                    location.reload(true);
+                                } else {
+									let result = JSON.parse(data);
+
+									if (result.success){
+										$("#loading").modal();
+                                    	location.reload();
+									}else{
+										bootbox.alert(result.error);
+									}
+                                }
+                            });
+                        } else {
+                            return false;
+                        }
+                    }
+                }
+            });
+
+        } else {
+            bootbox.alert("Error: Critical Error Encountered!");
+        }
+
+    });
     //endregion transaction buttons
 
 

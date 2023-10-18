@@ -666,42 +666,7 @@ class Current_transaction extends CI_Controller
 		}
 	}
 
-	//TRANS CANCEL
-	function cancel()
-	{
-		$transaction_id = $this->input->post("transaction_id");
-		$reason = $this->input->post("reason");
 
-		if ($transaction_id) {
-			if ($reason) {
-				try {
-					//$check = $this->main_model->cancel_check($transaction_id);
-
-					//if ($check) {
-
-					$save = $this->main_model->cancel($transaction_id, $reason, $this->uid);
-
-					if ($save) {
-						$transaction_no = str_pad($transaction_id, 5, "0", STR_PAD_LEFT);
-						$this->session->set_flashdata("message", $transaction_no . " has been cancelled!");
-
-						echo $transaction_no;
-					} else {
-						echo "Error: Failed! Please try again!";
-					}
-					//} else {
-					//	echo "Error: Some items are not cancellable, you need to cancel the item one by one!";
-					//}
-				} catch (Exception $ex) {
-					echo $ex->getMessage();
-				}
-			} else {
-				echo "Error: Please provide reason!";
-			}
-		} else {
-			echo $this->default_error_msg;
-		}
-	}
 
 	//TRANS EXPORT
 	function export_pdf($transaction_id)
@@ -759,6 +724,70 @@ class Current_transaction extends CI_Controller
 			}
 		} else {
 			$result["error"] = "Critical Error Encountered!";
+		}
+
+		echo json_encode($result);
+	}
+
+	//TRANS COMPLETE
+	function complete(){
+		$transaction_id = $this->input->post("transaction_id");
+		$result["success"] = false;
+
+		if ($transaction_id){
+			try{
+				$complete = $this->main_model->complete($transaction_id, $this->uid);
+
+				if ($complete["proceed"] === true){
+					$transaction_no = str_pad($transaction_id, 5, "0", STR_PAD_LEFT);
+					$this->session->set_flashdata("message", $transaction_no . " has been mark as completed!");
+
+					$result["success"] = true;
+				}else{
+					$result["error"] = $complete["error"];
+				}
+			}catch(Exception $ex){
+				$result["error"] = $ex->getMessage();
+			}
+		} else {
+			$result["error"] = $this->default_error_msg;
+		}
+
+		echo json_encode($result);
+	}
+
+	//TRANS CANCEL
+	function cancel()
+	{
+		$result["success"] = false;
+
+		$transaction_id = $this->input->post("transaction_id");
+		$reason = $this->input->post("reason");
+
+		if ($transaction_id) {
+			if ($reason) {
+				try {
+
+					$save = $this->main_model->cancel($transaction_id, $reason, $this->uid);
+
+					if ($save["proceed"] === true) {
+						$transaction_no = str_pad($transaction_id, 5, "0", STR_PAD_LEFT);
+						$this->session->set_flashdata("message", $transaction_no . " has been cancelled!");
+
+						$result["success"] = true;
+						$result["data"] = $transaction_no;
+					} else {
+						$result["error"] = $save["error"];
+					}
+
+				} catch (Exception $ex) {
+					$result["error"] = $ex->getMessage();
+				}
+			} else {
+				$result["error"] =  "Error: Please provide reason!";
+			}
+		} else {
+			$result["error"] =  $this->default_error_msg;
 		}
 
 		echo json_encode($result);

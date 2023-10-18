@@ -253,7 +253,11 @@
                         $('td', row).removeClass('info');
                         $('td', row).removeClass('success');
                         $('td', row).addClass('danger');
-                    } else if (data[12] == 3) { //completed
+					} else if (data[12] == 3) { //confirm
+                        $('td', row).addClass('info');
+                        $('td', row).removeClass('danger');
+                        $('td', row).removeClass('success');
+                    } else if (data[12] == 4) { //completed
                         $('td', row).removeClass('info');
                         $('td', row).removeClass('danger');
                         $('td', row).addClass('success');

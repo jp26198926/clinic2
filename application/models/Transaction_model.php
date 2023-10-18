@@ -274,6 +274,81 @@ class Transaction_model extends CI_Model
 	}
 
 	//transactions
+	function complete($transaction_id, $current_user = 0){
+		$result["proceed"] = false;
+
+		$this->db->trans_start();
+
+		//check if all items status are completed
+		$this->db->select("id");
+		$this->db->from("items");
+		$this->db->where("transaction_id", $transaction_id);
+		$this->db->where("status_id >", 1); //not deleted
+		$this->db->where("status_id <", 4); //not completed
+		$this->db->get();
+		if ($this->db->affected_rows() > 0){
+			$result["error"] = "Some item/s is not yet completed!";
+		}else{
+			//get payment method
+			//reset query
+			$this->db->reset_query();
+			$this->db->select("t.payment_method_id, (t.total - t.total_paid) as balance, pm.payment_method");
+			$this->db->from("transactions t");
+			$this->db->join("payment_methods pm", "pm.id = t.payment_method_id", "left");
+			$this->db->where("t.id", $transaction_id);
+
+			if ($query = $this->db->get()){
+				$row = $query->row();
+				$payment_method = $row->payment_method;
+				$balance = $row->balance;
+
+				//check the method is cash
+				if (stripos($payment_method, "cash") !== false){
+					//check if there is balance
+					if ($balance > 0) {
+						$result["error"] = "There is {$balance} balance that need to be settled!";
+					}else{
+						$result["proceed"] = true;
+					}
+				}else{
+					$result["proceed"] = true;
+				}
+
+				if ($result["proceed"] === true){
+					//mark the transaction status as complete
+					$this->db->reset_query();
+					$this->db->set("status_id", 4); //completed
+					$this->db->set("queue_id", 0);
+					$this->db->where("id", $transaction_id);
+					$this->db->update("transactions");
+
+					//write log
+					$this->db->reset_query();
+					$log_data = array(
+						"action" => "Complete Transaction",
+						"created_by" => $current_user,
+						"transaction_id" => $transaction_id,
+						"item_id" => 0,
+						"item_name" => "",
+						"item_status" => "",
+						"remarks" => "Transaction has been completed"
+					);
+					$this->db->insert("trails", $log_data);
+				}
+			}else{
+				$result["error"] = $this->db->error();
+			}
+		}
+
+		$this->db->trans_complete();
+
+		if ($this->db->trans_status() === FALSE) {
+			throw new Exception("Error: Database problem, Please contact your System Administrator!");
+		} else {
+			return $result;
+		}
+	}
+
 	function cancel_check($transaction_id)
 	{
 		//check if some item status has a value of more than 4 then it return false and cannot be cancelled
@@ -294,6 +369,8 @@ class Transaction_model extends CI_Model
 
 	function cancel($transaction_id, $reason, $current_user = 0)
 	{
+		$result["proceed"] = false;
+
 		$this->db->trans_start();
 
 		$data = array(
@@ -303,63 +380,78 @@ class Transaction_model extends CI_Model
 			'status_id' => 1 //cancel
 		);
 
-		//update transaction
+		//check if total paid is greater than 0
+		$this->db->select("total_paid");
 		$this->db->where("id", $transaction_id);
-		$this->db->update("transactions", $data);
+		$query = $this->db->get("transactions");
+		$total_paid = $query->row()->total_paid;
 
-		$this->db->reset_query();
+		if (floatval($total_paid) > 0){
+			$result["error"] = "There is already a payment, please cancel the payment first before you can cancel this transaction!";
+		}else{
+			$result["proceed"] = true;
 
-		//write log - transaction
-		$log_data = array(
-			"action" => "Cancel Transaction",
-			"created_by" => $current_user,
-			"transaction_id" => $transaction_id,
-			"item_id" => 0,
-			"item_name" => "",
-			"item_status" => "",
-			"remarks" => $reason
-		);
-		$this->db->insert("trails", $log_data);
+			$this->db->reset_query();
 
-		// $this->db->reset_query();
+			//update transaction
+			$this->db->where("id", $transaction_id);
+			$this->db->update("transactions", $data);
 
-		// //get all items in the transaction
-		// $this->db->select("x.id, x.qty, x.description, s.status");
-		// $this->db->from("items x");
-		// $this->db->join("item_status s", "s.id = x.status_id", "left");
-		// $this->db->where("x.transaction_id", $transaction_id);
-		// $this->db->where("x.status_id <=", 7); //for gm approval or below
+			$this->db->reset_query();
 
-		// if ($query = $this->db->get()){
-		// 	$results = $query->result();
+			//write log - transaction
+			$log_data = array(
+				"action" => "Cancel Transaction",
+				"created_by" => $current_user,
+				"transaction_id" => $transaction_id,
+				"item_id" => 0,
+				"item_name" => "",
+				"item_status" => "",
+				"remarks" => $reason
+			);
+			$this->db->insert("trails", $log_data);
 
-		// 	$this->db->reset_query();
+			// $this->db->reset_query();
 
-		// 	foreach ($results as $key => $value) {
-		// 		//update item status
-		// 		$this->db->reset_query();
+			// //get all items in the transaction
+			// $this->db->select("x.id, x.qty, p.name as description, s.status");
+			// $this->db->from("items x");
+			// $this->db->join("products p","p.id = x.product_id", "left");
+			// $this->db->join("item_status s", "s.id = x.status_id", "left");
+			// $this->db->where("x.transaction_id", $transaction_id);
+			// $this->db->where("x.status_id >", 1);
 
-		// 		$this->db->where("id", $value->id);
-		// 		$this->db->update("items", $data);
+			// if ($query = $this->db->get()){
+			// 	$results = $query->result();
 
-		// 		//write log
-		// 		$this->db->reset_query();
+			// 	$this->db->reset_query();
 
-		// 		$series_no = str_pad($value->id, 5, "0", STR_PAD_LEFT);
+			// 	foreach ($results as $key => $value) {
+			// 		//update item status
+			// 		$this->db->reset_query();
 
-		// 		$log_data = array(
-		// 			"action" => "Cancel Item",
-		// 			"created_by" => $current_user,
-		// 			"transaction_id" => $transaction_id,
-		// 			"item_id" => $value->id,
-		// 			"item_name" => $value->description,
-		// 			"item_status" => $value->status,
-		// 			"remarks" => $series_no . " : " . $value->qty . " x " . $value->description . " -> " . $reason
-		// 		);
+			// 		$this->db->where("id", $value->id);
+			// 		$this->db->update("items", $data);
 
-		// 		$this->db->insert("trails", $log_data);
-		// 	}
-		// }
+			// 		//write log
+			// 		$this->db->reset_query();
+
+			// 		$series_no = str_pad($value->id, 5, "0", STR_PAD_LEFT);
+
+			// 		$log_data = array(
+			// 			"action" => "Cancel Item",
+			// 			"created_by" => $current_user,
+			// 			"transaction_id" => $transaction_id,
+			// 			"item_id" => $value->id,
+			// 			"item_name" => $value->description,
+			// 			"item_status" => $value->status,
+			// 			"remarks" => $series_no . " : " . $value->qty . " x " . $value->description . " -> " . $reason
+			// 		);
+
+			// 		$this->db->insert("trails", $log_data);
+			// 	}
+			// }
+		}
 
 		$this->db->trans_complete();
 
@@ -368,7 +460,7 @@ class Transaction_model extends CI_Model
 			//$error = $this->db->error();
 			throw new Exception("Error: Database problem, Please contact your System Administrator!");
 		} else {
-			return true;
+			return $result;
 		}
 	}
 

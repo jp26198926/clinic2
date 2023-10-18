@@ -86,6 +86,20 @@ class Payment_model extends CI_Model
 		$this->db->insert("payments", $data);
 		$payment_id = $this->db->insert_id();
 
+		//get the total paid
+		$this->db->reset_query();
+		$this->db->select_sum('amount');
+		$this->db->where("status_id > 1");
+		$this->db->where("transaction_id", $transaction_id);
+		$query = $this->db->get('payments');
+		$total_paid = $query->row()->amount;
+
+		//update transaction's total
+		$this->db->reset_query();
+		$this->db->set("total_paid", $total_paid);
+		$this->db->where("id", $transaction_id);
+		$this->db->update("transactions");
+
 		// 	//write log - transaction
 		$log_data = array(
 			"action" => "Add Payment",
@@ -122,6 +136,21 @@ class Payment_model extends CI_Model
 		//update record
 		$this->db->where("id", $id);
 		$this->db->update("payments", $data);
+
+		//get the total paid
+		$this->db->reset_query();
+		$this->db->select_sum('amount');
+		$this->db->where("status_id > 1");
+		$this->db->where("transaction_id", $transaction_id);
+		$query = $this->db->get('payments');
+		$total_paid = $query->row()->amount;
+
+		//update transaction's total
+		$this->db->reset_query();
+		$this->db->set("total_paid", $total_paid);
+		$this->db->where("id", $transaction_id);
+		$this->db->update("transactions");
+
 
 		//write log - transaction
 		$log_data = array(
