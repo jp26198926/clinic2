@@ -80,6 +80,7 @@ class Current_transaction extends CI_Controller
 
 					$this->load->model("item_model");
 					$this->load->model("payment_model");
+					$this->load->model("prescription_model");
 
 					$this->load->model("shared_model");
 				}
@@ -415,6 +416,7 @@ class Current_transaction extends CI_Controller
 						$data["queues"] = $this->data_queue_model->search();
 
 						$data["products"] = $this->data_product_model->search();
+						$data["pharmacy_products"] = $this->data_product_model->get_product_by_category(array(2)); //2-pharmacy
 						$data["packages"] = $this->data_package_model->search();
 
 						//get total charges
@@ -666,37 +668,35 @@ class Current_transaction extends CI_Controller
 		}
 	}
 
-
-
 	//TRANS EXPORT
-	function export_pdf($transaction_id)
-	{
-		if ($transaction_id) {
-			try {
-				$record = $this->main_model->view($transaction_id, $this->uid);
+	// function export_pdf($transaction_id)
+	// {
+	// 	if ($transaction_id) {
+	// 		try {
+	// 			$record = $this->main_model->view($transaction_id, $this->uid);
 
-				if ($record) {
-					$data["transaction_no"] = str_pad($transaction_id, 5, "0", STR_PAD_LEFT);
-					$data["app_name"] = $this->app_name;
-					$data["company_name"] = $this->company_name;
-					$data["company_address"] = $this->company_address;
-					$data["company_contact"] = $this->company_contact;
-					$data["record"] = $record;
-					$data["items"] = $this->item_model->search_by_transaction($transaction_id);
+	// 			if ($record) {
+	// 				$data["transaction_no"] = str_pad($transaction_id, 5, "0", STR_PAD_LEFT);
+	// 				$data["app_name"] = $this->app_name;
+	// 				$data["company_name"] = $this->company_name;
+	// 				$data["company_address"] = $this->company_address;
+	// 				$data["company_contact"] = $this->company_contact;
+	// 				$data["record"] = $record;
+	// 				$data["items"] = $this->item_model->search_by_transaction($transaction_id);
 
-					$this->load->library('Pdf');
-					$this->load->view('pdf/export_to_pdf', $data);
-				} else {
-					$this->session->set_flashdata("error", "Error: Request no. REQ-" . str_pad($transaction_id, 5, "0", STR_PAD_LEFT) . " is unavailable!");
-					redirect(base_url() . "current_transaction");
-				}
-			} catch (Exception $ex) {
-				echo $ex->getMessage();
-			}
-		} else {
-			echo $this->default_error_msg;
-		}
-	}
+	// 				$this->load->library('Pdf');
+	// 				$this->load->view('pdf/export_to_pdf', $data);
+	// 			} else {
+	// 				$this->session->set_flashdata("error", "Error: Request no. REQ-" . str_pad($transaction_id, 5, "0", STR_PAD_LEFT) . " is unavailable!");
+	// 				redirect(base_url() . "current_transaction");
+	// 			}
+	// 		} catch (Exception $ex) {
+	// 			echo $ex->getMessage();
+	// 		}
+	// 	} else {
+	// 		echo $this->default_error_msg;
+	// 	}
+	// }
 
 	//TRANS SEND TO LOCATION
 	function send(){
@@ -727,6 +727,117 @@ class Current_transaction extends CI_Controller
 		}
 
 		echo json_encode($result);
+	}
+
+	//TRANS PRESCRIPTION
+	function prescription_list(){
+		$result["success"] = false;
+		$transaction_id = $this->input->post("transaction_id");
+
+		if ($transaction_id){
+			try{
+				$result["data"] = $this->prescription_model->search_by_transaction($transaction_id);
+				$result["success"] = true;
+			}catch(Exception $ex){
+				$result["error"] = $ex->getMessage();
+			}
+		}else{
+			$result["error"] = $this->default_error_msg;
+		}
+
+		echo json_encode($result);
+	}
+
+	function prescription_add(){
+		$result["success"] = false;
+		$transaction_id = $this->input->post("transaction_id");
+		$product_id = $this->input->post("txt_prescription_product_id");
+		$qty = $this->input->post("txt_prescription_qty");
+		$instruction = $this->input->post("txt_prescription_instruction");
+		$data = $this->input->post();
+
+		if ($transaction_id){
+			if ($product_id && floatval($qty)>0 && $instruction){
+				try{
+					$add = $this->prescription_model->add($data, $transaction_id, $this->uid);
+
+					if ($add){
+						$result["data"] = $this->prescription_model->search_by_transaction($transaction_id);
+						$result["success"] = true;
+					}else{
+						$result["error"] = "Error: Adding failed, please try again!";
+					}
+				}catch(Exception $ex){
+					$result["error"] = $ex->getMessage();
+				}
+			}else{
+				$result["error"] = "Error: All fields are required!";
+			}
+		}else{
+			$result["error"] = $this->default_error_msg;
+		}
+
+		echo json_encode($result);
+	}
+
+	function prescription_delete(){
+		$result["success"] = false;
+		$transaction_id = $this->input->post("transaction_id");
+		$prescription_id = $this->input->post("prescription_id");
+		$reason = $this->input->post("reason");
+
+		if ($transaction_id && $prescription_id){
+			if ($reason){
+				try{
+					$delete = $this->prescription_model->delete($prescription_id, $transaction_id, $reason, $this->uid);
+
+					if ($delete){
+						$result["data"] = $this->prescription_model->search_by_transaction($transaction_id);
+						$result["success"] = true;
+					}else{
+						$result["error"] = "Error: Unable to delete, please try again!";
+					}
+				}catch(Exception $ex){
+					$result["error"] = $ex->getMessage();
+				}
+			}else{
+				$result["error"] = "Error: Please provide a reason!";
+			}
+		}else{
+			$result["error"] = $this->default_error_msg;
+		}
+
+		echo json_encode($result);
+	}
+
+	function prescription_print($transaction_id)
+	{
+		if ($transaction_id) {
+			try {
+				$record = $this->main_model->view($transaction_id, $this->uid);
+
+				if ($record) {
+					$data["transaction_id"] = $transaction_id;
+					$data["transaction_no"] = str_pad($transaction_id, 5, "0", STR_PAD_LEFT);
+					$data["app_name"] = $this->app_name;
+					$data["company_name"] = $this->company_name;
+					$data["company_address"] = $this->company_address;
+					$data["company_contact"] = $this->company_contact;
+					$data["record"] = $record;
+					$data["items"] = $this->prescription_model->search_by_transaction($transaction_id);
+
+					$this->load->library('Pdf');
+					$this->load->view('pdf/prescription', $data);
+				} else {
+					$this->session->set_flashdata("error", "Error: Request no. REQ-" . str_pad($transaction_id, 5, "0", STR_PAD_LEFT) . " is unavailable!");
+					redirect(base_url() . "current_transaction");
+				}
+			} catch (Exception $ex) {
+				echo $ex->getMessage();
+			}
+		} else {
+			echo $this->default_error_msg;
+		}
 	}
 
 	//TRANS COMPLETE

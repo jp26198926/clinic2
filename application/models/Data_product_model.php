@@ -277,4 +277,21 @@ class Data_product_model extends CI_Model
 			throw new Exception("Error: " . $error['message']);
 		}
 	}
+
+	function get_product_by_category($arr_categories){
+		$this->db->select("p.id, p.code, p.name");
+		$this->db->select("u.code as uom_code, u.name as uom_name");
+		$this->db->from("products p");
+		$this->db->join("uoms u", "u.id=p.uom_id", "left");
+		$this->db->where("p.status_id > ", 1); //not deleted
+		$this->db->where_in("p.category_id", $arr_categories);
+		$this->db->order_by("p.name", "asc");
+
+		if ($query = $this->db->get()) {
+			return $query->result();
+		} else {
+			$error = $this->db->error();
+			throw new Exception("Error: " . $error['message']);
+		}
+	}
 }

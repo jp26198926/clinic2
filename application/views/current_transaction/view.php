@@ -570,6 +570,7 @@ $total_amount_due = $subtotal_total;
         $this->load->view("current_transaction/modal_items");
 		$this->load->view("current_transaction/modal_payment");
 		$this->load->view("current_transaction/modal_send");
+		$this->load->view("current_transaction/modal_prescription");
 
         $this->load->view('template/footer');
         $this->load->view('template/loading');
@@ -876,6 +877,7 @@ $total_amount_due = $subtotal_total;
         $('.chosen-select').chosen({
             allow_single_deselect: true
         });
+
     });
 
     $(document).on("click", "#btn_add_patient", function() {
@@ -1227,6 +1229,245 @@ $total_amount_due = $subtotal_total;
 		}
 
 	});
+
+	$(document).on("click", "#btn_prescription", function(){
+		let transaction_id = $("#id_update").val();
+		$("#txt_prescription_instruction").val("");
+		$("#txt_prescription_product_id").val(0).focus();
+		$("#txt_prescription_qty").val("1");
+
+		if (transaction_id){
+			$("#loading").modal();
+			$.post("<?= base_url(); ?>current_transaction/prescription_list", {transaction_id:transaction_id}, function(data) {
+				$("#loading").modal("hide");
+				if (data.indexOf("<!DOCTYPE html>") > -1) {
+					alert("Error: Session Time-Out, You must login again to continue.");
+					location.reload(true);
+				}else{
+					let result = JSON.parse(data);
+
+					if (result.success == true) {
+						let tbl = "";
+
+						if (result.data.length > 0){
+							let i = 0;
+							$.each(result.data, (i, row) => {
+								i++;
+								tbl += `<tr>
+											<td align="center">${i}</td>
+											<td align="center">${row.product_code} - ${row.product_name} [ ${row.uom_code} ]</td>
+											<td align="center">${row.qty}</td>
+											<td><span style="white-space:pre;">${row.instruction}</span></td>
+											<td align="center">
+												<i  id="${row.id}" class="btn_prescription_delete fa fa-trash fa-fw text-danger" title="Delete"></i>
+											</td>
+										</tr>`;
+							});
+						}else{
+							tbl += `<tr><td colspan="5" align="center">No Record</td></tr>`;
+						}
+
+						$("#tbl_prescription tbody").html(tbl);
+
+						$("#modal_prescription").modal();
+					}else{
+						bootbox.alert(error);
+					}
+				}
+			});
+		}else{
+			bootbox.alert("Error: ")
+		}
+
+	});
+
+	$(document).on("click","#btn_prescription_add", function(e){
+		e.preventDefault();
+
+		let transaction_id = $("#id_update").val();
+		let this_modal = "#modal_prescription";
+
+		let product_id = $("#txt_prescription_product_id").val();
+		let product_name = $("#txt_prescription_product_id option:selected").text();
+		let qty = $("#txt_prescription_qty").val();
+		let instruction = $("#txt_prescription_instruction").val();
+
+		if (transaction_id){
+			if (product_id && Number(qty) > 0 && instruction){
+				let payload = $("#frm_prescription").serialize();
+				payload += "&transaction_id=" + transaction_id;
+				payload += "&product_name=" + product_name;
+
+				$(this_modal + " .modal_error").hide();
+				$(this_modal + " .modal_button").hide();
+				$(this_modal + " .modal-body").hide();
+				$(this_modal + " .modal_waiting").show();
+
+				$.post("<?= base_url(); ?>current_transaction/prescription_add", payload, function(data) {
+
+					$(this_modal + " .modal_error").hide();
+					$(this_modal + " .modal_button").show();
+					$(this_modal + " .modal-body").show();
+					$(this_modal + " .modal_waiting").hide();
+
+					if (data.indexOf("<!DOCTYPE html>") > -1) {
+						alert("Error: Session Time-Out, You must login again to continue.");
+						location.reload(true);
+					}else{
+						let result = JSON.parse(data);
+
+						if (result.success == true) {
+							let tbl = "";
+
+							if (result.data.length > 0){
+								let i = 0;
+								$.each(result.data, (i, row) => {
+									i++;
+									tbl += `<tr>
+												<td align="center">${i}</td>
+												<td align="center">${row.product_code} - ${row.product_name} [ ${row.uom_code} ]</td>
+												<td align="center">${row.qty}</td>
+												<td><span style="white-space:pre;">${row.instruction}</span></td>
+												<td align="center">
+													<i  id="${row.id}" class="btn_prescription_delete fa fa-trash fa-fw text-danger" title="Delete"></i>
+												</td>
+											</tr>`;
+								});
+							}else{
+								tbl += `<tr><td colspan="5" align="center">No Record</td></tr>`;
+							}
+
+							$("#tbl_prescription tbody").html(tbl);
+
+							//clear fields
+							$("#txt_prescription_instruction").val("");
+							$("#txt_prescription_product_id").val(0).focus();
+							$("#txt_prescription_qty").val("1");
+						}else{
+							$(this_modal + " .modal_error_msg").text(result.error);
+							$(this_modal + " .modal_error").stop(true, true).show().delay(15000).fadeOut("slow");
+						}
+					}
+				});
+			}else{
+				$(this_modal + " .modal_error_msg").text("Error: All fields are required!");
+            	$(this_modal + " .modal_error").stop(true, true).show().delay(15000).fadeOut("slow");
+			}
+		}else{
+			$(this_modal + " .modal_error_msg").text("Error: Critical Error Encountered!");
+            $(this_modal + " .modal_error").stop(true, true).show().delay(15000).fadeOut("slow");
+		}
+	});
+
+	$(document).on("click", ".btn_prescription_delete", function(){
+
+		let prescription_id = $(this).attr("id");
+		let transaction_id = $("#id_update").val();
+		let this_modal = "#modal_prescription";
+
+		if (transaction_id && prescription_id){
+
+			bootbox.prompt({
+                title: "Provide Cancel Reason!",
+                inputType: 'textarea',
+                buttons: {
+                    cancel: {
+                        label: '<i class="fa fa-times"></i> Cancel'
+                    },
+                    confirm: {
+                        label: '<i class="fa fa-check"></i> Confirm'
+                    }
+                },
+                callback: function(result) {
+
+                    if (result !== null) {
+                        if (result) {
+                            $(this_modal + " .modal_error").hide();
+							$(this_modal + " .modal_button").hide();
+							$(this_modal + " .modal-body").hide();
+							$(this_modal + " .modal_waiting").show();
+
+							$.post("<?= base_url(); ?>current_transaction/prescription_delete", {
+								transaction_id:transaction_id,
+								prescription_id:prescription_id,
+								reason: result
+							}, function(data) {
+
+								$(this_modal + " .modal_error").hide();
+								$(this_modal + " .modal_button").show();
+								$(this_modal + " .modal-body").show();
+								$(this_modal + " .modal_waiting").hide();
+
+								if (data.indexOf("<!DOCTYPE html>") > -1) {
+									alert("Error: Session Time-Out, You must login again to continue.");
+									location.reload(true);
+								}else{
+									let result = JSON.parse(data);
+
+									if (result.success == true) {
+										let tbl = "";
+
+										if (result.data.length > 0){
+											let i = 0;
+											$.each(result.data, (i, row) => {
+												i++;
+												tbl += `<tr>
+															<td align="center">${i}</td>
+															<td align="center">${row.product_code} - ${row.product_name} [ ${row.uom_code} ]</td>
+															<td align="center">${row.qty}</td>
+															<td><span style="white-space:pre;">${row.instruction}</span></td>
+															<td align="center">
+																<i  id="${row.id}" class="btn_prescription_delete fa fa-trash fa-fw text-danger" title="Delete"></i>
+															</td>
+														</tr>`;
+											});
+										}else{
+											tbl += `<tr><td colspan="5" align="center">No Record</td></tr>`;
+										}
+
+										$("#tbl_prescription tbody").html(tbl);
+
+										//clear fields
+										$("#txt_prescription_instruction").val("");
+										$("#txt_prescription_product_id").val(0);
+										$("#txt_prescription_qty").val("1");
+									}else{
+										$(this_modal + " .modal_error_msg").text(result.error);
+										$(this_modal + " .modal_error").stop(true, true).show().delay(15000).fadeOut("slow");
+									}
+								}
+								});
+                        } else {
+                            return false;
+                        }
+                    }
+                }
+            });
+
+		}else{
+			$(this_modal + " .modal_error_msg").text("Error: Critical Error Encountered!");
+            $(this_modal + " .modal_error").stop(true, true).show().delay(15000).fadeOut("slow");
+		}
+	});
+
+	$(document).on("keypress", ".txt_field_prescription", function(e){
+		if (e.which == 13){
+			$("#btn_prescription_add").trigger("click");
+		}
+	});
+
+	$(document).on("click", "#btn_prescription_print", function(){
+		let transaction_id = $("#id_update").val();
+		let this_modal = "#modal_prescription";
+
+		if (transaction_id){
+			window.open("<?= base_url(); ?>current_transaction/prescription_print/" + transaction_id, "_blank");
+		}else{
+			$(this_modal + " .modal_error_msg").text("Error: Critical Error Encountered!");
+            $(this_modal + " .modal_error").stop(true, true).show().delay(15000).fadeOut("slow");
+		}
+	});
+
 
     $(document).on("click", "#btn_completed", function(){
         let transaction_id = $("#id_update").val();

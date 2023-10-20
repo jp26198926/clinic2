@@ -287,7 +287,7 @@ class Transaction_model extends CI_Model
 		$this->db->where("status_id <", 4); //not completed
 		$this->db->get();
 		if ($this->db->affected_rows() > 0){
-			$result["error"] = "Some item/s is not yet completed!";
+			$result["error"] = "Some items are not yet completed!";
 		}else{
 			//get payment method
 			//reset query
