@@ -323,6 +323,25 @@
 
 	<!-- inline scripts related to this page -->
 	<script>
+		let log_data = [];
+
+		//functions
+		function write_to_log(key_name, element_id, element_type="select"){
+			// Get the selected value from the element
+			let selectedValue = (element_type==="select") ? $(element_id + " option:selected").text() : $(element_id).val();
+
+			// Check if 'item3' exists in the array
+			let itemIndex = log_data.findIndex(function(item) {
+				return item.key === key_name;
+			});
+
+			// If key_name exists, update its value; otherwise, add a new entry
+			if (itemIndex !== -1) {
+				log_data[itemIndex].value = selectedValue;
+			} else {
+				log_data.push({ key: key_name, value: selectedValue });
+			}
+		}
 
 		$(document).ready(function() {
 
@@ -363,6 +382,11 @@
 						// Serialize the form data
 						var formData = $("#form_update").serialize();
 
+						//append logs
+						for (var i = 0; i < log_data.length; i++) {
+							formData += "&logs[" + log_data[i].key + "]=" + log_data[i].value;
+						}
+
 						$.post("<?= base_url(); ?>current_transaction/update", formData, function(data) {
 							if (data.indexOf("<!DOCTYPE html>") > -1) {
 								alert("Error: Session Time-Out, You must login again to continue.");
@@ -386,6 +410,41 @@
 		});
 		//endregion transaction buttons
 
+		//event change
+		$(document).on("change","#date_update", function(){
+			write_to_log("Date", "#date_update", "text");
+		});
+		$(document).on("change","#trans_type_id_update", function(){
+			write_to_log("Trans_Type", "#trans_type_id_update", "select");
+		});
+		$(document).on("change","#patient_id_update", function(){
+			write_to_log("Patient", "#patient_id_update", "select");
+		});
+		$(document).on("change","#payment_method_id_update", function(){
+			write_to_log("Pay_Method", "#payment_method_id_update", "select");
+		});
+		$(document).on("change","#client_id_update", function(){
+			write_to_log("Company", "#client_id_update", "select");
+		});
+		$(document).on("change","#charging_type_id_update", function(){
+			write_to_log("Charge_To", "#charging_type_id_update", "select");
+		});
+		$(document).on("change","#insurance_id_update", function(){
+			write_to_log("Insurance", "#insurance_id_update", "select");
+		});
+		$(document).on("change","#po_no_update", function(){
+			write_to_log("PO_No", "#po_no_update", "text");
+		});
+		$(document).on("change","#doctor_id_update", function(){
+			write_to_log("Doctor", "#doctor_id_update", "select");
+		});
+		$(document).on("change","#remarks_update", function(){
+			write_to_log("Remarks", "#remarks_update", "text");
+		});
+		$(document).on("change","#diagnosis_update", function(){
+			write_to_log("Remarks", "#diagnosis_update", "text");
+		});
+		//end of change event
 
 	</script>
 

@@ -15,7 +15,6 @@ function details($record)
 							<td align=\"right\" width=\"15%\"><b>DATE : </b></td>
                             <td align=\"left\" width=\"25%\">{$record->date}</td>
                         </tr>
-
                     </table>";
 	return $details;
 }

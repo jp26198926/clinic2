@@ -427,23 +427,30 @@ $total_amount_due = $subtotal_total;
                                                             if (intval($value->status_id) == 1) {
                                                                 //cancelled
                                                                 $tr_class = "danger";
-                                                            } else if (intval($value->status_id) == 2) {
+                                                            } else if (intval($value->status_id) == 2 || intval($value->status_id) == 3) {
                                                                 //pending
-                                                                $tr_class = "info";
+                                                                $tr_class = intval($value->status_id) == 2 ? "info" : "warning";
                                                                 $action = " <span>
-                                                                                <button
+                                                                                <i
                                                                                     id='{$value->id}'
-                                                                                    class='btn_item_cancel btn btn-danger btn-xs fa fa-times'
+                                                                                    class='btn_item_cancel btn btn-xs btn-danger btn-xs fa  fa-times'
                                                                                     title='Delete'
-                                                                                    data-toogle='tooltip'
-                                                                                ></button>
+                                                                                    data-togle='tooltip'
+                                                                                ></i>
+																				<i
+																					id='{$value->id}'
+																					class='btn_item_working btn btn-xs btn-info fa  fa-arrow-right'
+																					title='Working'
+																					data-toggle='tooltip'
+																				></i>
+																				<i
+																					id='{$value->id}'
+																					class='btn_item_completed btn btn-xs btn-success fa fa-check'
+																					title='Mark as Completed'
+																					data-toggle='tooltip'
+																				></i>
                                                                             </span>";
-                                                            } else if (intval($value->status_id) == 3 || intval($value->status_id) == 4) {
-                                                                //draft or Sendback
-                                                                $tr_class = "";
-                                                                $action = " <i id='{$value->id}' class='btn_item_modify fa fa-pencil text-primary' title='Edit' data-toggle='tooltip'></i>
-                                                                                    <i id='{$value->id}' class='btn_item_info fa fa-times text-danger' title='Delete' data-toggle='tooltip'></i>";
-                                                            } else if (intval($value->status_id) == 7) {
+                                                            } else if (intval($value->status_id) == 4) {
                                                                 //completed
                                                                 $tr_class = "success";
                                                                 $action = "";
@@ -497,7 +504,7 @@ $total_amount_due = $subtotal_total;
                                                         </td>
                                                         <td align='right'>
                                                             <b>
-                                                                <span id='lbl_total_insurance'>
+                                                                <span id='lbl_total_commision'>
                                                                     <?= number_format($subtotal_commission, 2, '.', ','); ?>
                                                                 </span>
                                                             </b>
@@ -512,7 +519,8 @@ $total_amount_due = $subtotal_total;
                                                         <td align='right'>
                                                             <b>
                                                                 <span
-                                                                    id='lbl_total_subtotal'><?= number_format($subtotal_total, 2, '.', ','); ?></span>
+                                                                    id='lbl_total_subtotal'><?= number_format($subtotal_total, 2, '.', ','); ?>
+																</span>
                                                             </b>
                                                         </td>
                                                     </tr>
@@ -542,18 +550,20 @@ $total_amount_due = $subtotal_total;
 
 
 
-                                    <!-- <div class="row">
+                                    <div class="row">
                                         <div class="col-md-12">
                                             <div class="page-header">
                                                 <h1>Trail</h1>
                                             </div>
-                                            <?php
-                                            foreach ($trails as $key => $value) {
-                                                echo "<div>{$value->created_at} | {$value->action} | {$value->created} | {$value->remarks} </div>";
-                                            }
-                                            ?>
+											<div id="div_trails">
+												<?php
+												foreach ($trails as $key => $value) {
+													echo "<div>{$value->created_at} | {$value->action} | {$value->created} | {$value->remarks} </div>";
+												}
+                                            	?>
+											</div>
                                         </div>
-                                    </div> -->
+                                    </div>
                                 </div>
                             </div><!-- /.row -->
 
@@ -654,6 +664,7 @@ $total_amount_due = $subtotal_total;
                                 `;
 
     function display_total() {
+
         $("#lbl_total_amount").text(subtotal_amount.toFixed(2));
         $("#lbl_total_commission").text(subtotal_commission.toFixed(2));
         $("#lbl_total_insurance").text(subtotal_insurance.toFixed(2));
@@ -695,35 +706,31 @@ $total_amount_due = $subtotal_total;
                     //cancelled
                     tr_class = "danger";
 
-                } else if (parseInt(item.status_id) == 2) {
+                } else if (parseInt(item.status_id) == 2 || parseInt(item.status_id) == 3) {
                     //pending
-                    tr_class = "info";
+                    tr_class = parseInt(item.status_id) == 2 ? "info" : "warning";
                     action = `<span>
-                                <button
+                                <i
                                     id = '${item.id}'
-                                    class = 'btn_item_cancel btn btn-danger btn-xs fa fa-times'
+                                    class = 'btn_item_cancel btn btn-xs btn-danger fa fa-times'
                                     title = 'Delete'
-                                    data-toogle = 'tooltip'
-                                ></button>
+                                    data-toggle = 'tooltip'
+                                ></i>
+								<i
+									id='${item.id}'
+									class='btn_item_working btn btn-xs btn-info fa  fa-arrow-right'
+									title='Working'
+									data-toggle='tooltip'
+								></i>
+								<i
+									id='${item.id}'
+									class='btn_item_completed btn btn-xs btn-success fa fa-check'
+									title='Mark as Completed'
+									data-toggle='tooltip'
+								></i>
                               </span>`;
 
-                } else if (parseInt(item.status_id) == 3 || parseInt(item.status_id) == 4) {
-                    //draft or Sendback
-                    tr_class = "";
-                    action = `<i
-                                id='${item.id}'
-                                class='btn_item_modify fa fa-pencil text-primary'
-                                title='Edit'
-                                data-toggle='tooltip'
-                            ></i>
-                            <i
-                                id = '${item.id}'
-                                class = 'btn_item_info fa fa-times text-danger'
-                                title = 'Delete'
-                                data-toggle = 'tooltip'
-                            ></i>`;
-
-                } else if (parseInt(item.status_id) == 7) {
+                } else if (parseInt(item.status_id) == 4) {
                     //completed
                     tr_class = "success";
                     action = "";
@@ -853,6 +860,19 @@ $total_amount_due = $subtotal_total;
         $("#total_new").val(total.toFixed(2));
     }
 
+	function display_logs(logs){
+		let list = "";
+
+		if (logs.length > 0){
+
+			$.each(logs, (i,value) => {
+				list += `<div>${value.created_at} | ${value.action} | ${value.created} | ${value.remarks} </div>`;
+			});
+
+			$("#div_trails").html(list);
+		}
+	}
+
     $(document).on("keyup", "#qty_new, #price_new, #commission_amount_new, #insurance_amount_new", function(e){
         compute_entry_manual();
     });
@@ -902,7 +922,9 @@ $total_amount_due = $subtotal_total;
             fieldtext = $('option:selected', this).text()
         }
 
-
+		if (fieldname !== "doctor_id_update" && fieldname !== "remarks_update" && fieldname !== "diagnosis_update"){
+			return; // do not continue if fieldnames are not doctor,remarks and diagnosis
+		}
 
         if (id && fieldvalue) {
             $.post("<?= base_url(); ?>current_transaction/auto_save", {
@@ -916,9 +938,14 @@ $total_amount_due = $subtotal_total;
                 if (data.indexOf("<!DOCTYPE html>") > -1) {
                     alert("Error: Session Time-Out, You must login again to continue.");
                     location.reload(true);
-                } else if (data.indexOf("Error: ") > -1) {
-                    //bootbox.alert(data);
                 } else {
+					let result = JSON.parse(data);
+
+					if (result["success"]){
+						display_logs(result["data"]);
+					}else{
+						bootbox.alert(result["error"]);
+					}
 
                 }
             });
@@ -1108,6 +1135,8 @@ $total_amount_due = $subtotal_total;
 
 							bootbox.alert("Payment Successfully Saved!");
 
+							display_logs(result.logs);
+
 							window.open("<?= base_url(); ?>current_transaction/print_payment/" + result.payment_id,"_blank");
 						}else{
 							$(this_modal + " .modal_error_msg").text(result.error);
@@ -1183,6 +1212,8 @@ $total_amount_due = $subtotal_total;
 
 								$("#tbl_payment_list tbody").html(table_payment);
 
+								display_logs(result.logs);
+
 							} else {
 								bootbox.alert(result.error);
 							}
@@ -1213,16 +1244,46 @@ $total_amount_due = $subtotal_total;
 	});
 
 	$(document).on("click","#btn_send_save",function(){
+		let transaction_id = $("#id_update").val();
 		let location_id = $("#location_id_send").val();
 		let location = $("#location_id_send option:selected").text();
 		let this_modal = "#modal_send";
 
-		if (location_id){
+		if (transaction_id && location_id){
+			$(this_modal + " .modal_error").hide();
+			$(this_modal + " .modal_button").hide();
+			$(this_modal + " .modal-body").hide();
+			$(this_modal + " .modal_waiting").show();
 
-			$("#location_id_update").val(location_id).trigger("change").trigger("chosen:updated");
+			$.post("<?= base_url(); ?>current_transaction/transfer", {
+				transaction_id: transaction_id,
+				location_id: location_id,
+				location: location
+			}, function(data) {
+				$(this_modal + " .modal_error").hide();
+				$(this_modal + " .modal_button").show();
+				$(this_modal + " .modal-body").show();
+				$(this_modal + " .modal_waiting").hide();
 
-			$(this_modal).modal("hide");
-			bootbox.alert("Successfully sent to " + location);
+				if (data.indexOf("<!DOCTYPE html>") > -1) {
+					alert("Error: Session Time-Out, You must login again to continue.");
+					location.reload(true);
+				}else{
+					let result = JSON.parse(data);
+
+					if (result.success == true) {
+						$(this_modal).modal("hide");
+
+						$("#location_id_update").val(location_id).trigger("change").trigger("chosen:updated");
+						$("#loading").modal();
+						window.location = "<?= base_url(); ?>current_transaction";
+
+					}else{
+						$(this_modal + " .modal_error_msg").text(result.error);
+						$(this_modal + " .modal_error").stop(true, true).show().delay(15000).fadeOut("slow");
+					}
+				}
+			});
 		}else{
 			$(this_modal + " .modal_error_msg").text("Error: No location selected!");
             $(this_modal + " .modal_error").stop(true, true).show().delay(15000).fadeOut("slow");
@@ -1343,6 +1404,9 @@ $total_amount_due = $subtotal_total;
 							$("#txt_prescription_instruction").val("");
 							$("#txt_prescription_product_id").val(0).focus();
 							$("#txt_prescription_qty").val("1");
+
+							//display latest log in trails
+							display_logs(result["logs"]);
 						}else{
 							$(this_modal + " .modal_error_msg").text(result.error);
 							$(this_modal + " .modal_error").stop(true, true).show().delay(15000).fadeOut("slow");
@@ -1431,12 +1495,16 @@ $total_amount_due = $subtotal_total;
 										$("#txt_prescription_instruction").val("");
 										$("#txt_prescription_product_id").val(0);
 										$("#txt_prescription_qty").val("1");
+
+										//display latest log in trails
+										display_logs(result["logs"]);
+
 									}else{
 										$(this_modal + " .modal_error_msg").text(result.error);
 										$(this_modal + " .modal_error").stop(true, true).show().delay(15000).fadeOut("slow");
 									}
 								}
-								});
+							});
                         } else {
                             return false;
                         }
@@ -1611,7 +1679,7 @@ $total_amount_due = $subtotal_total;
                             });
 
 							display_total();
-
+							display_logs(result.logs);
 						} else {
 							bootbox.alert(result.message);
 						}
@@ -1678,8 +1746,12 @@ $total_amount_due = $subtotal_total;
                                         $("#tbl_list tbody").append(new_entry_field);
                                         $("#product_id_new").trigger("select", "focus");
 
-                                        display_total();
+										$('.chosen-select').chosen({
+											allow_single_deselect: true
+										});
 
+                                        display_total();
+										display_logs(result.logs);
                                     } else {
                                         bootbox.alert(result.message);
                                     }
@@ -1718,6 +1790,94 @@ $total_amount_due = $subtotal_total;
             //         });
             //     }
             // });
+        }
+    });
+
+	//ITEM COMPLETED
+	$(document).on("click", ".btn_item_completed", function(e) {
+        e.preventDefault();
+        let id = $(this).attr("id");
+        let transaction_id = $("#id_update").val();
+
+        if (id && transaction_id) {
+            bootbox.confirm("Are you sure you want to mark this item as completed?", function(result) {
+            	if (result) {
+                    $("#loading").modal();
+
+                    $.post("<?= base_url(); ?>current_transaction/item_complete", {
+                        id: id,
+                        transaction_id: transaction_id
+                    }, function(data) {
+                        $("#loading").modal("hide");
+
+                        if (data.indexOf("<!DOCTYPE html>") > -1) {
+                            alert("Error: Session Time-Out, You must login again to continue.");
+                            location.reload(true);
+                        } else {
+                            let result = JSON.parse(data);
+
+                            if (result.success == true) {
+                            	$("#tbl_list tbody").html(item_list(result.result));
+                                $("#tbl_list tbody").append(new_entry_field);
+                                $("#product_id_new").trigger("select", "focus");
+
+								$('.chosen-select').chosen({
+									allow_single_deselect: true
+								});
+
+                                display_total();
+								display_logs(result.logs);
+                            } else {
+                                bootbox.alert(result.message);
+                            }
+                        }
+                    });
+                }
+            });
+        }
+    });
+
+	//ITEM WORKING
+	$(document).on("click", ".btn_item_working", function(e) {
+        e.preventDefault();
+        let id = $(this).attr("id");
+        let transaction_id = $("#id_update").val();
+
+        if (id && transaction_id) {
+            bootbox.confirm("Are you sure you want to mark this item as working?", function(result) {
+            	if (result) {
+                    $("#loading").modal();
+
+                    $.post("<?= base_url(); ?>current_transaction/item_working", {
+                        id: id,
+                        transaction_id: transaction_id
+                    }, function(data) {
+                        $("#loading").modal("hide");
+
+                        if (data.indexOf("<!DOCTYPE html>") > -1) {
+                            alert("Error: Session Time-Out, You must login again to continue.");
+                            location.reload(true);
+                        } else {
+                            let result = JSON.parse(data);
+
+                            if (result.success == true) {
+                            	$("#tbl_list tbody").html(item_list(result.result));
+                                $("#tbl_list tbody").append(new_entry_field);
+                                $("#product_id_new").trigger("select", "focus");
+
+								$('.chosen-select').chosen({
+									allow_single_deselect: true
+								});
+
+                                display_total();
+								display_logs(result.logs);
+                            } else {
+                                bootbox.alert(result.message);
+                            }
+                        }
+                    });
+                }
+            });
         }
     });
 

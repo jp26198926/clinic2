@@ -25,6 +25,7 @@ class Transaction_model extends CI_Model
 	{
 		$this->db->trans_start();
 
+		$error = array();
 		$data = array();
 		$transaction_id = 0;
 
@@ -34,31 +35,67 @@ class Transaction_model extends CI_Model
 
 		foreach ($data_input as $key => $val) {
 			$col = str_replace("_new", "", $key);
-			$data[$col] = $val;
+			if ($col !== "logs"){ //exclude logs
+				$data[$col] = $val;
+			}
 		}
 
 		if (!$this->db->insert($this->tablename, $data)) {
 			$error = $this->db->error();
-			throw new Exception("Error: " . $error['message']);
+			//throw new Exception("Error: " . $error['message']);
 		} else {
 			$transaction_id = $this->db->insert_id();
+			$transaction_no = str_pad($transaction_id,5,"0",STR_PAD_LEFT);
+
+			//write log
+			$this->db->reset_query();
+			$log_data = array(
+				"action" => "Create Transaction",
+				"created_by" => $current_user,
+				"transaction_id" => $transaction_id,
+				"item_id" => 0,
+				"item_name" => "",
+				"item_status" => "",
+				"remarks" => "Transaction No: " . $transaction_no
+			);
+			$this->db->insert("trails", $log_data);
+
+			//write to log other fields
+			// Loop through the array and access each item
+			foreach ($data_input["logs"] as $key => $value) {
+				// $key is the specific key for each item
+				// $value is the corresponding value
+
+				$this->db->reset_query();
+				$log_data = array(
+					"action" => "Create Transaction",
+					"created_by" => $current_user,
+					"transaction_id" => $transaction_id,
+					"item_id" => 0,
+					"item_name" => "",
+					"item_status" => "",
+					"remarks" => $key . " : " .  $value
+				);
+				$this->db->insert("trails", $log_data);
+			}
 		}
 
 		$this->db->trans_complete();
 
 		if ($this->db->trans_status() === FALSE) {
 			// generate an error... or use the log_message() function to log your error
-			$error = $this->db->error();
-			throw new Exception("Error: Database problem, Please contact your System Administrator!");
+			//$error = $this->db->error();
+			throw new Exception("Error: " . $error['message']);
 		} else {
 			return $transaction_id;
 		}
 	}
 
-
 	function update($id, $data_input, $current_user = 0)
 	{
 		$this->db->trans_start();
+
+		$error = array();
 
 		$data = array();
 		$data["updated_by"] = $current_user;
@@ -66,22 +103,46 @@ class Transaction_model extends CI_Model
 
 		foreach ($data_input as $key => $val) {
 			$col = str_replace("_update", "", $key);
-			$data[$col] = $val;
+			if ($col !== "logs"){ //exclude logs
+				$data[$col] = $val;
+			}
 		}
 
 		$this->db->where("id", $id);
 
 		if (!$this->db->update($this->tablename, $data)) {
 			$error = $this->db->error();
-			throw new Exception("Error: " . $error['message']);
+			//throw new Exception("Error: " . $error['message']);
+		}else{
+
+			//write to log other fields
+			// Loop through the array and access each item
+			if (array_key_exists("logs", $data_input)){
+				foreach ($data_input["logs"] as $key => $value) {
+					// $key is the specific key for each item
+					// $value is the corresponding value
+
+					$this->db->reset_query();
+					$log_data = array(
+						"action" => "Update Transaction",
+						"created_by" => $current_user,
+						"transaction_id" => $id,
+						"item_id" => 0,
+						"item_name" => "",
+						"item_status" => "",
+						"remarks" => $key . " : " .  $value
+					);
+					$this->db->insert("trails", $log_data);
+				}
+			}
 		}
 
 		$this->db->trans_complete();
 
 		if ($this->db->trans_status() === FALSE) {
 			// generate an error... or use the log_message() function to log your error
-			$error = $this->db->error();
-			throw new Exception("Error: Database problem, Please contact your System Administrator!");
+			//$error = $this->db->error();
+			throw new Exception("Error: " . $error['message']);
 		} else {
 			return true;
 		}
@@ -177,9 +238,13 @@ class Transaction_model extends CI_Model
 					' ',
 					LPAD(x.id,5,'0'),
 					x.date,
-					e.fname, e.mname, e.lname,
-					u.fname, u.mname, u.lname,
-					d.fname, d.mname, d.lname,
+					tt.trans_type,
+					c.name,
+					ct.charging_type,
+					pm.payment_method,
+					l.location,
+					dr.fname, dr.mname, dr.lname,
+					p.firstname, p.middlename, p.lastname,
 					s.status
 				)
 				LIKE '%{$search}%'"
@@ -274,6 +339,42 @@ class Transaction_model extends CI_Model
 	}
 
 	//transactions
+	function transfer($transaction_id, $location_id, $location, $current_user = 0){
+		$this->db->trans_start();
+
+		$error = array();
+
+
+		$this->db->set("location_id", $location_id);
+		$this->db->where("id", $transaction_id);
+
+		if (!$this->db->update($this->tablename)) {
+			$error = $this->db->error();
+		}else{
+			$this->db->reset_query();
+			$log_data = array(
+				"action" => "Transfer Location",
+				"created_by" => $current_user,
+				"transaction_id" => $transaction_id,
+				"item_id" => 0,
+				"item_name" => "",
+				"item_status" => "",
+				"remarks" => "Sent To : " . $location
+			);
+			$this->db->insert("trails", $log_data);
+		}
+
+		$this->db->trans_complete();
+
+		if ($this->db->trans_status() === FALSE) {
+			// generate an error... or use the log_message() function to log your error
+			//$error = $this->db->error();
+			throw new Exception("Error: " . $error['message']);
+		} else {
+			return true;
+		}
+	}
+
 	function complete($transaction_id, $current_user = 0){
 		$result["proceed"] = false;
 

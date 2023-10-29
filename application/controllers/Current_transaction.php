@@ -157,7 +157,7 @@ class Current_transaction extends CI_Controller
 	function search_active()
 	{
 		try {
-			$status_ids = array(2, 3, 4);
+			$status_ids = array(2, 3);
 
 			$result = $this->main_model->search("", $status_ids, $this->uid);
 			echo json_encode($result);
@@ -345,7 +345,7 @@ class Current_transaction extends CI_Controller
 
 	function auto_save()
 	{
-		$errors = [];
+		$result["success"] = false;
 
 		$id = $this->input->post("id");
 		$fieldname = $this->input->post("fieldname");
@@ -366,11 +366,20 @@ class Current_transaction extends CI_Controller
 				$tag = strtolower($tag);
 
 				$log_remarks = str_replace("_update", "", $fieldname) . " : " . ($tag === "select" ? $fieldtext : $fieldvalue);
-				$this->shared_model->write_to_log("Update", $this->uid, $id, 0, "", "", $log_remarks);
+				$save = $this->shared_model->write_to_log("Update Transaction", $this->uid, $id, 0, "", "", $log_remarks);
+
+				if ($save){
+					$get_logs = $this->shared_model->get_logs($id);
+
+					$result["success"] = true;
+					$result["data"] = $get_logs;
+				}
 			} catch (Exception $ex) {
-				$errors["error"] = $ex->getMessage();
+				$result["error"] = $ex->getMessage();
 			}
 		}
+
+		echo json_encode($result);
 	}
 
 	function view($transaction_id)
@@ -493,6 +502,8 @@ class Current_transaction extends CI_Controller
 					//get total paid
 					$data["total_paid"] = $this->main_model->get_total_paid($transaction_id);
 
+					$log_remarks = "";
+					$this->shared_model->write_to_log("Print Charges", $this->uid, $transaction_id, 0, "", "", $log_remarks);
 
 					$this->load->library('Pdf');
 					$this->load->view('pdf/charges', $data);
@@ -576,6 +587,8 @@ class Current_transaction extends CI_Controller
 
 							$amount_due = $total_charges - $total_paid;
 
+							$result["logs"] = $this->shared_model->get_logs($transaction_id);
+
 							$result["payment_id"] = $save;
 							$result["success"] = true;
 							$result["total_paid"] = $total_paid;
@@ -618,6 +631,8 @@ class Current_transaction extends CI_Controller
 
 					$amount_due = $total_charges - $total_paid;
 
+					$result["logs"] = $this->shared_model->get_logs($transaction_id);
+
 					$result["success"] = true;
 					$result["total_paid"] = $total_paid;
 					$result["amount_due"] = $amount_due;
@@ -653,6 +668,8 @@ class Current_transaction extends CI_Controller
 					//get total paid
 					$data["total_paid"] = $this->main_model->get_total_paid($record->transaction_id);
 
+					$log_remarks = "";
+					$this->shared_model->write_to_log("Print Payment", $this->uid, $record->transaction_id, 0, "", "", $log_remarks);
 
 					$this->load->library('Pdf');
 					$this->load->view('pdf/payment', $data);
@@ -698,8 +715,8 @@ class Current_transaction extends CI_Controller
 	// 	}
 	// }
 
-	//TRANS SEND TO LOCATION
-	function send(){
+	//TRANS or SEND TO LOCATION
+	function transfer(){
 		$result = array("success" => false);
 		$transaction_id = $this->input->post("transaction_id");
 		$location_id = $this->input->post("location_id");
@@ -708,11 +725,11 @@ class Current_transaction extends CI_Controller
 		if ($transaction_id) {
 			try {
 
-				$save = $this->main_model->send($transaction_id, $location_id, $this->uid);
+				$save = $this->main_model->transfer($transaction_id, $location_id, $location, $this->uid);
 
 				if ($save) {
-					//$transaction_no = str_pad($transaction_id, 5, "0", STR_PAD_LEFT);
-					//$this->session->set_flashdata("message", $transaction_no . " has been transferred to " . $location);
+					$transaction_no = str_pad($transaction_id, 5, "0", STR_PAD_LEFT);
+					$this->session->set_flashdata("message", "Transaction No: " . $transaction_no . " has been transferred to " . $location);
 
 					$result["success"] = true;
 					$result["message"] = "Successfully transferred!";
@@ -763,6 +780,8 @@ class Current_transaction extends CI_Controller
 
 					if ($add){
 						$result["data"] = $this->prescription_model->search_by_transaction($transaction_id);
+						$result["logs"] = $this->shared_model->get_logs($transaction_id);
+
 						$result["success"] = true;
 					}else{
 						$result["error"] = "Error: Adding failed, please try again!";
@@ -793,6 +812,8 @@ class Current_transaction extends CI_Controller
 
 					if ($delete){
 						$result["data"] = $this->prescription_model->search_by_transaction($transaction_id);
+						$result["logs"] = $this->shared_model->get_logs($transaction_id);
+
 						$result["success"] = true;
 					}else{
 						$result["error"] = "Error: Unable to delete, please try again!";
@@ -825,6 +846,9 @@ class Current_transaction extends CI_Controller
 					$data["company_contact"] = $this->company_contact;
 					$data["record"] = $record;
 					$data["items"] = $this->prescription_model->search_by_transaction($transaction_id);
+
+					$log_remarks = "";
+					$this->shared_model->write_to_log("Print Prescription", $this->uid, $transaction_id, 0, "", "", $log_remarks);
 
 					$this->load->library('Pdf');
 					$this->load->view('pdf/prescription', $data);
@@ -935,6 +959,8 @@ class Current_transaction extends CI_Controller
 				if ($add) {
 					//display result
 					$result = $this->item_model->search_by_transaction($transaction_id);
+					$data["logs"] = $this->shared_model->get_logs($transaction_id);
+
 					$data["result"] = $result;
 				} else {
 					$errors["error"] = "Error: Saving Failed, Please Try Again!";
@@ -1045,6 +1071,8 @@ class Current_transaction extends CI_Controller
 					if ($delete) {
 						//display result
 						$result = $this->item_model->search_by_transaction($transaction_id);
+						$data["logs"] = $this->shared_model->get_logs($transaction_id);
+
 						$data["result"] = $result;
 					} else {
 						$errors["error"] = "Error: Saving Failed, Please Try Again!";
@@ -1055,6 +1083,88 @@ class Current_transaction extends CI_Controller
 			} else {
 				$errors["error"] = "Error: All fields with * are required!";
 			}
+		} else {
+			$errors["error"] = "Error: Critical Error Encountered!";
+		}
+
+
+		if (!empty($errors)) {
+			$data["success"] = false;
+			$data["errors"] = $errors;
+		} else {
+			$data["success"] = true;
+		}
+
+		echo json_encode($data);
+	}
+
+	//ITEM COMPLETE
+	function item_complete()
+	{
+		$errors = [];
+		$data = [];
+
+		$id = $this->input->post("id");
+		$transaction_id = $this->input->post("transaction_id");
+
+		if ($id && $transaction_id) {
+
+				try {
+					$complete = $this->item_model->complete($id, $transaction_id, $this->uid);
+
+					if ($complete) {
+						//display result
+						$result = $this->item_model->search_by_transaction($transaction_id);
+						$data["logs"] = $this->shared_model->get_logs($transaction_id);
+
+						$data["result"] = $result;
+					} else {
+						$errors["error"] = "Error: Updating Failed, Please Try Again!";
+					}
+				} catch (Exception $ex) {
+					$errors["error"] = $ex->getMessage();
+				}
+		} else {
+			$errors["error"] = "Error: Critical Error Encountered!";
+		}
+
+
+		if (!empty($errors)) {
+			$data["success"] = false;
+			$data["errors"] = $errors;
+		} else {
+			$data["success"] = true;
+		}
+
+		echo json_encode($data);
+	}
+
+	//ITEM WORKING
+	function item_working()
+	{
+		$errors = [];
+		$data = [];
+
+		$id = $this->input->post("id");
+		$transaction_id = $this->input->post("transaction_id");
+
+		if ($id && $transaction_id) {
+
+				try {
+					$working = $this->item_model->working($id, $transaction_id, $this->uid);
+
+					if ($working) {
+						//display result
+						$result = $this->item_model->search_by_transaction($transaction_id);
+						$data["logs"] = $this->shared_model->get_logs($transaction_id);
+
+						$data["result"] = $result;
+					} else {
+						$errors["error"] = "Error: Updating Failed, Please Try Again!";
+					}
+				} catch (Exception $ex) {
+					$errors["error"] = $ex->getMessage();
+				}
 		} else {
 			$errors["error"] = "Error: Critical Error Encountered!";
 		}

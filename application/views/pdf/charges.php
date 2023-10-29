@@ -2,6 +2,9 @@
 
 function details($record)
 {
+	$remarks = nl2br($record->remarks);
+	$diagnosis = nl2br($record->diagnosis);
+
 	$details = " <table>
 						<tr>
                             <td align=\"right\" width=\"15%\"><b>PATIENT : </b></td>
@@ -29,13 +32,13 @@ function details($record)
                         </tr>
 						<tr>
                             <td align=\"right\" width=\"15%\"><b>REMARKS : </b></td>
-                            <td align=\"left\" width=\"45%\">{$record->remarks}</td>
+                            <td align=\"left\" width=\"45%\">{$remarks}</td>
 							<td align=\"right\" width=\"15%\"><b>PO # : </b></td>
                             <td align=\"left\" width=\"25%\">{$record->po_no}</td>
                         </tr>
 						<tr>
                             <td align=\"right\" width=\"15%\"><b>DIAGNOSIS : </b></td>
-                            <td align=\"left\" width=\"85%\">{$record->diagnosis}</td>
+                            <td align=\"left\" width=\"85%\">{$diagnosis}</td>
                         </tr>
                     </table>";
 	return $details;

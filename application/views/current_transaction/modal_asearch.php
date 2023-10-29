@@ -10,8 +10,8 @@
                 <form id="frm_asearch" name="frm_asearch">
                     <div class="row" style="margin-bottom: 0.5em;">
                         <div class="col-md-3">
-                            <label for="request_no_asearch">Request No </label>
-                            <input type="text" id="request_no_asearch" name="request_no_asearch"
+                            <label for="transaction_no_asearch">Request No </label>
+                            <input type="text" id="transaction_no_asearch" name="transaction_no_asearch"
                                 class="field_asearch form-control" />
                         </div>
                         <div class="col-md-3">
