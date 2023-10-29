@@ -2124,7 +2124,7 @@ class TCPDF_STATIC {
 	 * Array of page formats
 	 * measures are calculated in this way: (inches * 72) or (millimeters * 72 / 25.4)
 	 * @public static
-	 * 
+	 *
      * @var array<string,float[]>
 	 */
 	public static $page_formats = array(
@@ -2476,6 +2476,10 @@ class TCPDF_STATIC {
 		'FR_COURONNE'            => array( 1020.472,  1303.937), // = (  360 x 460  ) mm  = ( 14.17 x 18.11 ) in
 		'FR_TELLIERE'            => array(  963.780,  1247.244), // = (  340 x 440  ) mm  = ( 13.39 x 17.32 ) in
 		'FR_POT'                 => array(  878.740,  1133.858), // = (  310 x 400  ) mm  = ( 12.20 x 15.75 ) in
+
+		//CUSTOM SIZE BY JP 2023-10-29
+		'A4_HALF'                     => array(  595.276,   420.945),
+		'A4_ONE_FOURTH'                     => array(  595.276,   210.4725),
 	);
 
 

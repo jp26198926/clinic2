@@ -160,6 +160,82 @@ class Custom_function
 
 		return $string;
 	}
+
+	public function number_to_words($number, $dollar_word="", $cent_word="") {
+		$ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+		$tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+
+		list($dollars, $cents) = explode('.', $number);
+
+		$dollars_text = '';
+
+		// Handle billions
+		if ($dollars >= 1000000000) {
+			$billions = floor($dollars / 1000000000);
+			$dollars_text .= $this->number_to_words($billions) . ' Billion ';
+			$dollars %= 1000000000;
+		}
+
+		// Handle millions
+		if ($dollars >= 1000000) {
+			$millions = floor($dollars / 1000000);
+			$dollars_text .= $this->number_to_words($millions) . ' Million ';
+			$dollars %= 1000000;
+		}
+
+		// Handle thousands
+		if ($dollars >= 1000) {
+			$thousands = floor($dollars / 1000);
+			$dollars_text .= $this->number_to_words($thousands) . ' Thousand ';
+			$dollars %= 1000;
+		}
+
+		if ($dollars > 0) {
+			if ($dollars < 20) {
+				$dollars_text .= $ones[$dollars];
+			} elseif ($dollars < 100) {
+				$dollars_text .= $tens[floor($dollars / 10)];
+				if ($dollars % 10 > 0) {
+					$dollars_text .= '-' . $ones[$dollars % 10];
+				}
+			} elseif ($dollars < 1000) {
+				$dollars_text .= $ones[floor($dollars / 100)] . ' Hundred ' . $this->number_to_words($dollars % 100);
+			} else {
+				$dollars_text = 'Number out of range';
+			}
+		} else {
+			$dollars_text = 'Zero';
+		}
+
+		$cents_text = '';
+		if ($cents > 0) {
+			if ($cents < 20) {
+				$cents_text = $ones[$cents];
+			} else {
+				$cents_text = $tens[floor($cents / 10)];
+				if ($cents % 10 > 0) {
+					$cents_text .= '-' . $ones[$cents % 10];
+				}
+			}
+			$cents_text = 'and ' . $cents_text . ' ' . $cent_word;
+		} else {
+			$cents_text = $cent_word;
+		}
+
+		// Combine dollars, currency word, and cents
+		$result = $dollars_text . ' ' . $dollar_word . ' ' . $cents_text;
+
+		return $result;
+	}
+
+
+
+
+
+
+
+
+
 	// public function get_tax_2012($type, $dependant = -1, $period, $gross_amount)
 	// {
 	// 	//computation below was for 2012 and was supersede with the latest 2019

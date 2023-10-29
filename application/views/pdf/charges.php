@@ -51,11 +51,13 @@ function summary_list($items, $total_paid=0)
 							<th width=\"5%\" align=\"center\" border=\"1\" ><b> # </b></th>
 							<th width=\"10%\" align=\"center\" border=\"1\" ><b> QTY </b></th>
 							<th width=\"10%\" align=\"center\" border=\"1\" ><b> UOM </b></th>
-							<th width=\"25%\" align=\"center\" border=\"1\" ><b> ITEM </b></th>
+							<th width=\"45%\" align=\"center\" border=\"1\" ><b> ITEM </b></th>
 							<th width=\"10%\" align=\"center\" border=\"1\" ><b> PRICE </b></th>
 							<th width=\"10%\" align=\"center\" border=\"1\" ><b> AMOUNT </b></th>
+							<!--
 							<th width=\"10%\" align=\"center\" border=\"1\" ><b> COMM </b></th>
 							<th width=\"10%\" align=\"center\" border=\"1\" ><b> INSUR </b></th>
+							-->
 							<th width=\"10%\" align=\"center\" border=\"1\" ><b> TOTAL </b></th>
 						</tr>";
 
@@ -86,8 +88,8 @@ function summary_list($items, $total_paid=0)
 			$list .= "	<td align=\"center\">{$item_description}</td>";
 			$list .= "	<td align=\"right\">{$item->price}</td>";
 			$list .= "	<td align=\"right\">{$item->amount}</td>";
-			$list .= "	<td align=\"right\">{$item->commission_amount}</td>";
-			$list .= "	<td align=\"right\">{$item->insurance_amount}</td>";
+			//$list .= "	<td align=\"right\">{$item->commission_amount}</td>";
+			//$list .= "	<td align=\"right\">{$item->insurance_amount}</td>";
 			$list .= "	<td align=\"right\">{$item->total}</td>";
 			$list .= "</tr>";
 		}
@@ -97,17 +99,19 @@ function summary_list($items, $total_paid=0)
 		$list .= "<tr>";
         $list .= "	<td colspan=\"5\" align=\"right\"><b>Sub-Total</b></td>";
         $list .= "	<td align=\"right\">" . number_format($subtotal_amount, 2, '.', ',') . "</td>";
-        $list .= "  <td align=\"right\">" . number_format($subtotal_commission, 2, '.', ',') . "</td>";
-        $list .= "  <td align=\"right\">" . number_format($subtotal_insurance, 2, '.', ',') . "</td>";
+        //$list .= "  <td align=\"right\">" . number_format($subtotal_commission, 2, '.', ',') . "</td>";
+        //$list .= "  <td align=\"right\">" . number_format($subtotal_insurance, 2, '.', ',') . "</td>";
         $list .= "  <td align=\"right\">" . number_format($subtotal_total, 2, '.', ',') . "</td>";
         $list .= "</tr>";
 		$list .= "<tr>";
         $list .= "	<td colspan=\"5\" align=\"right\"><b>TOTAL PAID</b></td>";
-        $list .= "  <td colspan=\"4\" align=\"right\">" . number_format($total_paid, 2, '.', ',') . "</td>";
+		$list .= "  <td colspan=\"2\" align=\"right\">" . number_format($total_paid, 2, '.', ',') . "</td>";
+        // $list .= "  <td colspan=\"4\" align=\"right\">" . number_format($total_paid, 2, '.', ',') . "</td>";
         $list .= "</tr>";
         $list .= "<tr>";
         $list .= "	<td colspan=\"5\" align=\"right\"><b>TOTAL AMOUNT DUE</b></td>";
-        $list .= "	<td colspan=\"4\" align=\"right\">" . number_format($total_amount_due, 2, '.', ',') . "</td>";
+		$list .= "	<td colspan=\"2\" align=\"right\">" . number_format($total_amount_due, 2, '.', ',') . "</td>";
+        // $list .= "	<td colspan=\"4\" align=\"right\">" . number_format($total_amount_due, 2, '.', ',') . "</td>";
         $list .= "</tr>";
 
 	} else {

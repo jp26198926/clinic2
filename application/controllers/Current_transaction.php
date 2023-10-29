@@ -668,11 +668,14 @@ class Current_transaction extends CI_Controller
 					//get total paid
 					$data["total_paid"] = $this->main_model->get_total_paid($record->transaction_id);
 
+					$data["amount_paid"] = number_format($record->amount,2,".",",");
+					$data["amount_paid_words"] = $this->cf->number_to_words($record->amount, "Kina", "Toea");
+
 					$log_remarks = "";
 					$this->shared_model->write_to_log("Print Payment", $this->uid, $record->transaction_id, 0, "", "", $log_remarks);
 
 					$this->load->library('Pdf');
-					$this->load->view('pdf/payment', $data);
+					$this->load->view('pdf/payment2', $data);
 				} else {
 					$this->session->set_flashdata("error", "Error: Critical Error Encountered!");
 					redirect(base_url() . "current_transaction");
