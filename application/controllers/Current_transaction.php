@@ -519,6 +519,42 @@ class Current_transaction extends CI_Controller
 		}
 	}
 
+	//TRANS INSURANCE INVOICE
+	function print_insurance_invoice($transaction_id)
+	{
+		if ($transaction_id) {
+			try {
+				$record = $this->main_model->view($transaction_id, $this->uid);
+
+				if ($record) {
+					$data["transaction_id"] = $transaction_id;
+					$data["transaction_no"] = str_pad($transaction_id, 5, "0", STR_PAD_LEFT);
+					$data["app_name"] = $this->app_name;
+					$data["company_name"] = $this->company_name;
+					$data["company_address"] = $this->company_address;
+					$data["company_contact"] = $this->company_contact;
+					$data["record"] = $record;
+					$data["items"] = $this->item_model->search_by_transaction($transaction_id);
+					//get total paid
+					$data["total_paid"] = $this->main_model->get_total_paid($transaction_id);
+
+					$log_remarks = "";
+					$this->shared_model->write_to_log("Print Insurance Invoice", $this->uid, $transaction_id, 0, "", "", $log_remarks);
+
+					$this->load->library('Pdf');
+					$this->load->view('pdf/insurance_invoice', $data);
+				} else {
+					$this->session->set_flashdata("error", "Error: Request no. REQ-" . str_pad($transaction_id, 5, "0", STR_PAD_LEFT) . " is unavailable!");
+					redirect(base_url() . "current_transaction");
+				}
+			} catch (Exception $ex) {
+				echo $ex->getMessage();
+			}
+		} else {
+			echo $this->default_error_msg;
+		}
+	}
+
 	//TRANS CHECK PAYMENT
 	function check_payment() {
 		$transaction_id = $this->input->post("transaction_id");

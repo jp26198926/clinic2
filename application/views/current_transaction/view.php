@@ -345,6 +345,15 @@ $total_amount_due = $subtotal_total;
                                                             <i class='fa fa-print fa-fw'></i>
                                                             Print
                                                         </a> ";
+
+												echo "<a
+														id='btn_insurance_invoice'
+														href='" . base_url() . "current_transaction/print_insurance_invoice/{$transaction_id}' class='btn btn-warning'
+														target='_blank'
+													  >
+														<i class='fa fa-heart fa-fw'></i>
+														Insurance Invoice
+													</a> ";
                                                 // }
 
                                                 echo "<button id='btn_send' class='btn btn-info'>
