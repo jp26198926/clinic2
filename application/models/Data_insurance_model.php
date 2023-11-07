@@ -32,7 +32,7 @@ class Data_insurance_model extends CI_Model
 		}
 
 		if ($search) {
-			$this->db->where("CONCAT_WS(' ',x.name,s.status) LIKE '%{$search}%'");
+			$this->db->where("CONCAT_WS(' ',x.name, x.company_name ,s.status) LIKE '%{$search}%'");
 		}
 
 		if ($query = $this->db->get()) {

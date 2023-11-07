@@ -92,6 +92,7 @@
                                                 <tr>
                                                     <th>OPTION</th>
                                                     <th>NAME</th>
+													<th>COMPANY NAME</th>
                                                     <th>VALUE TYPE</th>
                                                     <th>VALUE</th>
                                                     <th>COMMISSION TYPE</th>
@@ -101,7 +102,7 @@
                                             </thead>
                                             <tbody>
                                                 <tr>
-                                                    <td align='center' colspan='7'>Use search button to display record
+                                                    <td align='center' colspan='8'>Use search button to display record
                                                     </td>
                                                 </tr>
                                             </tbody>
@@ -243,6 +244,7 @@
                             className: "text-center"
                         },
                         null, //name
+						null, //company name
                         null, //value type
                         null, //value
                         null, //commission type
@@ -252,7 +254,7 @@
                     data: dataSet,
                     "aaSorting": [],
                     "rowCallback": function(row, data, index) {
-                        if (data[8] == 1) { //deleted
+                        if (data[9] == 1) { //deleted
                             $('td', row).addClass('danger');
                         } else {
                             $('td', row).removeClass('danger');
@@ -299,7 +301,7 @@
                         "title": "Copy",
                         "data-toggle": "tooltip",
                         exportOptions: {
-                            columns: [1, 2, 3, 4, 5, 6] //0, 1, 2, 3
+                            columns: [1, 2, 3, 4, 5, 6, 7] //0, 1, 2, 3
                         }
                     },
                     {
@@ -307,7 +309,7 @@
                         "text": "<i class='fa fa-file-excel-o bigger-110 green'></i> <span class='hidden'>Export to CSV</span>",
                         "className": "btn btn-white btn-primary btn-bold",
                         exportOptions: {
-                            columns: [1, 2, 3, 4, 5, 6] //0, 1, 2, 3
+                            columns: [1, 2, 3, 4, 5, 6, 7] //0, 1, 2, 3
                         }
                     },
                     {
@@ -315,7 +317,7 @@
                         "text": "<i class='fa fa-file-excel-o bigger-110 green'></i> <span class='hidden'>Export to Excel</span>",
                         "className": "btn btn-white btn-primary btn-bold",
                         exportOptions: {
-                            columns: [1, 2, 3, 4, 5, 6] //0, 1, 2, 3
+                            columns: [1, 2, 3, 4, 5, 6, 7] //0, 1, 2, 3
                         }
                     },
                     {
@@ -323,7 +325,7 @@
                         "text": "<i class='fa fa-file-pdf-o bigger-110 red'></i> <span class='hidden'>Export to PDF</span>",
                         "className": "btn btn-white btn-primary btn-bold",
                         exportOptions: {
-                            columns: [1, 2, 3, 4, 5, 6] //0, 1, 2, 3
+                            columns: [1, 2, 3, 4, 5, 6, 7] //0, 1, 2, 3
                         }
                     },
                     {
@@ -334,7 +336,7 @@
                         //message: 'This print was produced using the Print button for DataTables',
                         message: "<?= $page_name; ?>",
                         exportOptions: {
-                            columns: [1, 2, 3, 4, 5, 6] //0, 1, 2, 3
+                            columns: [1, 2, 3, 4, 5, 6, 7] //0, 1, 2, 3
                         }
                     }
                 ]
@@ -365,6 +367,7 @@
                 dataSet.push([
                     option,
                     value.name,
+					value.company_name,
                     value.value_type,
                     Number(value.value),
                     value.commission_type,
@@ -438,6 +441,7 @@
 
         $(document).on("click", "#btn_asearch_start", function() {
             var name = $("#txt_name_asearch").val().trim();
+			var company_name = $("#txt_company_name_asearch").val().trim();
             var value_type_id = $("#txt_value_type_id").val();
             var value = $("#txt_value").val();
             var commission_type_id = $("#txt_commission_type_id").val();
@@ -449,6 +453,7 @@
 
             $.post("<?= base_url(); ?>data_insurance/advance_search", {
                 name: name,
+				company_name: company_name,
                 value_type_id: value_type_id,
                 value: value,
                 commission_type_id: commission_type_id,
@@ -500,6 +505,7 @@
         $(document).on("click", "#btn_save", function() {
 
             var name = $("#txt_name").val().trim();
+			var company_name = $("#txt_company_name").val().trim();
             var value_type_id = $("#txt_value_type_id").val();
             var value = $("#txt_value").val();
             var commission_type_id = $("#txt_commission_type_id").val();
@@ -511,6 +517,7 @@
 
                 $.post("<?= base_url(); ?>data_insurance/add", {
                     name: name,
+					company_name: company_name,
                     value_type_id: value_type_id,
                     value: value,
                     commission_type_id: commission_type_id,
@@ -571,6 +578,7 @@
 
                         $(".hidden_id").val(data.id);
                         $("#txt_name_update").val(data.name);
+						$("#txt_company_name_update").val(data.company_name);
                         $("#txt_value_type_id_update").val(data.value_type_id);
                         $("#txt_value_update").val(Number(data.value));
                         $("#txt_commission_type_id_update").val(data.commission_type_id);
@@ -597,6 +605,7 @@
         $(document).on("click", "#btn_update", function() {
             var id = $(".hidden_id").val();
             var name = $("#txt_name_update").val();
+			var company_name = $("#txt_company_name_update").val();
             var value_type_id = $("#txt_value_type_id_update").val();
             var value_type = $("#txt_value_type_id_update option:selected").text();
             var value = $("#txt_value_update").val();
@@ -612,6 +621,7 @@
                     $.post("<?= base_url(); ?>data_insurance/update", {
                         id: id,
                         name: name,
+						company_name: company_name,
                         value_type_id: value_type_id,
                         value: value,
                         commission_type_id: commission_type_id,
@@ -631,10 +641,11 @@
                             $("#txt_name_update").trigger("select", "focus");
                         } else {
                             current_data[1] = name;
-                            current_data[2] = value_type;
-                            current_data[3] = value;
-                            current_data[4] = commission_type;
-                            current_data[5] = commission_value;
+							current_data[2] = company_name;
+                            current_data[3] = value_type;
+                            current_data[4] = value;
+                            current_data[5] = commission_type;
+                            current_data[6] = commission_value;
                             current_row.data(current_data).invalidate();
 
                             $("#modal_modify").modal("hide");
@@ -680,6 +691,7 @@
                         data = JSON.parse(data);
 
                         $("#txt_name_info").val(data.name);
+						$("#txt_company_name_info").val(data.company_name);
                         $("#txt_value_type_id_info").val(data.value_type_id);
                         $("#txt_value_info").val(Number(data.value));
                         $("#txt_commission_type_id_info").val(data.commission_type_id);
@@ -735,7 +747,7 @@
                                             data = JSON.parse(data);
 
                                             current_data[0] = table_buttons(id, data.status_id);
-                                            current_data[6] = table_status(
+                                            current_data[7] = table_status(
                                                 data.status_id,
                                                 data.status,
                                                 data.created_at,
@@ -744,7 +756,7 @@
                                                 data.deleted,
                                                 data.deleted_reason
                                             );
-                                            current_data[8] = data.status_id;
+                                            current_data[9] = data.status_id;
                                             current_row.data(current_data).invalidate().draw();
 
                                             $('[data-toggle="tooltip"]').tooltip({
@@ -795,7 +807,7 @@
                                     data = JSON.parse(data);
 
                                     current_data[0] = table_buttons(id, data.status_id);
-                                    current_data[6] = table_status(
+                                    current_data[7] = table_status(
                                         data.status_id,
                                         data.status,
                                         data.created_at,
@@ -804,7 +816,7 @@
                                         data.deleted,
                                         data.deleted_reason
                                     );
-                                    current_data[8] = data.status_id;
+                                    current_data[9] = data.status_id;
                                     current_row.data(current_data).invalidate().draw();
 
                                     $('[data-toggle="tooltip"]').tooltip({

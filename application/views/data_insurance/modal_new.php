@@ -13,6 +13,12 @@
                         <input type="text" id="txt_name" class="txt_field form-control" />
                     </div>
                 </div>
+				<div class="row" style="margin-bottom: 0.5em;">
+                    <div class="col-sm-12">
+                        <label>Company Name <span class="text-danger">*</span></label>
+                        <input type="text" id="txt_company_name" class="txt_field form-control" />
+                    </div>
+                </div>
                 <div class="row" style="margin-bottom: 0.5em;">
                     <div class="col-sm-6">
                         <label>Value Type</label>

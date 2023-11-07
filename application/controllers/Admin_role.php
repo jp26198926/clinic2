@@ -58,6 +58,7 @@ class Admin_role extends CI_Controller
 
 					//load needed models for this page
 					$this->load->model('administration_m', 'adm');
+					$this->load->model('data_location_model');
 				}
 			}
 		} catch (Exception $ex) {
@@ -89,6 +90,8 @@ class Admin_role extends CI_Controller
 			$data['module_permission'] = $this->module_permission;
 			$data['uid'] = strtoupper($this->session->userdata[$prefix . '_logged_in'][$prefix . '_uid']);
 			$data['ufname'] = strtoupper($this->session->userdata[$prefix . '_logged_in'][$prefix . '_fname']);
+
+			$data["locations"] = $this->data_location_model->search();
 
 			$this->load->view('admin_role/index', $data);
 		} else {

@@ -10,8 +10,14 @@
                 <div class="row" style="margin-bottom: 0.5em;">
                     <div class="row" style="margin-bottom: 0.5em;">
                         <div class="col-sm-12">
-                            <label>Name <span class="text-danger">*</span></label>
+                            <label>Name</label>
                             <input type="text" id="txt_name_asearch" class="txt_field_asearch form-control" />
+                        </div>
+                    </div>
+					<div class="row" style="margin-bottom: 0.5em;">
+                        <div class="col-sm-12">
+                            <label>Company Name</label>
+                            <input type="text" id="txt_company_name_asearch" class="txt_field_asearch form-control" />
                         </div>
                     </div>
                     <div class="row" style="margin-bottom: 0.5em;">

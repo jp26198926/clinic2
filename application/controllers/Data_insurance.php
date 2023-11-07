@@ -149,7 +149,7 @@ class Data_insurance extends CI_Controller
 	{
 		$data_input = $this->input->post();
 
-		if ($data_input["name"]) {
+		if ($data_input["name"] && $data_input["company_name"]) {
 			try {
 				$add = $this->main_model->add($data_input, $this->uid);
 
@@ -173,7 +173,7 @@ class Data_insurance extends CI_Controller
 		$id = $data_input["id"];
 
 		if ($id) {
-			if ($data_input["name"]) {
+			if ($data_input["name"] && $data_input["company_name"]) {
 				try {
 					$update = $this->main_model->update($id, $data_input, $this->uid);
 
