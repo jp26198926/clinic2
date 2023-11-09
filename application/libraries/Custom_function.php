@@ -228,6 +228,24 @@ class Custom_function
 		return $result;
 	}
 
+	/**
+	 * checkArrayType
+	 * Return: 0 - not array, 1 - 1D array, 2 - 2D array
+	 */
+	public function checkArrayType($array) {
+		if (!is_array($array)) {
+			return 0; // Not an array at all
+		}
+
+		foreach ($array as $element) {
+			if (is_array($element)) {
+				return 2; // 2D array
+			}
+		}
+
+		return 1; // 1D array
+	}
+
 
 
 

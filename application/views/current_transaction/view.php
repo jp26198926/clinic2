@@ -338,11 +338,11 @@ $total_amount_due = $subtotal_total;
 
                                                 //export to pdf shown
                                                 echo "<a
-                                                            id='btn_print'
-                                                            href='" . base_url() . "current_transaction/print_charges/{$transaction_id}' class='btn btn-warning'
-                                                            target='_blank'
-                                                          >
-                                                            <i class='fa fa-print fa-fw'></i>
+                                                        id='btn_print'
+                                                        href='" . base_url() . "current_transaction/print_charges/{$transaction_id}' class='btn btn-warning'
+                                                        target='_blank'
+                                                    	>
+                                                        	<i class='fa fa-print fa-fw'></i>
                                                             Print
                                                         </a> ";
 
@@ -365,6 +365,11 @@ $total_amount_due = $subtotal_total;
 														<i class='fa fa-credit-card fa-fw'></i>
 														Payment
 													 </button> ";
+
+												echo "<button id='btn_xray' class='btn btn-info'>
+													 <i class='fa fa-times-circle fa-fw'></i>
+													 Xray Result
+												  </button> ";
 
 												echo "<button id='btn_lab' class='btn btn-info'>
 														<i class='fa fa-flask fa-fw'></i>
@@ -590,6 +595,7 @@ $total_amount_due = $subtotal_total;
 		$this->load->view("current_transaction/modal_payment");
 		$this->load->view("current_transaction/modal_send");
 		$this->load->view("current_transaction/modal_prescription");
+		$this->load->view("current_transaction/modal_xray");
 
         $this->load->view('template/footer');
         $this->load->view('template/loading');
@@ -881,6 +887,27 @@ $total_amount_due = $subtotal_total;
 			$("#div_trails").html(list);
 		}
 	}
+
+	function xray_attachment_list(attachments) {
+        let list = ``;
+        let transaction_id = $("#id_update").val();
+        let base_url = "<?= base_url(); ?>";
+
+        if (attachments.length > 0) {
+            list += `<ul>`;
+
+            attachments.forEach((attachment) => {
+                list += `<li id='list_${attachment}' style='padding:0.1em;'>
+                            <a href='#' id='${attachment}' class='xray_attachment_remove label label-danger arrowed-in arrowed-right' >Remove</a>
+                            <a href='${base_url}upload/xray/${transaction_id}/${attachment}' target='_blank'>${attachment}</a>
+                         </li>`;
+            });
+
+            list += `</ul>`;
+        }
+
+        return list;
+    }
 
     $(document).on("keyup", "#qty_new, #price_new, #commission_amount_new, #insurance_amount_new", function(e){
         compute_entry_manual();
@@ -1247,6 +1274,108 @@ $total_amount_due = $subtotal_total;
 			$(this_modal + " .modal_error").stop(true, true).show().delay(15000).fadeOut("slow");
 		}
 	});
+
+	$(document).on("click", "#btn_xray", function(){
+		$("#modal_xray").modal("show");
+	});
+
+	$(document).on("change", "#xray_attachment_add", function(e) {
+        let transaction_id = $("#id_update").val();
+        let attachment = $(this).val();
+		let this_modal = "#modal_xray";
+
+        if (attachment) {
+            $(this_modal + " .modal_error").hide();
+			$(this_modal + " .modal_button").hide();
+			$(this_modal + " .modal-body").hide();
+			$(this_modal + " .modal_waiting").show();
+
+            let formData = new FormData($("#frm_xray_attachment_add")[0]);
+            formData.append("transaction_id_new", transaction_id);
+
+            $.ajax({
+                type: "POST",
+                url: "<?= base_url(); ?>current_transaction/xray_attachment_add",
+                data: formData,
+                enctype: "multipart/form-data",
+                processData: false, // tell jQuery not to process the data
+                contentType: false, // tell jQuery not to set contentType
+                dataType: "json",
+                //encode: true,
+            }).done(function(data) {
+				$(this_modal + " .modal_error").hide();
+				$(this_modal + " .modal_button").show();
+				$(this_modal + " .modal-body").show();
+				$(this_modal + " .modal_waiting").hide();
+
+                $("#xray_attachment_add").val("");
+
+				let result = data;
+
+				if (result.success === true) {
+					$("#xray_attachment_list").html(xray_attachment_list(result.data));
+					display_logs(result.logs);
+				}else{
+					$(this_modal + " .modal_error").hide();
+					$(this_modal + " .modal_error_msg").text(result.error);
+				}
+
+            }).fail(function(data) {
+				$(this_modal + " .modal_error").hide();
+				$(this_modal + " .modal_button").show();
+				$(this_modal + " .modal-body").show();
+				$(this_modal + " .modal_waiting").hide();
+
+                bootbox.alert("Error: Server Error or Session Time-Out!, Please try again or reload the page!");
+                $("#loading").modal("hide");
+            });
+
+            e.preventDefault();
+        }
+    });
+
+    $(document).on("click", ".xray_attachment_remove", function(e) {
+        e.preventDefault();
+        let transaction_id = $("#id_update").val();
+        let filename = $(this).attr("id");
+		let this_modal = "#modal_xray";
+
+		if (filename){
+			$(this_modal + " .modal_error").hide();
+			$(this_modal + " .modal_button").hide();
+			$(this_modal + " .modal-body").hide();
+			$(this_modal + " .modal_waiting").show();
+
+			$.post("<?= base_url(); ?>current_transaction/xray_attachment_remove", {
+				transaction_id: transaction_id,
+				filename: filename
+			}, function(data) {
+				$(this_modal + " .modal_error").hide();
+				$(this_modal + " .modal_button").show();
+				$(this_modal + " .modal-body").show();
+				$(this_modal + " .modal_waiting").hide();
+
+				if (data.indexOf("<!DOCTYPE html>") > -1) {
+					alert("Error: Session Time-Out, You must login again to continue.");
+					location.reload(true);
+				} else {
+
+					let result = JSON.parse(data);
+
+					if (result.success == true) {
+						$("[id='list_" + filename + "']").remove();
+						display_logs(result.logs);
+					}else{
+						$(this_modal + " .modal_error").hide();
+						$(this_modal + " .modal_error_msg").text(result.error);
+					}
+				}
+			});
+		}else{
+
+		}
+    });
+
 
 	$(document).on("click","#btn_send", function(){
 		$("#modal_send").modal();

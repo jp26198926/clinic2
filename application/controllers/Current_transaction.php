@@ -435,9 +435,11 @@ class Current_transaction extends CI_Controller
 
 						$data["amount_due"] = $data["total_charges"] - $data["total_paid"];
 
+						$data["xray_attachments"] = $this->xray_attachment_list($transaction_id);
 						$data["trails"] = $this->shared_model->get_logs($transaction_id);
 
 						$items = $this->item_model->search_by_transaction($transaction_id);
+
 
 						$data["items"] = $items;
 						$this->load->view("current_transaction/view", $data);
@@ -979,6 +981,138 @@ class Current_transaction extends CI_Controller
 			}
 		}
 	}
+
+	function xray_attachment_add()
+	{
+		$transaction_id = $this->input->post("transaction_id_new");
+		$result["success"] = false;
+
+		if ($transaction_id) {
+			//$filenames = $_FILES["xray_attachment_add"];
+			//if ($filename) {
+
+			$upload = $this->do_upload("xray_attachment_add", $transaction_id);
+
+			if (!$upload["error"]) {
+
+				//echo json_encode($this->xray_attachment_list($transaction_id));
+				$result["success"] = true;
+				$result["data"] = $this->xray_attachment_list($transaction_id);
+
+				// Retrieve and display the uploaded filenames
+				$file_info = $upload["upload_data"];
+
+				//checkArrayType: 0-not array, 1-1D array, 2-2D array
+				$array_type = $this->cf->checkArrayType($file_info);
+				$filenames = "";
+
+				if ($array_type == 1){
+					$filenames = $file_info['file_name'];
+				}elseif ($array_type == 2){
+					$i = 0;
+					foreach($file_info as $filename){
+						$i++;
+						$filenames .= ($i <= 1) ? $filename['file_name'] : ", " . $filename['file_name'];
+					}
+				}
+
+				//write to log
+				$log_remarks = "Attachment : {$filenames}";
+				$this->shared_model->write_to_log("Add X-Ray Attachment", $this->uid, $transaction_id, 0, "", "", $log_remarks);
+
+				//get logs from
+				$result["logs"] = $this->shared_model->get_logs($transaction_id);
+			}else{
+				$result["error"] = $upload["error_msg"];
+			}
+			//}
+		}else{
+			$result["error"] = $this->default_error_msg;
+		}
+
+		echo json_encode($result);
+	}
+
+	function xray_attachment_remove()
+	{
+		$transaction_id = $this->input->post("transaction_id");
+		$filename = $this->input->post("filename");
+		$file = "./upload/xray/" . $transaction_id . "/" . $filename;
+		$result["success"] = false;
+
+		if ($transaction_id && $filename) {
+			if (file_exists($file)) {
+				if (!unlink($file)) {
+					//echo "Error: Unable to delete attachment!";
+					$result["error"] = "Unable to delete attachment!";
+				} else {
+					//write to log
+					$log_remarks = "Attachment : {$filename}";
+					$this->shared_model->write_to_log("Removed X-Ray Attachment", $this->uid, $transaction_id, 0, "", "", $log_remarks);
+
+					$result["success"] = true;
+					//get logs from
+					$result["logs"] = $this->shared_model->get_logs($transaction_id);
+				}
+			} else {
+				//echo "Error: File does not exist!";
+				$result["error"] = "File does not exist!";
+			}
+		} else {
+			//echo $this->default_error_msg;
+			$result["error"] = $this->default_error_msg;
+		}
+
+		echo json_encode($result);
+	}
+
+	private function xray_attachment_list($transaction_id)
+	{
+		$path = "./upload/xray/" . $transaction_id;
+		$files = array();
+
+		if (file_exists($path)) {
+			$arrFiles = scandir($path);
+
+			foreach ($arrFiles as $file) {
+				//disregard if the result is a directory
+				if (!is_dir($path . "/" . $file)) {
+					array_push($files, $file);
+				}
+			}
+		}
+
+		return $files;
+	}
+
+	private function do_upload($file, $transaction_id)
+	{
+		$result = array("error" => false);
+
+		//prepare upload path
+		if (!file_exists("./upload/xray/" . $transaction_id)) {
+			mkdir("./upload/xray/" . $transaction_id, 0777, true);
+		}
+
+		$config["upload_path"]          = "./upload/xray/{$transaction_id}/";
+		$config["allowed_types"]        = "*";
+		//$config["max_size"]             = 10000;
+		// $config["max_width"]            = 1024;
+		// $config["max_height"]           = 768;
+
+
+		$this->load->library("upload", $config);
+
+		if (!$this->upload->do_upload($file)) {
+			$result["error"] = true;
+			$result["error_msg"] =  $this->upload->display_errors();
+		} else {
+			$result["upload_data"] = $this->upload->data();
+		}
+
+		return $result;
+	}
+
 
 	//ITEM ADD
 	function add_item()
