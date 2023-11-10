@@ -312,26 +312,32 @@ $total_amount_due = $subtotal_total;
                                     <div class="row" style="margin-bottom:1em;">
                                         <div class="col-md-12 text-center">
                                             <?php
-                                            echo "<a href='" . base_url() . "current_transaction' class='btn btn-default'>
+                                            echo "<a href='" . base_url() . "current_transaction' class='btn btn-default' title='Back to List'>
                                                     <i class='fa fa-arrow-left fa-fw'></i>
                                                     Back
                                                   </a> ";
+
+                                            echo "<button id='btn_history' class='btn btn-default' title='Patient History Record'>
+                                                  <i class='fa fa-clock-o fa-fw'></i>
+                                                  History
+                                                </button> ";
 
                                             if ($transaction_status_id >= 2) { //draft
                                                 //echo "<button id='btn_package' class='btn btn-info'>Add Package</button> ";
 
                                                 //if (count($items) > 0) {
-                                                if ($transaction_status_id == 2) { //draft
-                                                    echo "<a id='btn_confirm' class='btn btn-primary'>
-                                                            <i class='fa fa-check fa-fw'></i>
-                                                            Confirm
-                                                        </a> ";
-                                                }
+                                                // if ($transaction_status_id == 2) { //draft
+                                                //     echo "<a id='btn_confirm' class='btn btn-primary'>
+                                                //             <i class='fa fa-check fa-fw'></i>
+                                                //             Confirm
+                                                //         </a> ";
+                                                // }
 
 												echo "<a
 														id='btn_modify'
                                                         href='" . base_url() . "current_transaction/modify/{$transaction_id}' class='btn btn-warning'
-                                                    	>
+                                                    	title='Modify Transaction'
+														>
                                                             <i class='fa fa-pencil fa-fw'></i>
                                                             Modify
                                                         </a> ";
@@ -341,6 +347,7 @@ $total_amount_due = $subtotal_total;
                                                         id='btn_print'
                                                         href='" . base_url() . "current_transaction/print_charges/{$transaction_id}' class='btn btn-warning'
                                                         target='_blank'
+														title='Print Charge Slip'
                                                     	>
                                                         	<i class='fa fa-print fa-fw'></i>
                                                             Print
@@ -350,43 +357,44 @@ $total_amount_due = $subtotal_total;
 														id='btn_insurance_invoice'
 														href='" . base_url() . "current_transaction/print_insurance_invoice/{$transaction_id}' class='btn btn-warning'
 														target='_blank'
+														title='Print Insurance Invoice'
 													  >
 														<i class='fa fa-heart fa-fw'></i>
 														Insurance Invoice
 													</a> ";
                                                 // }
 
-                                                echo "<button id='btn_send' class='btn btn-info'>
+                                                echo "<button id='btn_send' class='btn btn-info' title='Transfer to other area'>
                                                         <i class='fa fa-arrow-right fa-fw'></i>
                                                         Send To
                                                       </button> ";
 
-												echo "<button id='btn_payment' class='btn btn-info'>
+												echo "<button id='btn_payment' class='btn btn-info' title='Add / View Payment'>
 														<i class='fa fa-credit-card fa-fw'></i>
 														Payment
 													 </button> ";
 
-												echo "<button id='btn_xray' class='btn btn-info'>
+												echo "<button id='btn_xray' class='btn btn-info' title='Show X-Ray Result'>
 													 <i class='fa fa-times-circle fa-fw'></i>
 													 Xray Result
 												  </button> ";
 
-												echo "<button id='btn_lab' class='btn btn-info'>
+												echo "<button id='btn_lab' class='btn btn-info' title='Show Laboratory Result'>
 														<i class='fa fa-flask fa-fw'></i>
 														Lab Result
 													 </button> ";
 
-												echo "<button id='btn_prescription' class='btn btn-info'>
+												echo "<button id='btn_prescription' class='btn btn-info' title='Add / View Prescription' >
 														<i class='fa fa-glass fa-fw'></i>
 														Prescription
 													  </button> ";
 
-												echo "<button id='btn_completed' class='btn btn-info'>
+												echo "<button id='btn_completed' class='btn btn-success' title='Mark this transaction as completed' >
 														<i class='fa fa-check fa-fw'></i>
 														Completed
 													  </button> ";
 
-                                                echo "<button id='btn_transaction_cancel' class='btn btn-danger'>
+                                                echo "<button id='btn_transaction_cancel' class='btn btn-danger' title='Cancel this transaction' >
                                                         <i class='fa fa-times fa-fw'></i>
                                                         Cancel
                                                      </button> ";
@@ -596,6 +604,7 @@ $total_amount_due = $subtotal_total;
 		$this->load->view("current_transaction/modal_send");
 		$this->load->view("current_transaction/modal_prescription");
 		$this->load->view("current_transaction/modal_xray");
+		$this->load->view("current_transaction/modal_history");
 
         $this->load->view('template/footer');
         $this->load->view('template/loading');
@@ -988,7 +997,60 @@ $total_amount_due = $subtotal_total;
         }
     });
 
-    //INSURANCE UPDATE
+	//show history
+	$(document).on("click", "#btn_history", function(){
+		let patient_id = $("#patient_id_update").val();
+		let transaction_id = $("#id_update").val();
+
+		if (patient_id && transaction_id) {
+			$("#loading").modal();
+
+			$.post("<?= base_url(); ?>current_transaction/patient_history", {
+				patient_id: patient_id,
+				transaction_id: transaction_id
+			}, function(data) {
+				$("#loading").modal("hide");
+
+				if (data.indexOf("<!DOCTYPE html>") > -1) {
+					alert("Error: Session Time-Out, You must login again to continue.");
+					location.reload(true);
+				} else {
+					let result = JSON.parse(data);
+					let tbl = "";
+
+					if (result.success === true) {
+
+						if (result.records && result.records.length > 0) {
+							$.each(result.records, function(i, record) {
+								tbl += `<tr>
+											<td align='center'>${record.transaction_no}</td>
+											<td align='center'>${record.date}</td>
+											<td align='center'>${record.trans_type}</td>
+											<td align='center'>${record.doctor == null ? "" : record.doctor}</td>
+											<td>${record.diagnosis}</td>
+											<td align='center'>${record.status}</td>
+											<td align='center'>
+												<a href='${record.transaction_id}'  target='_blank' class='btn btn-xs btn-info fa fa-forward'> Show Transaction </a>
+											</td>
+										</tr>`;
+							});
+						}else{
+							tbl = "<tr><td colspan='7' align='center'> No Record </td></tr>";
+						}
+
+						$("#tbl_history  tbody").html(tbl);
+						$("#modal_history").modal();
+					}else{
+						bootbox.alert(result.error);
+					}
+				}
+			});
+		}else{
+			bootbox.alert("Critical Error Encountered!");
+		}
+	});
+
+	//INSURANCE UPDATE
     $(document).on("change", "#insurance_id_update", function() {
         let id = $(this).val();
 

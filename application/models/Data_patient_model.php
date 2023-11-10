@@ -260,4 +260,28 @@ class Data_patient_model extends CI_Model
 			throw new Exception("Error: " . $error['message']);
 		}
 	}
+
+	function history($patient_id, $exclude_transaction_id=0){
+		$this->db->select("t.id as transaction_id, LPAD(t.id,5,'0') as transaction_no, t.date, t.diagnosis");
+		$this->db->select("tt.trans_type");
+		$this->db->select("st.status");
+		$this->db->select("CONCAT(d.fname,' ', d.mname,' ', d.lname) as doctor");
+		$this->db->from("transactions t");
+		$this->db->join("trans_types tt", "tt.id = t.trans_type_id", "left");
+		$this->db->join("transaction_status st", "st.id = t.status_id", "left");
+		$this->db->join("user d", "d.id = t.doctor_id", "left");
+		$this->db->where("t.patient_id", $patient_id);
+		$this->db->where("t.status_id >", 2);
+
+		if ($exclude_transaction_id){
+			$this->db->where("t.id !=", $exclude_transaction_id);
+		}
+
+		if ($query = $this->db->get()) {
+			return $query->result();
+		} else {
+			$error = $this->db->error();
+			throw new Exception("Error: " . $error['message']);
+		}
+	}
 }

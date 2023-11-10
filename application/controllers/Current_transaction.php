@@ -459,6 +459,27 @@ class Current_transaction extends CI_Controller
 		}
 	}
 
+	//TRANS HISTORY
+	function patient_history(){
+		$result["success"] = false;
+		$patient_id = $this->input->post("patient_id");
+		$transaction_id = $this->input->post("transaction_id");
+
+		if ($patient_id && $transaction_id){
+			try{
+				$result["success"] = true;
+				$result["records"] = $this->data_patient_model->history($patient_id);
+			}catch(Exception $ex){
+				$result["success"] = false;
+				$result["error"] = $ex->getMessage();
+			}
+		}else{
+			$result["error"] = $this->default_error_msg;
+		}
+
+		echo json_encode($result);
+	}
+
 	//TRANS CONFIRM
 	function confirm()
 	{
@@ -725,36 +746,6 @@ class Current_transaction extends CI_Controller
 			echo $this->default_error_msg;
 		}
 	}
-
-	//TRANS EXPORT
-	// function export_pdf($transaction_id)
-	// {
-	// 	if ($transaction_id) {
-	// 		try {
-	// 			$record = $this->main_model->view($transaction_id, $this->uid);
-
-	// 			if ($record) {
-	// 				$data["transaction_no"] = str_pad($transaction_id, 5, "0", STR_PAD_LEFT);
-	// 				$data["app_name"] = $this->app_name;
-	// 				$data["company_name"] = $this->company_name;
-	// 				$data["company_address"] = $this->company_address;
-	// 				$data["company_contact"] = $this->company_contact;
-	// 				$data["record"] = $record;
-	// 				$data["items"] = $this->item_model->search_by_transaction($transaction_id);
-
-	// 				$this->load->library('Pdf');
-	// 				$this->load->view('pdf/export_to_pdf', $data);
-	// 			} else {
-	// 				$this->session->set_flashdata("error", "Error: Request no. REQ-" . str_pad($transaction_id, 5, "0", STR_PAD_LEFT) . " is unavailable!");
-	// 				redirect(base_url() . "current_transaction");
-	// 			}
-	// 		} catch (Exception $ex) {
-	// 			echo $ex->getMessage();
-	// 		}
-	// 	} else {
-	// 		echo $this->default_error_msg;
-	// 	}
-	// }
 
 	//TRANS or SEND TO LOCATION
 	function transfer(){

@@ -250,4 +250,6 @@ class Data_patient extends CI_Controller
 			echo $this->default_error_msg;
 		}
 	}
+
+
 }
