@@ -27,53 +27,65 @@
 
                     <div class="row" style="margin-bottom: 0.5em;">
                         <div class="col-md-4">
-                            <label for="series_no_update">Series No.</label>
+                            <label for="series_no_item_update">Series No.</label>
                             <input type="text" id="series_no_item_update" name="series_no_item_update"
                                 class="field_item_update form-control" disabled />
                         </div>
-                        <div class="col-md-4">
-                            <label for="status_update">Status</label>
+						<div class="col-md-4">
+                            <label for="category_item_update">Category</label>
+                            <input type="text" id="category_item_update" name="category_item_update"
+                                class="field_item_update form-control" disabled />
+                        </div>
+						<div class="col-md-4">
+                            <label for="status_item_update">Status</label>
                             <input type="text" id="status_item_update" name="status_item_update"
                                 class="field_item_update form-control" disabled />
                         </div>
                     </div>
-
+					<div class="row" style="margin-bottom: 0.5em;">
+                        <div class="col-md-12">
+                            <label for="product_item_update">PRODUCT / SERVICES</label>
+                            <input type="text" id="product_item_update" name="product_item_update"
+                                class="field_item_update form-control" readonly />
+                        </div>
+                    </div>
+					<hr />
                     <div class="row" style="margin-bottom: 0.5em;">
                         <div class="col-md-4">
                             <label for="qty_item_update">QTY <span class="text-danger">*</span></label>
                             <input type="number" id="qty_item_update" name="qty_item_update"
-                                class="field_item_update form-control" required />
+                                class="field_item_update numeric form-control" />
                         </div>
-                        <div class="col-md-4">
-                            <label for="uom_id_item_update">UOM <span class="text-danger">*</span></label>
-                            <select id="uom_id_item_update" name="uom_id_item_update"
-                                class="field_item_update form-control text-center">
-                                <?php
-                                    foreach($uoms as $key => $value){
-                                        echo "<option value='{$value->id}'>{$value->name}</option>";
-                                    }
-                                ?>
-                            </select>
+						<div class="col-md-4">
+                            <label for="price_item_update">UNIT PRICE <span class="text-danger">*</span></label>
+                            <input type="number" id="price_item_update" name="price_item_update"
+                                class="field_item_update numeric form-control"  />
                         </div>
-                        <div class="col-md-4">
-                            <label for="type_id_item_update">TYPE <span class="text-danger">*</span></label>
-                            <select id="type_id_item_update" name="type_id_item_update"
-                                class="field_item_update form-control text-center">
-                                <?php
-                                    foreach($types as $key => $value){
-                                        echo "<option value='{$value->id}'>{$value->name}</option>";
-                                    }
-                                ?>
-                            </select>
+						<div class="col-md-4">
+                            <label for="amount_item_update">AMOUNT</label>
+                            <input type="number" id="amount_item_update" name="amount_item_update"
+                                class="field_item_update numeric form-control" readonly />
                         </div>
                     </div>
-                    <div class="row" style="margin-bottom: 0.5em;">
-                        <div class="col-md-12">
-                            <label for="description_item_update">DESCRIPTION <span class="text-danger">*</span></label>
-                            <textarea id="description_item_update" name="description_item_update"
-                                class="field_item_update form-control" required></textarea>
+
+					<div class="row" style="margin-bottom: 0.5em;">
+                        <div class="col-md-4">
+                            <label for="commission_amount_item_update">COMMISSION </label>
+                            <input type="number" id="commission_amount_item_update" name="commission_amount_item_update"
+                                class="field_item_update numeric form-control"  />
+                        </div>
+						<div class="col-md-4">
+                            <label for="insurance_amount_item_update">INSURANCE</label>
+                            <input type="number" id="insurance_amount_item_update" name="insurance_amount_item_update"
+                                class="field_item_update numeric form-control"  />
+                        </div>
+						<div class="col-md-4">
+                            <label for="total_item_update">TOTAL</label>
+                            <input type="number" id="total_item_update" name="total_item_update"
+                                class="field_item_update numeric form-control" readonly />
                         </div>
                     </div>
+
                 </form>
             </div>
 

@@ -453,12 +453,12 @@ $total_amount_due = $subtotal_total;
                                                                 //pending
                                                                 $tr_class = intval($value->status_id) == 2 ? "info" : "warning";
                                                                 $action = " <span>
-                                                                                <i
-                                                                                    id='{$value->id}'
-                                                                                    class='btn_item_cancel btn btn-xs btn-danger btn-xs fa  fa-times'
-                                                                                    title='Delete'
-                                                                                    data-togle='tooltip'
-                                                                                ></i>
+																				<i
+																					id='{$value->id}'
+																					class='btn_item_modify btn btn-xs btn-warning btn-xs fa  fa-pencil'
+																					title='Edit'
+																					data-toggle='tooltip'
+																				></i>
 																				<i
 																					id='{$value->id}'
 																					class='btn_item_working btn btn-xs btn-info fa  fa-arrow-right'
@@ -471,6 +471,12 @@ $total_amount_due = $subtotal_total;
 																					title='Mark as Completed'
 																					data-toggle='tooltip'
 																				></i>
+																				<i
+                                                                                    id='{$value->id}'
+                                                                                    class='btn_item_cancel btn btn-xs btn-danger btn-xs fa  fa-times'
+                                                                                    title='Delete'
+                                                                                    data-toggle='tooltip'
+                                                                                ></i>
                                                                             </span>";
                                                             } else if (intval($value->status_id) == 4) {
                                                                 //completed
@@ -500,7 +506,7 @@ $total_amount_due = $subtotal_total;
                                                             echo "  <td class='text-center'>{$status}</td>";
 
 															if($transaction_status_id > 1) {
-																echo "  <td class='text-center'>{$action}</td>";
+																echo "  <td align='center' class='text-center'>{$action}</td>";
 															}else{
 																echo "<td></td>";
 															}
@@ -734,10 +740,10 @@ $total_amount_due = $subtotal_total;
                     //pending
                     tr_class = parseInt(item.status_id) == 2 ? "info" : "warning";
                     action = `<span>
-                                <i
+								<i
                                     id = '${item.id}'
-                                    class = 'btn_item_cancel btn btn-xs btn-danger fa fa-times'
-                                    title = 'Delete'
+                                    class = 'btn_item_modify btn btn-xs btn-warning fa fa-pencil'
+                                    title = 'Edit'
                                     data-toggle = 'tooltip'
                                 ></i>
 								<i
@@ -752,6 +758,12 @@ $total_amount_due = $subtotal_total;
 									title='Mark as Completed'
 									data-toggle='tooltip'
 								></i>
+								<i
+                                    id = '${item.id}'
+                                    class = 'btn_item_cancel btn btn-xs btn-danger fa fa-times'
+                                    title = 'Delete'
+                                    data-toggle = 'tooltip'
+                                ></i>
                               </span>`;
 
                 } else if (parseInt(item.status_id) == 4) {
@@ -775,7 +787,7 @@ $total_amount_due = $subtotal_total;
                                 <td class='text-center'>${item.status}</td>`;
 
 				<?php if($transaction_status_id > 1){ ?>
-                	list +=     `<td class='text-center'>${action}</td>`;
+                	list +=     `<td align='center' class='text-center'>${action}</td>`;
 				<?php } else { ?>
 					list += 	`<td></td>`;
 				<?php } ?>
@@ -2082,123 +2094,146 @@ $total_amount_due = $subtotal_total;
     });
 
     //ITEM MODIFY
-    // $(document).on("click", ".btn_item_modify", function(e) {
-    //     e.preventDefault();
-    //     let id = $(this).attr("id");
+    $(document).on("click", ".btn_item_modify", function(e) {
+        e.preventDefault();
+        let id = $(this).attr("id");
 
-    //     if (id) {
-    //         $.post("<?= base_url(); ?>current_transaction/item_search_row", {
-    //             id: id
-    //         }, function(data) {
+        if (id) {
+            $.post("<?= base_url(); ?>current_transaction/item_search_row", {
+                id: id
+            }, function(data) {
 
-    //             if (data.indexOf("<!DOCTYPE html>") > -1) {
-    //                 alert("Error: Session Time-Out, You must login again to continue.");
-    //                 location.reload(true);
-    //             } else if (data.indexOf("Error: ") > -1) {
-    //                 bootbox.alert(data);
-    //             } else {
-    //                 var result = JSON.parse(data);
+                if (data.indexOf("<!DOCTYPE html>") > -1) {
+                    alert("Error: Session Time-Out, You must login again to continue.");
+                    location.reload(true);
+                } else if (data.indexOf("Error: ") > -1) {
+                    bootbox.alert(data);
+                } else {
+                    var result = JSON.parse(data);
 
-    //                 //set the data to the field
-    //                 $.each(result, function(key, val) {
-    //                     if ($("#" + key + "_item_update")) {
-    //                         $("#" + key + "_item_update").val(val);
-    //                     }
-    //                 });
+                    //set the data to the field
+                    $.each(result, function(key, val) {
+                        if ($("#" + key + "_item_update")) {
+                            $("#" + key + "_item_update").val(val);
+                        }
+                    });
 
-    //                 $("#modal_modify").modal();
+                    $("#modal_modify").modal();
 
-    //                 $("#modal_modify").on("shown.bs.modal", function() {
-    //                     $("#qty_item_update").select().focus();
-    //                 });
-    //             }
-    //         });
+                    $("#modal_modify").on("shown.bs.modal", function() {
+                        $("#qty_item_update").select().focus();
+                    });
+                }
+            });
 
-    //     } else {
-    //         bootbox.alert("Error: Critical Error Encountered!");
-    //     }
-    // });
+        } else {
+            bootbox.alert("Error: Critical Error Encountered!");
+        }
+    });
 
-    // //ITEM UPDATE
-    // $(document).on("keypress", ".field_item_update", function(e) {
-    //     if (e.which == 13) {
-    //         $("#btn_item_update").trigger("click");
-    //     }
-    // });
+	//ITEM TOTAL
+	$(document).on("keyup", "#qty_item_update, #price_item_update, #commission_amount_item_update, #insurance_amount_item_update", function(){
+		let qty = Number($("#qty_item_update").val());
+		let price = Number($("#price_item_update").val());
+		let commission_amount = Number($("#commission_amount_item_update").val());
+		let insurance_amount = Number($("#insurance_amount_item_update").val());
 
-    // $(document).on("click", "#btn_item_update", function(e) {
-    //     let transaction_id = $("#transaction_id_item_update").val();
-    //     let id = $("#id_item_update").val();
+		let amount = qty * price;
+		let deduction = commission_amount + insurance_amount;
+		let total = amount - deduction;
 
-    //     if (transaction_id) {
-    //         let qty = $("#qty_item_update").val();
-    //         let uom_id = $("#uom_id_item_update").val();
-    //         let type_id = $("#type_id_item_update").val();
-    //         let description = $("#description_item_update").val();
+		$("#amount_item_update").val(amount.toFixed(2));
+		$("#total_item_update").val(total.toFixed(2));
+	});
 
-    //         if (qty > 0 && uom_id && type_id && description) {
-    //             $("#modal_modify .modal_error, #modal_modify .modal_button, #modal_modify .modal-body").hide();
-    //             $("#modal_modify .modal_waiting").show();
+	$(document).on("change", "#qty_item_update, #price_item_update, #commission_amount_item_update, #insurance_amount_item_update", function(){
+		let qty = Number($("#qty_item_update").val());
+		let price = Number($("#price_item_update").val());
+		let commission_amount = Number($("#commission_amount_item_update").val());
+		let insurance_amount = Number($("#insurance_amount_item_update").val());
 
-    //             var formData = new FormData($("#frm_item_update")[0]);
+		let amount = qty * price;
+		let deduction = commission_amount + insurance_amount;
+		let total = amount - deduction;
 
-    //             $.ajax({
-    //                 type: "POST",
-    //                 url: "<?= base_url(); ?>current_transaction/item_update",
-    //                 data: formData,
-    //                 enctype: "multipart/form-data",
-    //                 processData: false, // tell jQuery not to process the data
-    //                 contentType: false, // tell jQuery not to set contentType
-    //                 dataType: "json",
-    //                 //encode: true,
-    //             }).done(function(data) {
+		$("#amount_item_update").val(amount.toFixed(2));
+		$("#total_item_update").val(total.toFixed(2));
+	});
 
-    //                 $('#modal_modify .modal_error, #modal_modify .modal_waiting').hide();
-    //                 $('#modal_modify .modal_button, #modal_modify .modal-body').show();
+    //ITEM UPDATE
+    $(document).on("keypress", ".field_item_update", function(e) {
+        if (e.which == 13) {
+            $("#btn_item_update").trigger("click");
+        }
+    });
 
-    //                 if (!data.success) {
-    //                     $("#modal_modify .modal_error_msg").text(data.errors.error);
-    //                     $("#modal_modify  .modal_error").stop(true, true).show().delay(15000).fadeOut(
-    //                         "slow");
-    //                     $("#qty_item_update").select().focus();
-    //                 } else {
-    //                     //no error
-    //                     if (data) {
+    $(document).on("click", "#btn_item_update", function(e) {
+		let transaction_id = $("#transaction_id_item_update").val();
+        let id = $("#id_item_update").val();
+		let this_modal = "#modal_modify";
 
-    //                         $("#tbl_list tbody").html(item_list(data.result));
+        if (id && transaction_id) {
 
-    //                         //clear fields
-    //                         $(".field_item_update").val("");
+			$(this_modal + " .modal_error").hide();
+			$(this_modal + " .modal_button").hide();
+			$(this_modal + " .modal_body").hide();
+            $(this_modal + " .modal_waiting").show();
 
-    //                         $('[data-toggle="tooltip"]').tooltip({
-    //                             html: true
-    //                         });
-    //                     }
+            var formData = new FormData($("#frm_item_update")[0]);
 
-    //                     $("#modal_modify").modal("hide")
-    //                 }
-    //             }).fail(function(data) {
-    //                 alert(
-    //                     "Error: Server Error or Session Time-Out!, Please try again or reload the page!"
-    //                 );
-    //                 $('#modal_modify .modal_error, #modal_modify .modal_waiting').hide();
-    //                 $('#modal_modify .modal_button, #modal_modify .modal-body').show();
-    //             });
+            $.ajax({
+                type: "POST",
+                url: "<?= base_url(); ?>current_transaction/item_update",
+                data: formData,
+                enctype: "multipart/form-data",
+                processData: false, // tell jQuery not to process the data
+                contentType: false, // tell jQuery not to set contentType
+                dataType: "json",
+                //encode: true,
+            }).done(function(data) {
 
-    //             e.preventDefault();
+                $(this_modal + " .modal_error").hide();
+				$(this_modal + " .modal_waiting").hide();
+				$(this_modal + " .modal_button").show();
+				$(this_modal + " .modal_body").show();
 
-    //         } else {
-    //             $("#modal_modify .modal_error_msg").text("Error: Fields with * are required!");
-    //             $("#modal_modify .modal_error").stop(true, true).show().delay(15000).fadeOut("slow");
-    //             $("#qty_item_update").select().focus();
-    //         }
-    //     } else {
-    //         $("#modal_modify .modal_error_msg").text("Error: Critical Error Encountered!");
-    //         $("#modal_modify .modal_error").stop(true, true).show().delay(15000).fadeOut("slow");
-    //         $("#qty_item_update").select().focus();
-    //     }
+				if (data.success === true) {
+					$("#tbl_list tbody").html(item_list(data.records));
+					$("#tbl_list tbody").append(new_entry_field);
+					$("#product_id_new").trigger("select", "focus");
 
-    // });
+                    $('.chosen-select').chosen({
+                        allow_single_deselect: true
+                    });
+
+					display_total();
+					display_logs(data.logs);
+
+					$("#modal_modify").modal("hide")
+
+				} else {
+					$(this_modal + " .modal_error_msg").text(data.error);
+                    $(this_modal + " .modal_error").stop(true, true).show().delay(15000).fadeOut("slow");
+                    $("#qty_item_update").select().focus();
+				}
+
+            }).fail(function(data) {
+                alert("Error: Server Error or Session Time-Out!, Please try again or reload the page!");
+                $(this_modal + " .modal_error").hide();
+				$(this_modal + " .modal_waiting").hide();
+				$(this_modal + " .modal_button").show();
+				$(this_modal + " .modal-body").show();
+            });
+
+            e.preventDefault();
+
+        } else {
+            $(this_modal + " .modal_error_msg").text("Error: Critical Error Encountered!");
+            $(this_modal + " .modal_error").stop(true, true).show().delay(15000).fadeOut("slow");
+            $("#qty_item_update").select().focus();
+        }
+
+    });
 
     // //ITEM INFO
     // $(document).on("click", ".btn_item_info", function(e) {

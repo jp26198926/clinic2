@@ -1169,52 +1169,35 @@ class Current_transaction extends CI_Controller
 	//ITEM UPDATE
 	function item_update()
 	{
+		$result["success"] = false;
 		$errors = [];
 		$data = [];
 
 		$form_data = $this->input->post();
 		$transaction_id = !empty($form_data["transaction_id_item_update"]) ? intval($form_data["transaction_id_item_update"]) : 0;
 		$id = !empty($form_data["id_item_update"]) ? intval($form_data["id_item_update"]) : 0;
-		$qty = !empty($form_data["qty_item_update"]) ? intval($form_data["qty_item_update"]) : 0;
-		$uom_id = !empty($form_data["uom_id_item_update"]) ? intval($form_data["uom_id_item_update"]) : 0;
-		$type_id = !empty($form_data["type_id_item_update"]) ? intval($form_data["type_id_item_update"]) : 0;
-		$description = !empty($form_data["description_item_update"]) ? $form_data["description_item_update"] : "";
 
 		if ($transaction_id && $id) {
-			if ($qty && $uom_id && $type_id && $description) {
-				try {
-					$save = $this->item_model->update($id, $form_data, $this->uid);
+			try {
+				$save = $this->item_model->update($id, $form_data, $this->uid);
 
-					if ($save) {
-						//write to log
-						$log_remarks = str_pad($id, 5, "0", STR_PAD_LEFT) . " : {$qty} x {$description}";
-						$this->shared_model->write_to_log("Update Item", $this->uid, $transaction_id, 0, "", "", $log_remarks);
-
-						//display result
-						$result = $this->item_model->search_by_transaction($transaction_id);
-						$data["result"] = $result;
-					} else {
-						$errors["error"] = "Error: Saving Failed, Please Try Again!";
-					}
-				} catch (Exception $ex) {
-					$errors["error"] = $ex->getMessage();
+				if ($save) {
+					//display result
+					$result["records"] = $this->item_model->search_by_transaction($transaction_id);
+					$result["logs"] = $this->shared_model->get_logs($transaction_id);
+					$result["success"] = true;
+				} else {
+					$result["error"] = "Error: Saving Failed, Please Try Again!";
 				}
-			} else {
-				$errors["error"] = "Error: All fields with * are required!";
+			} catch (Exception $ex) {
+				$result["error"] = $ex->getMessage();
 			}
+
 		} else {
-			$errors["error"] = "Error: Critical Error Encountered!";
+			$result["error"] = "Error: Critical Error Encountered!";
 		}
 
-
-		if (!empty($errors)) {
-			$data["success"] = false;
-			$data["errors"] = $errors;
-		} else {
-			$data["success"] = true;
-		}
-
-		echo json_encode($data);
+		echo json_encode($result);
 	}
 
 	//ITEM CANCEL
