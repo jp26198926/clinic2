@@ -27,6 +27,10 @@
                 <div class="row" style="margin-bottom:1em;">
                     <div class="col-md-2 text-right">Attachment</div>
                     <div class="col-md-8">
+						<?php
+							if (intval($transaction_status_id) == 3) {
+						?>
+
                         <form id="frm_xray_attachment_add" name="frm_xray_attachment_add"
                             enctype="multipart/form-data">
                             <input type="file"
@@ -36,6 +40,8 @@
 								multiple
 							/>
 						</form>
+
+						<?php } ?>
 
                         <div id="xray_attachment_list" style="margin-top:0.5em;">
                             <?php

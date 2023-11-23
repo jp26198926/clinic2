@@ -77,7 +77,8 @@ class Payment_model extends CI_Model
 			"tender_amount" => $tender_amount,
 			"change_amount" => $change_amount,
 			"reference" => $reference,
-			"created_by" => $current_user
+			"created_by" => $current_user,
+			"status_id" => 4 //completed
 		);
 
 		$this->db->trans_start();

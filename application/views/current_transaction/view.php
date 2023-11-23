@@ -323,15 +323,6 @@ $total_amount_due = $subtotal_total;
                                                 </button> ";
 
                                             if ($transaction_status_id >= 2) { //draft
-                                                //echo "<button id='btn_package' class='btn btn-info'>Add Package</button> ";
-
-                                                //if (count($items) > 0) {
-                                                // if ($transaction_status_id == 2) { //draft
-                                                //     echo "<a id='btn_confirm' class='btn btn-primary'>
-                                                //             <i class='fa fa-check fa-fw'></i>
-                                                //             Confirm
-                                                //         </a> ";
-                                                // }
 
 												echo "<a
 														id='btn_modify'
@@ -449,7 +440,7 @@ $total_amount_due = $subtotal_total;
                                                             if (intval($value->status_id) == 1) {
                                                                 //cancelled
                                                                 $tr_class = "danger";
-                                                            } else if (intval($value->status_id) == 2 || intval($value->status_id) == 3) {
+                                                            } else if ($transaction_status_id >= 2 && intval($value->status_id) == 2 || intval($value->status_id) == 3) {
                                                                 //pending
                                                                 $tr_class = intval($value->status_id) == 2 ? "info" : "warning";
                                                                 $action = " <span>
@@ -707,6 +698,8 @@ $total_amount_due = $subtotal_total;
     }
 
     function item_list(items) {
+		//let transaction_id = $("#id_update").val();
+		let transaction_status_id = <?= $transaction_status_id; ?>;
         let list = ``;
 
 		subtotal_amount = 0;
@@ -736,7 +729,7 @@ $total_amount_due = $subtotal_total;
                     //cancelled
                     tr_class = "danger";
 
-                } else if (parseInt(item.status_id) == 2 || parseInt(item.status_id) == 3) {
+                } else if ((item.status_id) == 2 || parseInt(item.status_id) == 3) {
                     //pending
                     tr_class = parseInt(item.status_id) == 2 ? "info" : "warning";
                     action = `<span>
@@ -1753,23 +1746,27 @@ $total_amount_due = $subtotal_total;
         let transaction_id = $("#id_update").val();
 
         if (transaction_id){
-            $("#loading").modal();
+			bootbox.confirm("Are you sure you want to mark this Transaction as completed?", function(result) {
+				if (result) {
+					$("#loading").modal();
 
-            $.post("<?= base_url(); ?>current_transaction/complete", {transaction_id: transaction_id}, function(data) {
-				$("#loading").modal("hide");
+					$.post("<?= base_url(); ?>current_transaction/complete", {transaction_id: transaction_id}, function(data) {
+						$("#loading").modal("hide");
 
-				if (data.indexOf("<!DOCTYPE html>") > -1) {
-					alert("Error: Session Time-Out, You must login again to continue.");
-					location.reload(true);
-				}else{
-					let result = JSON.parse(data);
+						if (data.indexOf("<!DOCTYPE html>") > -1) {
+							alert("Error: Session Time-Out, You must login again to continue.");
+							location.reload(true);
+						}else{
+							let result = JSON.parse(data);
 
-					if (result.success == true) {
-						$("#loading").modal();
-                        location.reload(true);
-					}else{
-						bootbox.alert(result.error);
-					}
+							if (result.success == true) {
+								$("#loading").modal();
+								location.reload(true);
+							}else{
+								bootbox.alert(result.error);
+							}
+						}
+					});
 				}
 			});
         }else{

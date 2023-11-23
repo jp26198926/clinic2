@@ -219,7 +219,7 @@ class Custom_function
 			}
 			$cents_text = 'and ' . $cents_text . ' ' . $cent_word;
 		} else {
-			$cents_text = $cent_word;
+			$cents_text = ''; //$cent_word;
 		}
 
 		// Combine dollars, currency word, and cents
