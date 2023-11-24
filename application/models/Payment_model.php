@@ -35,7 +35,7 @@ class Payment_model extends CI_Model
 		}
 	}
 
-	function get_payment_list($transaction_id){
+	function get_payment_list($transaction_id, $classification="Charges"){ //condition=Charges or Insurance
 		$this->db->select("p.id, p.date, p.amount, p.reference, p.status_id");
 		$this->db->select("CONCAT('PMT',LPAD(p.id,3,'0')) as payment_no");
 		$this->db->select("t.payment_type");
@@ -45,6 +45,7 @@ class Payment_model extends CI_Model
 		$this->db->join("user e", "e.id=p.created_by", "left");
 		$this->db->join("payment_types t", "t.id=p.payment_type_id", "left");
 		$this->db->join("payment_status s", "s.id=p.status_id", "left");
+		$this->db->where("p.classification", $classification);
 		$this->db->where("p.transaction_id", $transaction_id);
 
 		if ($query = $this->db->get()) {
@@ -64,7 +65,8 @@ class Payment_model extends CI_Model
 		$tender_amount,
 		$change_amount,
 		$reference,
-		$current_user=0
+		$current_user=0,
+		$classification="Charges"
 	){
 		$payment_id = 0;
 
@@ -78,6 +80,7 @@ class Payment_model extends CI_Model
 			"change_amount" => $change_amount,
 			"reference" => $reference,
 			"created_by" => $current_user,
+			"classification" => $classification,
 			"status_id" => 4 //completed
 		);
 
@@ -91,19 +94,22 @@ class Payment_model extends CI_Model
 		$this->db->reset_query();
 		$this->db->select_sum('amount');
 		$this->db->where("status_id > 1");
+		$this->db->where("classification", $classification);
 		$this->db->where("transaction_id", $transaction_id);
 		$query = $this->db->get('payments');
 		$total_paid = $query->row()->amount;
 
-		//update transaction's total
-		$this->db->reset_query();
-		$this->db->set("total_paid", $total_paid);
-		$this->db->where("id", $transaction_id);
-		$this->db->update("transactions");
+		if (strtolower($classification) === "charges"){
+			//update transaction's total
+			$this->db->reset_query();
+			$this->db->set("total_paid", $total_paid);
+			$this->db->where("id", $transaction_id);
+			$this->db->update("transactions");
+		}
 
 		// 	//write log - transaction
 		$log_data = array(
-			"action" => "Add Payment",
+			"action" => "Add Payment - " . $classification,
 			"created_by" => $current_user,
 			"transaction_id" => $transaction_id,
 			"item_id" => 0,
@@ -125,7 +131,7 @@ class Payment_model extends CI_Model
 		}
 	}
 
-	function cancel($id, $transaction_id, $current_user = 0){
+	function cancel($id, $transaction_id, $current_user = 0, $classification="Charges"){
 		$data = array(
 			"deleted_at" => date('Y-m-d H:i:s'),
 			"deleted_by" => $current_user,
@@ -142,20 +148,22 @@ class Payment_model extends CI_Model
 		$this->db->reset_query();
 		$this->db->select_sum('amount');
 		$this->db->where("status_id > 1");
+		$this->db->where("classification", $classification);
 		$this->db->where("transaction_id", $transaction_id);
 		$query = $this->db->get('payments');
 		$total_paid = $query->row()->amount;
 
-		//update transaction's total
-		$this->db->reset_query();
-		$this->db->set("total_paid", $total_paid);
-		$this->db->where("id", $transaction_id);
-		$this->db->update("transactions");
-
+		if (strtolower($classification) === "charges") {
+			//update transaction's total
+			$this->db->reset_query();
+			$this->db->set("total_paid", $total_paid);
+			$this->db->where("id", $transaction_id);
+			$this->db->update("transactions");
+		}
 
 		//write log - transaction
 		$log_data = array(
-			"action" => "Cancel Payment",
+			"action" => "Cancel Payment - " . $classification,
 			"created_by" => $current_user,
 			"transaction_id" => $transaction_id,
 			"item_id" => 0,

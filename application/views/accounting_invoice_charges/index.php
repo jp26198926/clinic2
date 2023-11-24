@@ -62,10 +62,10 @@
                                                 Go!
                                             </button>
 
-                                            <button id='btn_asearch' class="btn btn-sm btn-info" type="button"
+                                            <!-- <button id='btn_asearch' class="btn btn-sm btn-info" type="button"
                                                 title='Advance Search' data-toggle='tooltip'>
                                                 <i class="ace-icon fa fa-search-plus bigger-110"></i>
-                                            </button>
+                                            </button> -->
 
                                         </span>
                                     </div>
