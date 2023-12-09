@@ -53,16 +53,20 @@ class Item_model extends CI_Model
 
 			//get the current totals of all items in this transaction
 			$this->db->reset_query();
-			$this->db->select_sum('total');
+			$this->db->select_sum("total");
+			$this->db->select_sum("insurance_amount");
 			$this->db->where("status_id > 1");
 			$this->db->where("transaction_id", $transaction_id);
 			$query = $this->db->get('items');
-			$total = $query->row()->total;
+			$row = $query->row();
+			$total = $row->total;
+			$insurance_amount = $row->insurance_amount;
 
 			//update transaction's total
 			$this->db->reset_query();
 			$this->db->set("subtotal", $total); //tax based amount
 			$this->db->set("total", $total);
+			$this->db->set("insurance_total", $insurance_amount);
 			$this->db->where("id", $transaction_id);
 			$this->db->update("transactions");
 
@@ -116,16 +120,20 @@ class Item_model extends CI_Model
 
 			//get the current totals of all items in this transaction
 			$this->db->reset_query();
-			$this->db->select_sum('total');
+			$this->db->select_sum("total");
+			$this->db->select_sum("insurance_amount");
 			$this->db->where("status_id > 1");
 			$this->db->where("transaction_id", $data['transaction_id']);
 			$query = $this->db->get('items');
-			$total = $query->row()->total;
+			$row = $query->row();
+			$total = $row->total;
+			$insurance_amount = $row->insurance_amount;
 
 			//update transaction's total
 			$this->db->reset_query();
 			$this->db->set("subtotal", $total); //tax based amount
 			$this->db->set("total", $total);
+			$this->db->set("insurance_total", $insurance_amount);
 			$this->db->where("id", $data['transaction_id']);
 			$this->db->update("transactions");
 
@@ -182,16 +190,20 @@ class Item_model extends CI_Model
 
 			//get the current totals of all items in this transaction
 			$this->db->reset_query();
-			$this->db->select_sum('total');
+			$this->db->select_sum("total");
+			$this->db->select_sum("insurance_amount");
 			$this->db->where("status_id > 1");
 			$this->db->where("transaction_id", $transaction_id);
 			$query = $this->db->get('items');
-			$total = $query->row()->total;
+			$row = $query->row();
+			$total = $row->total;
+			$insurance_amount = $row->insurance_amount;
 
 			//update transaction's total
 			$this->db->reset_query();
 			$this->db->set("subtotal", $total); //tax based amount
 			$this->db->set("total", $total);
+			$this->db->set("insurance_total", $insurance_amount);
 			$this->db->where("id", $transaction_id);
 			$this->db->update("transactions");
 
@@ -247,16 +259,22 @@ class Item_model extends CI_Model
 
 			//get the current totals of all items in this transaction
 			$this->db->reset_query();
-			$this->db->select_sum('total');
+			$this->db->select_sum("total");
+			$this->db->select_sum("insurance_amount");
 			$this->db->where("status_id > 1");
 			$this->db->where("transaction_id", $transaction_id);
 			$query = $this->db->get('items');
-			$total = $query->row()->total;
+			$row = $query->row();
+			$total = $row->total;
+			$insurance_amount = $row->insurance_amount;
+
+
 
 			//update transaction's total
 			$this->db->reset_query();
 			$this->db->set("subtotal", $total); //tax based amount
 			$this->db->set("total", $total);
+			$this->db->set("insurance_total", $insurance_amount);
 			$this->db->where("id", $transaction_id);
 			$this->db->update("transactions");
 
@@ -313,16 +331,20 @@ class Item_model extends CI_Model
 
 			//get the current totals of all items in this transaction
 			$this->db->reset_query();
-			$this->db->select_sum('total');
+			$this->db->select_sum("total");
+			$this->db->select_sum("insurance_amount");
 			$this->db->where("status_id > 1");
 			$this->db->where("transaction_id", $transaction_id);
 			$query = $this->db->get('items');
-			$total = $query->row()->total;
+			$row = $query->row();
+			$total = $row->total;
+			$insurance_amount = $row->insurance_amount;
 
 			//update transaction's total
 			$this->db->reset_query();
 			$this->db->set("subtotal", $total); //tax based amount
 			$this->db->set("total", $total);
+			$this->db->set("insurance_total", $insurance_amount);
 			$this->db->where("id", $transaction_id);
 			$this->db->update("transactions");
 

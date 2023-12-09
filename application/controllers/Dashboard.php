@@ -59,6 +59,7 @@ class Dashboard extends CI_Controller
 
 					//load needed models for this page
 					$this->load->model('administration_m', 'adm');
+					$this->load->model('transaction_model');
 				}
 			}
 		} catch (Exception $ex) {
@@ -92,5 +93,26 @@ class Dashboard extends CI_Controller
 		//} else {
 		//	redirect(base_url() . 'authentication');
 		//}
+	}
+
+	function get_summary()
+	{
+		$dt_from = $this->input->post('dt_from');
+		$dt_to = $this->input->post('dt_to');
+		$result["success"] = false;
+
+		try {
+			$summary = $this->transaction_model->get_summary($dt_from, $dt_to);
+			if ($summary) {
+				$result["success"] = true;
+				$result["data"] = $summary;
+			} else {
+				$result["error"] = "No Record Found";
+			}
+		} catch (Exception $e) {
+			$result["error"] = $e->getMessage();
+		}
+
+		echo json_encode($result);
 	}
 }

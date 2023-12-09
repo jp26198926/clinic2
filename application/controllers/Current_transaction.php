@@ -431,7 +431,8 @@ class Current_transaction extends CI_Controller
 						//get total charges
 						$data["total_charges"] = $this->main_model->get_total_charges($transaction_id);
 						//get total paid
-						$data["total_paid"] = $this->main_model->get_total_paid($transaction_id);
+						$total_paid = $this->main_model->get_total_paid($transaction_id);
+						$data["total_paid"] = $total_paid ? $total_paid : 0;
 
 						$data["amount_due"] = $data["total_charges"] - $data["total_paid"];
 
@@ -523,7 +524,8 @@ class Current_transaction extends CI_Controller
 					$data["record"] = $record;
 					$data["items"] = $this->item_model->search_by_transaction($transaction_id);
 					//get total paid
-					$data["total_paid"] = $this->main_model->get_total_paid($transaction_id);
+					$total_paid = $this->main_model->get_total_paid($transaction_id);
+					$data["total_paid"] = $total_paid ? $total_paid : 0;
 
 					$log_remarks = "";
 					$this->shared_model->write_to_log("Print Charges", $this->uid, $transaction_id, 0, "", "", $log_remarks);
@@ -559,7 +561,8 @@ class Current_transaction extends CI_Controller
 					$data["record"] = $record;
 					$data["items"] = $this->item_model->search_by_transaction($transaction_id);
 					//get total paid
-					$data["total_paid"] = $this->main_model->get_total_paid($transaction_id);
+					$total_paid = $this->main_model->get_total_paid($transaction_id);
+					$data["total_paid"] = $total_paid ? $total_paid : 0;
 
 					$log_remarks = "";
 					$this->shared_model->write_to_log("Print Insurance Invoice", $this->uid, $transaction_id, 0, "", "", $log_remarks);
@@ -589,6 +592,7 @@ class Current_transaction extends CI_Controller
 				$total_charges = $this->main_model->get_total_charges($transaction_id);
 				//get total paid
 				$total_paid = $this->main_model->get_total_paid($transaction_id);
+				$total_paid = $total_paid ? $total_paid : 0;
 				//get payment history list
 				$payment_list = $this->payment_model->get_payment_list($transaction_id);
 
@@ -643,6 +647,7 @@ class Current_transaction extends CI_Controller
 							$total_charges = $this->main_model->get_total_charges($transaction_id);
 							//get total paid
 							$total_paid = $this->main_model->get_total_paid($transaction_id);
+							$total_paid = $total_paid ? $total_paid : 0;
 
 							$amount_due = $total_charges - $total_paid;
 
@@ -685,6 +690,7 @@ class Current_transaction extends CI_Controller
 					$total_charges = $this->main_model->get_total_charges($transaction_id);
 					//get total paid
 					$total_paid = $this->main_model->get_total_paid($transaction_id);
+					$total_paid = $total_paid ? $total_paid : 0;
 
 					$payment_list = $this->payment_model->get_payment_list($transaction_id);
 
@@ -725,7 +731,8 @@ class Current_transaction extends CI_Controller
 					$data["record"] = $record;
 					$data["items"] = $this->item_model->search_by_transaction($record->transaction_id);
 					//get total paid
-					$data["total_paid"] = $this->main_model->get_total_paid($record->transaction_id);
+					$total_paid = $this->main_model->get_total_paid($record->transaction_id);
+					$data["total_paid"] = $total_paid ? $total_paid : 0;
 
 					$data["amount_paid"] = number_format($record->amount,2,".",",");
 					$data["amount_paid_words"] = $this->cf->number_to_words($record->amount, "Kina", "Toea");

@@ -143,96 +143,96 @@ class Accounting_invoice_charges extends CI_Controller
 		}
 	}
 
-	function advance_search()
-	{
-		$input_data = $this->input->post();
+	// function advance_search()
+	// {
+	// 	$input_data = $this->input->post();
 
-		try {
-			$result = $this->main_model->advance_search($input_data);
-			echo json_encode($result);
-		} catch (Exception $ex) {
-			echo $ex->getMessage();
-		}
-	}
+	// 	try {
+	// 		$result = $this->main_model->advance_search($input_data);
+	// 		echo json_encode($result);
+	// 	} catch (Exception $ex) {
+	// 		echo $ex->getMessage();
+	// 	}
+	// }
 
-	function add()
-	{
-		$data_input = $this->input->post();
+	// function add()
+	// {
+	// 	$data_input = $this->input->post();
 
-		if ($data_input["name"]) {
-			try {
-				$add = $this->main_model->add($data_input, $this->uid);
+	// 	if ($data_input["name"]) {
+	// 		try {
+	// 			$add = $this->main_model->add($data_input, $this->uid);
 
-				if ($add) {
-					$result = $this->main_model->search_by_id($add);
-					echo json_encode($result);
-				} else {
-					echo "Error: Saving Failed, Please Try Again!";
-				}
-			} catch (Exception $ex) {
-				echo $ex->getMessage();
-			}
-		} else {
-			echo "Error: All fields with * are required!";
-		}
-	}
+	// 			if ($add) {
+	// 				$result = $this->main_model->search_by_id($add);
+	// 				echo json_encode($result);
+	// 			} else {
+	// 				echo "Error: Saving Failed, Please Try Again!";
+	// 			}
+	// 		} catch (Exception $ex) {
+	// 			echo $ex->getMessage();
+	// 		}
+	// 	} else {
+	// 		echo "Error: All fields with * are required!";
+	// 	}
+	// }
 
-	function update()
-	{
-		$data_input = $this->input->post();
-		$id = $data_input["id"];
+	// function update()
+	// {
+	// 	$data_input = $this->input->post();
+	// 	$id = $data_input["id"];
 
-		if ($id) {
-			if ($data_input["name"]) {
-				try {
-					$update = $this->main_model->update($id, $data_input, $this->uid);
+	// 	if ($id) {
+	// 		if ($data_input["name"]) {
+	// 			try {
+	// 				$update = $this->main_model->update($id, $data_input, $this->uid);
 
-					if ($update) {
-						$result = $this->main_model->search_by_row($id);
-						echo json_encode($result);
-					} else {
-						echo "Error: Updating User Failed!";
-					}
-				} catch (Exception $ex) {
-					echo $ex->getMessage();
-				}
-			} else {
-				echo "Error: Critical Error Encountered!";
-			}
-		} else {
-			echo "Error: All fields with * are required!";
-		}
-	}
+	// 				if ($update) {
+	// 					$result = $this->main_model->search_by_row($id);
+	// 					echo json_encode($result);
+	// 				} else {
+	// 					echo "Error: Updating User Failed!";
+	// 				}
+	// 			} catch (Exception $ex) {
+	// 				echo $ex->getMessage();
+	// 			}
+	// 		} else {
+	// 			echo "Error: Critical Error Encountered!";
+	// 		}
+	// 	} else {
+	// 		echo "Error: All fields with * are required!";
+	// 	}
+	// }
 
-	function delete()
-	{
-		$id = $this->input->post("id");
-		$reason = $this->input->post("reason");
+	// function delete()
+	// {
+	// 	$id = $this->input->post("id");
+	// 	$reason = $this->input->post("reason");
 
-		if ($id) {
-			if ($reason) {
-				try {
-					$delete = $this->main_model->delete($id, $reason, $this->uid);
-					if ($delete) {
-						try {
-							$result = $this->main_model->search_by_row($id);
-							echo json_encode($result);
-						} catch (Exception $ex) {
-							echo "Error: Successfully deleted but unable to reload the list. Please refresh the page manually";
-						}
-					} else {
-						echo "Error: Unable to delete, Please Try Again!";
-					}
-				} catch (Exception $ex) {
-					echo $ex->getMessage();
-				}
-			} else {
-				echo "Error: Please provide a reason!";
-			}
-		} else {
-			echo $this->default_error_msg;
-		}
-	}
+	// 	if ($id) {
+	// 		if ($reason) {
+	// 			try {
+	// 				$delete = $this->main_model->delete($id, $reason, $this->uid);
+	// 				if ($delete) {
+	// 					try {
+	// 						$result = $this->main_model->search_by_row($id);
+	// 						echo json_encode($result);
+	// 					} catch (Exception $ex) {
+	// 						echo "Error: Successfully deleted but unable to reload the list. Please refresh the page manually";
+	// 					}
+	// 				} else {
+	// 					echo "Error: Unable to delete, Please Try Again!";
+	// 				}
+	// 			} catch (Exception $ex) {
+	// 				echo $ex->getMessage();
+	// 			}
+	// 		} else {
+	// 			echo "Error: Please provide a reason!";
+	// 		}
+	// 	} else {
+	// 		echo $this->default_error_msg;
+	// 	}
+	// }
 
 	function complete()
 	{

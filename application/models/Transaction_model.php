@@ -230,7 +230,7 @@ class Transaction_model extends CI_Model
 		$this->db->join("user d", "d.id=x.deleted_by", "left");
 		$this->db->join("transaction_status s", "s.id=x.status_id", "left");
 		$this->db->join("queues q", "q.id=x.queue_id", "left");
-		$this->db->where("x.created_by", $current_user);
+		//$this->db->where("x.created_by", $current_user);
 		$this->db->order_by('x.id');
 
 		if ($search) {
@@ -297,7 +297,7 @@ class Transaction_model extends CI_Model
 		$this->db->join("user d", "d.id=x.deleted_by", "left");
 		$this->db->join("transaction_status s", "s.id=x.status_id", "left");
 		$this->db->join("queues q", "q.id=x.queue_id", "left");
-		$this->db->where("x.created_by", $current_user);
+		//$this->db->where("x.created_by", $current_user);
 
 
 		foreach ($data_input as $key => $val) {
@@ -662,4 +662,43 @@ class Transaction_model extends CI_Model
 		return $total;
 	}
 
+	function get_summary($dt_from = "", $dt_to = "")
+	{
+		$this->db->select("CASE
+								WHEN status_id = 1 THEN 'CANCELLED'
+								WHEN status_id = 3 THEN 'PENDING'
+								WHEN status_id = 4 THEN 'COMPLETED'
+							END AS label");
+		$this->db->select("COUNT(*) AS data");
+		$this->db->select("CASE
+								WHEN status_id = 1 THEN '#DA5430'
+        						WHEN status_id = 3 THEN '#2091CF'
+        						WHEN status_id = 4 THEN '#68BC31'
+        						ELSE '#000000'
+    						END AS color");
+		$this->db->from("transactions");
+
+		//if both dt from and to are empty then set today's date
+		if ($dt_from === "" && $dt_to === "") {
+			$dt_from = $dt_from ? $dt_from : date("Y-m-d");
+			$dt_to = $dt_to ? $dt_to : date("Y-m-d");
+		}
+
+		if ($dt_from) {
+			$this->db->where("date >=", $dt_from);
+		}
+
+		if ($dt_to) {
+			$this->db->where("date <=", $dt_to);
+		}
+
+		$this->db->group_by('status_id');
+
+		if ($query = $this->db->get()) {
+			return $query->result();
+		} else {
+			$error = $this->db->error();
+			throw new Exception("Error: " . $error['message']);
+		}
+	}
 }
