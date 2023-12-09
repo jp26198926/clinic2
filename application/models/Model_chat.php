@@ -21,6 +21,8 @@ class Model_chat extends CI_Model {
 	
 	function get_latest_message($start_date){
 		
+		if (!$start_date) $start_date=date('Y-m-d');
+		
 		$this->db->select('c.*, CONCAT(u.fname, " ", u.mname, " ", u.lname) as sender');
 		$this->db->from('chat c');
 		$this->db->join('user u','u.id=c.sender_id','left');
@@ -34,7 +36,7 @@ class Model_chat extends CI_Model {
 		}
 	}
 	
-	function send_message($msg="", $current_user){
+	function send_message($msg="", $current_user=0){
 		$data = array(
 			'sender_id' => $current_user,
 			'msg' => $msg
