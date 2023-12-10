@@ -17,15 +17,15 @@ require_once(APPPATH . "controllers/Current_transaction.php");
  * 11 - Pharmacy
  * 12 - ER
  */
-class Location_audiometry extends Current_transaction
+class Location_ecg extends Current_transaction
 {
 	protected $module_permission = array();
 	protected $prefix; //check or update app_details table in db for session_prefix field
 	protected $default_error_msg = "Error: Critical Error Encountered!";
 	protected $role_id;
-	protected $module = "location_audiometry";
-	protected $module_description = "Audiometry";
-	protected $page_name = "Audiometry";
+	protected $module = "location_ecg";
+	protected $module_description = "ECG";
+	protected $page_name = "ECG";
 	protected $parent_menu = "Location";
 	protected $uid = 0;
 	protected $uname;
