@@ -23,9 +23,9 @@ class Location_doctor_office extends Current_transaction
 	protected $prefix; //check or update app_details table in db for session_prefix field
 	protected $default_error_msg = "Error: Critical Error Encountered!";
 	protected $role_id;
-	protected $module = "location_cashier";
-	protected $module_description = "Cashier";
-	protected $page_name = "Cashier";
+	protected $module = "location_doctor_office";
+	protected $module_description = "Doctor's Office";
+	protected $page_name = "Doctor's Office";
 	protected $parent_menu = "Location";
 	protected $uid = 0;
 	protected $uname;
