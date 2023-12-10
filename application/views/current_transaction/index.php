@@ -10,16 +10,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
 
     <?php
-    $this->load->view('template/style');
-    ?>
+	$this->load->view('template/style');
+	?>
 
 </head>
 
 <body class="no-skin">
 
     <?php
-    $this->load->view('template/header');
-    ?>
+	$this->load->view('template/header');
+	?>
 
     <div class="main-container ace-save-state" id="main-container">
         <script type="text/javascript">
@@ -29,16 +29,16 @@
         </script>
 
         <?php
-        $this->load->view('template/sidebar');
-        ?>
+		$this->load->view('template/sidebar');
+		?>
 
         <div class="main-content">
             <div class="main-content-inner">
 
                 <div class="page-content">
                     <?php
-                    $this->load->view('template/ace-settings');
-                    ?>
+					$this->load->view('template/ace-settings');
+					?>
 
                     <div class="row">
                         <div id='page_content' class="col-xs-12">
@@ -70,8 +70,8 @@
                                                 </button>
 
                                                 <?php
-                                                if ($role_id == 1 || $this->custom_function->module_permission("add", $module_permission)) { //admin or has add permission
-                                                ?>
+												if ($role_id == 1 || $this->custom_function->module_permission("add", $module_permission)) { //admin or has add permission
+												?>
 
                                                 <button id='btn_new' class='btn btn-sm btn-success' type='button'
                                                     title='New' data-toggle='tooltip'>
@@ -79,8 +79,8 @@
                                                 </button>
 
                                                 <?php
-                                                }
-                                                ?>
+												}
+												?>
 
                                             </span>
                                     </div>
@@ -133,11 +133,11 @@
         </div><!-- /.main-content -->
 
         <?php
-        $this->load->view('current_transaction/modal_asearch');
+		$this->load->view("current_transaction/modal_asearch");
 
-        $this->load->view('template/footer');
-        $this->load->view('template/loading');
-        ?>
+		$this->load->view("template/footer");
+		$this->load->view("template/loading");
+		?>
 
         <a href="#" id="btn-scroll-up" class="btn-scroll-up btn btn-sm btn-inverse">
             <i class="ace-icon fa fa-angle-double-up icon-only bigger-110"></i>
@@ -146,20 +146,20 @@
 
     <!-- basic scripts -->
     <?php
-    $this->load->view('template/script');
-    ?>
+	$this->load->view('template/script');
+	?>
 
     <script>
     //handle flash messages
     <?php
-        if ($this->session->flashdata('error')) {
-            echo "bootbox.alert('" . $this->session->flashdata('error') . "');";
-        }
+		if ($this->session->flashdata('error')) {
+			echo "bootbox.alert('" . $this->session->flashdata('error') . "');";
+		}
 
-        if ($this->session->flashdata('message')) {
-            echo "bootbox.alert('" . $this->session->flashdata('message') . "');";
-        }
-        ?>
+		if ($this->session->flashdata('message')) {
+			echo "bootbox.alert('" . $this->session->flashdata('message') . "');";
+		}
+		?>
     </script>
 
     <!-- inline scripts related to this page -->
@@ -172,7 +172,7 @@
     function table_buttons(id, status_id = 1) {
         var option = ``;
         option +=
-            `<a href='<?= base_url(); ?>current_transaction/view/${id}' class='btn btn-xs btn-info text-primary fa fa-search' title = 'Show Info' data-toggle='tooltip'></a>`;
+            `<a href='<?= base_url($module); ?>/view/${id}' class='btn btn-xs btn-info text-primary fa fa-search' title = 'Show Info' data-toggle='tooltip'></a>`;
 
         return option;
     }
@@ -253,7 +253,7 @@
                         $('td', row).removeClass('info');
                         $('td', row).removeClass('success');
                         $('td', row).addClass('danger');
-					} else if (data[12] == 3) { //confirm
+                    } else if (data[12] == 3) { //confirm
                         $('td', row).addClass('info');
                         $('td', row).removeClass('danger');
                         $('td', row).removeClass('success');
@@ -386,10 +386,10 @@
 
         $("#loading").modal();
 
-        var svr = "<?= base_url(); ?>current_transaction/search_active";
+        var svr = "<?= base_url($module); ?>/search_active";
 
         if (search) {
-            svr = "<?= base_url(); ?>current_transaction/search?search=" + search;
+            svr = "<?= base_url($module); ?>/search?search=" + search;
         }
 
         $.get(svr, function(data) {
@@ -432,7 +432,7 @@
 
         $.ajax({
             type: "POST",
-            url: "<?= base_url(); ?>current_transaction/advance_search",
+            url: "<?= base_url($module); ?>/advance_search",
             data: formData,
             enctype: "multipart/form-data",
             processData: false, // tell jQuery not to process the data
@@ -468,394 +468,9 @@
 
     //add
     $(document).on("click", "#btn_new", function() {
-		$("#loading").modal();
-        window.location = "<?= base_url(); ?>current_transaction/new"
+        $("#loading").modal();
+        window.location = "<?= base_url($module); ?>/new"
     });
-
-	// $(document).on("click", "#btn_new", function() {
-    //     $("#loading").modal();
-
-    //     $.get("<?= base_url(); ?>current_transaction/create", function(data) {
-    //         //$("#loading").modal("hide");
-
-    //         if (data.indexOf("<!DOCTYPE html>") > -1) {
-    //             alert("Error: Session Time-Out, You must login again to continue.");
-    //             location.reload(true);
-    //         } else if (data.indexOf("Error: ") > -1) {
-    //             bootbox.alert(data);
-    //         } else {
-    //             window.location = "<?= base_url(); ?>current_transaction/view/" + data;
-    //         }
-    //     });
-    // });
-
-
-
-
-
-
-
-    // $(document).on("click", "#btn_save", function(e) {
-
-    //     var lot_no = $("#lot_no_new").val();
-
-    //     if (lot_no) {
-    //         $(".modal_error, .modal_button, .modal-body").hide();
-    //         $(".modal_waiting").show();
-
-    //         var formData = new FormData($("#frm_new")[0]);
-
-    //         $.ajax({
-    //             type: "POST",
-    //             url: "<?= base_url(); ?>current_transaction/add",
-    //             data: formData,
-    //             enctype: "multipart/form-data",
-    //             processData: false, // tell jQuery not to process the data
-    //             contentType: false, // tell jQuery not to set contentType
-    //             dataType: "json",
-    //             //encode: true,
-    //         }).done(function(data) {
-
-    //             $('.modal_error, .modal_waiting').hide();
-    //             $('.modal_button, .modal-body').show();
-
-    //             if (!data.success) {
-    //                 $("#modal_new .modal_error_msg").text(data.errors.error);
-    //                 $("#modal_new  .modal_error").stop(true, true).show().delay(15000).fadeOut("slow");
-    //                 $("#lot_no_new").trigger("select", "focus");
-    //             } else {
-    //                 populate_table("#tbl_list", data.result);
-
-    //                 $("#modal_new").modal("hide");
-    //                 $("[data-toggle='tooltip']").tooltip({
-    //                     html: true
-    //                 });
-    //             }
-    //         }).fail(function(data) {
-    //             alert("Error: Server Error or Session Time-Out!, Please try again or reload the page!");
-    //             $('.modal_error, .modal_waiting').hide();
-    //             $('.modal_button, .modal-body').show();
-    //         });
-
-    //         e.preventDefault();
-
-    //     } else {
-    //         $("#modal_new .modal_error_msg").text("Error: Fields with * are required!");
-    //         $("#modal_new .modal_error").stop(true, true).show().delay(15000).fadeOut("slow");
-    //         $("#lot_no_new").trigger("select", "focus");
-    //     }
-    // });
-
-    // $(document).on("click", ".btn_modify", function(e) {
-    //     e.preventDefault();
-
-    //     var id = $(this).attr("id");
-
-    //     if (id) {
-    //         $("#loading").modal();
-
-    //         var table = $("#tbl_list").DataTable();
-    //         current_row = table.row($(this).parents("tr"));
-    //         current_data = current_row.data();
-
-    //         $.post("<?= base_url(); ?>current_transaction/search_info_row", {
-    //             id: id
-    //         }, function(data) {
-    //             $("#loading").modal("hide");
-
-    //             if (data.indexOf("<!DOCTYPE html>") > -1) {
-    //                 alert("Error: Session Time-Out, You must login again to continue.");
-    //                 location.reload(true);
-    //             } else if (data.indexOf("Error: ") > -1) {
-    //                 bootbox.alert(data);
-    //             } else {
-    //                 var result = JSON.parse(data);
-
-    //                 //set the data to the field
-    //                 $.each(result, function(key, val) {
-    //                     if ($("#" + key + "_update")) {
-    //                         $("#" + key + "_update").val(val);
-    //                     }
-    //                 });
-
-    //                 $("#modal_modify").modal();
-    //             }
-    //         });
-    //     } else {
-    //         bootbox.alert("Error: Critical Error Encountered!");
-    //     }
-    // });
-
-    // $(document).on("keypress", ".txt_field_update", function(e) {
-    //     if (e.which == 13) {
-    //         $("#btn_update").trigger("click");
-    //     }
-    // });
-
-    // $(document).on("click", "#btn_update", function(e) {
-    //     var id = $("#id_update").val();
-
-    //     if (id) {
-
-    //         var lot_no = $("#lot_no_update").val();
-
-    //         if (lot_no) {
-    //             $(".modal_error, .modal_button, .modal-body").hide();
-    //             $(".modal_waiting").show();
-
-    //             var formData = new FormData($("#frm_update")[0]);
-
-    //             $.ajax({
-    //                 type: "POST",
-    //                 url: "<?= base_url(); ?>current_transaction/update",
-    //                 data: formData,
-    //                 enctype: "multipart/form-data",
-    //                 processData: false, // tell jQuery not to process the data
-    //                 contentType: false, // tell jQuery not to set contentType
-    //                 dataType: "json",
-    //                 //encode: true,
-    //             }).done(function(data) {
-
-    //                 $('.modal_error, .modal_waiting').hide();
-    //                 $('.modal_button, .modal-body').show();
-
-    //                 if (!data.success) {
-    //                     $("#modal_modify .modal_error_msg").text(data.errors.error);
-    //                     $("#modal_modify  .modal_error").stop(true, true).show().delay(15000).fadeOut(
-    //                         "slow");
-    //                     $("#lot_no_update").trigger("select", "focus");
-    //                 } else {
-    //                     //no error
-    //                     if (data) {
-
-    //                         //data = JSON.parse(data);
-    //                         data = data.result;
-
-    //                         current_data[0] = table_buttons(id, data.status_id);
-    //                         current_data[1] = data.lot_no;
-    //                         current_data[2] = data.date_of_analysis;
-    //                         current_data[3] = data.supplier_name;
-    //                         current_data[4] = data.flag_name;
-    //                         current_data[5] = data.catcher_name;
-    //                         current_data[6] = data.carrier_name;
-    //                         current_data[7] = data.fish_requirement_name;
-    //                         current_data[8] = data.other_fish_requirement;
-    //                         current_data[9] = data.catching_date;
-    //                         current_data[10] = data.remarks;
-    //                         current_data[11] = table_status(
-    //                             data.status_id,
-    //                             data.status,
-    //                             data.created_at,
-    //                             data.created,
-    //                             data.deleted_at,
-    //                             data.deleted,
-    //                             data.deleted_reason
-    //                         );
-    //                         current_data[12] = data.status_id;
-    //                         current_row.data(current_data).invalidate().draw();
-
-    //                         $('[data-toggle="tooltip"]').tooltip({
-    //                             html: true
-    //                         });
-    //                     }
-
-    //                     $("#modal_modify").modal("hide")
-    //                 }
-    //             }).fail(function(data) {
-    //                 alert(
-    //                     "Error: Server Error or Session Time-Out!, Please try again or reload the page!"
-    //                 );
-    //                 $('.modal_error, .modal_waiting').hide();
-    //                 $('.modal_button, .modal-body').show();
-    //                 //location.reload(true);
-    //             });
-
-    //             e.preventDefault();
-
-    //         } else {
-    //             $("#modal_modify .modal_error_msg").text("Error: Fields with * are required!");
-    //             $("#modal_modify .modal_error").stop(true, true).show().delay(15000).fadeOut("slow");
-    //             $("#lot_no_update").trigger("select", "focus");
-    //         }
-    //     } else {
-    //         $("#modal_modify .modal_error_msg").text("Error: Critical Error Encountered!");
-    //         $("#modal_modify .modal_error").stop(true, true).show().delay(15000).fadeOut("slow");
-    //         $("#lot_no_update").trigger("focus");
-    //     }
-
-    // });
-
-    // //info
-    // $(document).on("click", ".btn_info", function(e) {
-    //     e.preventDefault();
-
-    //     var id = $(this).attr("id");
-
-    //     if (id) {
-    //         $("#loading").modal();
-
-    //         var table = $("#tbl_list").DataTable();
-    //         current_row = table.row($(this).parents("tr"));
-    //         current_data = current_row.data();
-
-    //         $.post("<?= base_url(); ?>current_transaction/search_info_row", {
-    //             id: id
-    //         }, function(data) {
-    //             $("#loading").modal("hide");
-
-    //             if (data.indexOf("<!DOCTYPE html>") > -1) {
-    //                 alert("Error: Session Time-Out, You must login again to continue.");
-    //                 location.reload(true);
-    //             } else if (data.indexOf("Error: ") > -1) {
-    //                 bootbox.alert(data);
-    //             } else {
-    //                 var result = JSON.parse(data);
-
-    //                 //set the data to the field
-    //                 $.each(result, function(key, val) {
-    //                     $("#" + key + "_info").val(val);
-    //                 });
-
-    //                 $("#modal_info").modal();
-    //             }
-    //         });
-    //     } else {
-    //         bootbox.alert("Error: Critical Error Encountered!");
-    //     }
-    // });
-
-    // //delete
-    // $(document).on("click", ".btn_delete", function() {
-    //     var id = $(this).attr("id");
-
-    //     if (id) {
-
-    //         var table = $("#tbl_list").DataTable();
-    //         current_row = table.row($(this).parents("tr"));
-    //         current_data = current_row.data();
-
-    //         bootbox.prompt({
-    //             title: "Provide Delete Reason!",
-    //             inputType: 'textarea',
-    //             buttons: {
-    //                 cancel: {
-    //                     label: '<i class="fa fa-times"></i> Cancel'
-    //                 },
-    //                 confirm: {
-    //                     label: '<i class="fa fa-check"></i> Confirm'
-    //                 }
-    //             },
-    //             callback: function(result) {
-
-    //                 if (result !== null) {
-    //                     if (result) {
-
-
-    //                         $.post("<?= base_url(); ?>current_transaction/delete", {
-    //                             id: id,
-    //                             reason: result
-    //                         }, function(data) {
-    //                             if (data.indexOf("<!DOCTYPE html>") > -1) {
-    //                                 alert(
-    //                                     "Error: Session Time-Out, You must login again to continue."
-    //                                 );
-    //                                 location.reload(true);
-    //                             } else if (data.indexOf("Error: ") > -1) {
-    //                                 bootbox.alert(data);
-    //                             } else {
-    //                                 if (data) {
-
-    //                                     data = JSON.parse(data);
-
-    //                                     current_data[0] = table_buttons(id, data.status_id);
-    //                                     current_data[11] = table_status(
-    //                                         data.status_id,
-    //                                         data.status,
-    //                                         data.created_at,
-    //                                         data.created,
-    //                                         data.deleted_at,
-    //                                         data.deleted,
-    //                                         data.deleted_reason
-    //                                     );
-    //                                     current_data[13] = data.status_id;
-    //                                     current_row.data(current_data).invalidate().draw();
-
-    //                                     $('[data-toggle="tooltip"]').tooltip({
-    //                                         html: true
-    //                                     });
-    //                                 }
-
-    //                             }
-    //                         });
-    //                     } else {
-    //                         return false;
-    //                     }
-    //                 }
-    //             }
-    //         });
-
-    //     } else {
-    //         bootbox.alert("Error: Critical Error Encountered!");
-    //     }
-
-    // });
-
-    // $(document).on('click', '.btn_activate', function(e) {
-    //     e.preventDefault();
-
-    //     var id = $(this).attr("id");
-
-    //     if (id) {
-
-    //         var table = $("#tbl_list").DataTable();
-    //         current_row = table.row($(this).parents("tr"));
-    //         current_data = current_row.data();
-
-    //         bootbox.confirm("Are you sure you want to RESTORE this data?", function(result) {
-    //             if (result) {
-
-    //                 $.post("<?= base_url(); ?>current_transaction/activate", {
-    //                     id: id
-    //                 }, function(data) {
-
-    //                     if (data.indexOf("<!DOCTYPE html>") > -1) {
-    //                         alert("Error: Session Time-Out, You must login again to continue.");
-    //                         location.reload(true);
-    //                     } else if (data.indexOf("Error: ") > -1) {
-    //                         bootbox.alert(data);
-    //                     } else {
-    //                         if (data) {
-
-    //                             data = JSON.parse(data);
-
-    //                             current_data[0] = table_buttons(id, data.status_id);
-    //                             current_data[11] = table_status(
-    //                                 data.status_id,
-    //                                 data.status,
-    //                                 data.created_at,
-    //                                 data.created,
-    //                                 data.deleted_at,
-    //                                 data.deleted,
-    //                                 data.deleted_reason
-    //                             );
-    //                             current_data[13] = data.status_id;
-    //                             current_row.data(current_data).invalidate().draw();
-
-    //                             $('[data-toggle="tooltip"]').tooltip({
-    //                                 html: true
-    //                             });
-    //                         }
-
-    //                     }
-    //                 });
-    //             } else {
-
-    //             }
-    //         });
-    //     } else {
-    //         alert("Error: Critical Error Encountered!");
-    //     }
-    // });
     </script>
 </body>
 
