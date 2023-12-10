@@ -148,7 +148,7 @@ class Transaction_model extends CI_Model
 		}
 	}
 
-	function view($id, $location_ids = [])
+	function view($id, $location_ids = [], $doctor_id = 0)
 	{
 		$this->db->select(
 			"x.*,
@@ -188,6 +188,10 @@ class Transaction_model extends CI_Model
 			$this->db->where_in("x.location_id", $location_ids);
 		}
 
+		if (intval($doctor_id) > 0){
+			$this->db->where("x.doctor_id", $doctor_id);
+		}
+
 		if ($query = $this->db->get()) {
 			if ($this->db->affected_rows() > 0) {
 				return $query->row();
@@ -200,7 +204,7 @@ class Transaction_model extends CI_Model
 		}
 	}
 
-	function search($search = "", $status_ids = [], $location_ids = [])
+	function search($search = "", $status_ids = [], $location_ids = [], $doctor_id = 0)
 	{
 		$this->db->select(
 			"x.*,
@@ -253,6 +257,9 @@ class Transaction_model extends CI_Model
 				LIKE '%{$search}%'"
 			);
 		}
+		if (intval($doctor_id) > 0){
+			$this->db->where("x.doctor_id", $doctor_id);
+		}
 
 		if (is_array($status_ids) && count($status_ids) > 0) { //if status id specified
 			$this->db->where_in("x.status_id", $status_ids);
@@ -270,7 +277,7 @@ class Transaction_model extends CI_Model
 		}
 	}
 
-	function advance_search($data_input, $location_ids=[])
+	function advance_search($data_input, $location_ids=[], $doctor_id = 0)
 	{
 		$this->db->select(
 			"x.*,
@@ -305,6 +312,10 @@ class Transaction_model extends CI_Model
 		$this->db->join("transaction_status s", "s.id=x.status_id", "left");
 		$this->db->join("queues q", "q.id=x.queue_id", "left");
 
+		if (intval($doctor_id) > 0){
+			$this->db->where("x.doctor_id", $doctor_id);
+		}
+
 		if (is_array($location_ids) && count($location_ids) > 0) { //if location id specified
 			$this->db->where_in("x.location_id", $location_ids);
 		}
@@ -316,7 +327,7 @@ class Transaction_model extends CI_Model
 				if ($col === "date_from") {
 					$this->db->where("x.date >=", $val);
 				} else if ($col === "date_to") {
-					$this->db->where("x.date <=", $val);	
+					$this->db->where("x.date <=", $val);
 				} else if ($col === "transaction_no") {
 					$this->db->like("LPAD(x.id,5,'0')", $val);
 				} else if ($col === "status") {
