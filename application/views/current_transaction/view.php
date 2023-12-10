@@ -473,7 +473,7 @@ $total_amount_due = $subtotal_total;
 																					class='btn_item_modify btn btn-xs btn-warning btn-xs fa  fa-pencil'
 																					title='Edit'
 																					data-toggle='tooltip'
-																				></i>";
+																				></i> ";
 																}
 
 																if ($role_id == 1 || $this->custom_function->module_permission("item working", $module_permission)) {
@@ -482,7 +482,7 @@ $total_amount_due = $subtotal_total;
 																					class='btn_item_working btn btn-xs btn-info fa  fa-arrow-right'
 																					title='Working'
 																					data-toggle='tooltip'
-																				></i>";
+																				></i> ";
 																}
 
 																if ($role_id == 1 || $this->custom_function->module_permission("item complete", $module_permission)) {
@@ -491,7 +491,7 @@ $total_amount_due = $subtotal_total;
 																					class='btn_item_completed btn btn-xs btn-success fa fa-check'
 																					title='Mark as Completed'
 																					data-toggle='tooltip'
-																				></i>";
+																				></i> ";
 																}
 
 																if ($role_id == 1 || $this->custom_function->module_permission("item delete", $module_permission)) {
@@ -500,7 +500,7 @@ $total_amount_due = $subtotal_total;
                                                                                     class='btn_item_cancel btn btn-xs btn-danger btn-xs fa  fa-times'
                                                                                     title='Delete'
                                                                                     data-toggle='tooltip'
-                                                                                ></i>";
+                                                                                ></i> ";
 																}
 
                                                                 $action .= "</span>";
@@ -784,7 +784,7 @@ $total_amount_due = $subtotal_total;
 										class = 'btn_item_modify btn btn-xs btn-warning fa fa-pencil'
 										title = 'Edit'
 										data-toggle = 'tooltip'
-									></i>`;
+									></i> `;
 					<?php
 						}
 
@@ -795,7 +795,7 @@ $total_amount_due = $subtotal_total;
 										class='btn_item_working btn btn-xs btn-info fa  fa-arrow-right'
 										title='Working'
 										data-toggle='tooltip'
-									></i>`;
+									></i> `;
 					<?php
 						}
 
@@ -806,7 +806,7 @@ $total_amount_due = $subtotal_total;
 										class='btn_item_completed btn btn-xs btn-success fa fa-check'
 										title='Mark as Completed'
 										data-toggle='tooltip'
-									></i>`;
+									></i> `;
 					<?php
 						}
 
@@ -817,7 +817,7 @@ $total_amount_due = $subtotal_total;
                                     class = 'btn_item_cancel btn btn-xs btn-danger fa fa-times'
                                     title = 'Delete'
                                     data-toggle = 'tooltip'
-                                ></i>`;
+                                ></i> `;
 					<?php
 						}
 					?>
