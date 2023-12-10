@@ -270,11 +270,11 @@ class Current_transaction extends CI_Controller
 					}
 				} else {
 					$this->session->set_flashdata("error", "Error: Trans no. " . str_pad($transaction_id, 5, "0", STR_PAD_LEFT) . " is unavailable!");
-					redirect(base_url() . "current_transaction");
+					redirect(base_url($this->module));
 				}
 			} catch (Exception $ex) {
 				$this->session->set_flashdata("error", $ex->getMessage());
-				redirect(base_url() . "current_transaction");
+				redirect(base_url($this->module));
 			}
 		} else {
 			$this->session->set_flashdata("error", "Error: Critical Error Encountered!");
@@ -449,11 +449,11 @@ class Current_transaction extends CI_Controller
 					}
 				} else {
 					$this->session->set_flashdata("error", "Error: Trans no. " . str_pad($transaction_id, 5, "0", STR_PAD_LEFT) . " is unavailable!");
-					redirect(base_url() . "current_transaction");
+					redirect(base_url($this->module));
 				}
 			} catch (Exception $ex) {
 				$this->session->set_flashdata("error", $ex->getMessage());
-				redirect(base_url() . "current_transaction");
+				redirect(base_url($this->module));
 			}
 		} else {
 			$this->session->set_flashdata("error", "Error: Critical Error Encountered!");
@@ -534,7 +534,7 @@ class Current_transaction extends CI_Controller
 					$this->load->view('pdf/charges', $data);
 				} else {
 					$this->session->set_flashdata("error", "Error: Request no. REQ-" . str_pad($transaction_id, 5, "0", STR_PAD_LEFT) . " is unavailable!");
-					redirect(base_url() . "current_transaction");
+					redirect(base_url($this->module));
 				}
 			} catch (Exception $ex) {
 				echo $ex->getMessage();
@@ -571,7 +571,7 @@ class Current_transaction extends CI_Controller
 					$this->load->view('pdf/insurance_invoice', $data);
 				} else {
 					$this->session->set_flashdata("error", "Error: Request no. REQ-" . str_pad($transaction_id, 5, "0", STR_PAD_LEFT) . " is unavailable!");
-					redirect(base_url() . "current_transaction");
+					redirect(base_url($this->module));
 				}
 			} catch (Exception $ex) {
 				echo $ex->getMessage();
@@ -744,7 +744,7 @@ class Current_transaction extends CI_Controller
 					$this->load->view('pdf/payment2', $data);
 				} else {
 					$this->session->set_flashdata("error", "Error: Critical Error Encountered!");
-					redirect(base_url() . "current_transaction");
+					redirect(base_url($this->module));
 				}
 			} catch (Exception $ex) {
 				echo $ex->getMessage();
@@ -893,7 +893,7 @@ class Current_transaction extends CI_Controller
 					$this->load->view('pdf/prescription', $data);
 				} else {
 					$this->session->set_flashdata("error", "Error: Request no. REQ-" . str_pad($transaction_id, 5, "0", STR_PAD_LEFT) . " is unavailable!");
-					redirect(base_url() . "current_transaction");
+					redirect(base_url($this->module));
 				}
 			} catch (Exception $ex) {
 				echo $ex->getMessage();
@@ -1064,7 +1064,7 @@ class Current_transaction extends CI_Controller
 		echo json_encode($result);
 	}
 
-	private function xray_attachment_list($transaction_id)
+	function xray_attachment_list($transaction_id)
 	{
 		$path = "./upload/xray/" . $transaction_id;
 		$files = array();
@@ -1083,7 +1083,7 @@ class Current_transaction extends CI_Controller
 		return $files;
 	}
 
-	private function do_upload($file, $transaction_id)
+	function do_upload($file, $transaction_id)
 	{
 		$result = array("error" => false);
 

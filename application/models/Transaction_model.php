@@ -148,7 +148,7 @@ class Transaction_model extends CI_Model
 		}
 	}
 
-	function view($id, $current_user = 0)
+	function view($id, $location_ids = [])
 	{
 		$this->db->select(
 			"x.*,
@@ -184,6 +184,10 @@ class Transaction_model extends CI_Model
 		$this->db->join("queues q", "q.id=x.queue_id", "left");
 		$this->db->where("x.id", $id);
 
+		if (is_array($location_ids) && count($location_ids) > 0) { //if location id specified
+			$this->db->where_in("x.location_id", $location_ids);
+		}
+
 		if ($query = $this->db->get()) {
 			if ($this->db->affected_rows() > 0) {
 				return $query->row();
@@ -196,7 +200,7 @@ class Transaction_model extends CI_Model
 		}
 	}
 
-	function search($search = "", $status_ids = [], $current_user = 0)
+	function search($search = "", $status_ids = [], $location_ids = [])
 	{
 		$this->db->select(
 			"x.*,
@@ -251,8 +255,12 @@ class Transaction_model extends CI_Model
 			);
 		}
 
-		if (count($status_ids) > 0) { //if status id specified
+		if (is_array($status_ids) && count($status_ids) > 0) { //if status id specified
 			$this->db->where_in("x.status_id", $status_ids);
+		}
+
+		if (is_array($location_ids) && count($location_ids) > 0) { //if location id specified
+			$this->db->where_in("x.location_id", $location_ids);
 		}
 
 		if ($query = $this->db->get()) {
