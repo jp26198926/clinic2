@@ -38,7 +38,7 @@ class Location_spiro extends Current_transaction
 	protected $company_name;
 	protected $company_address;
 	protected $company_contact;
-	protected $location_id = 10;
+	protected $location_id = 9;
 	// protected $timer_countdown;
 
 	function __construct()

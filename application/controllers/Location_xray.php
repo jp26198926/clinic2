@@ -17,15 +17,15 @@ require_once(APPPATH . "controllers/Current_transaction.php");
  * 11 - Pharmacy
  * 12 - ER
  */
-class Location_pharmacy extends Current_transaction
+class Location_xray extends Current_transaction
 {
 	protected $module_permission = array();
 	protected $prefix; //check or update app_details table in db for session_prefix field
 	protected $default_error_msg = "Error: Critical Error Encountered!";
 	protected $role_id;
-	protected $module = "location_pharmacy";
-	protected $module_description = "Pharmacy";
-	protected $page_name = "Pharmacy";
+	protected $module = "location_xray";
+	protected $module_description = "X-Ray";
+	protected $page_name = "X-Ray";
 	protected $parent_menu = "Location";
 	protected $uid = 0;
 	protected $uname;
@@ -38,7 +38,7 @@ class Location_pharmacy extends Current_transaction
 	protected $company_name;
 	protected $company_address;
 	protected $company_contact;
-	protected $location_id = 11;
+	protected $location_id = 7;
 	// protected $timer_countdown;
 
 	function __construct()
