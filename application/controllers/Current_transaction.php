@@ -297,7 +297,9 @@ class Current_transaction extends CI_Controller
 					$result["success"] = true;
 					$result["data"] = $save;
 
-					$this->session->set_flashdata("transaction_id", $save);
+					//$this->session->set_flashdata("transaction_id", $save);
+					$transaction_no = str_pad($save,5,"0",STR_PAD_LEFT);
+					$this->session->set_flashdata("error", "Transaction #: {$transaction_no} has been created and transferred to Triage!");
 				}else{
 					$result["error"] = "Unable to save, Please try again!";
 				}

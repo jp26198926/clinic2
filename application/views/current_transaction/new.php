@@ -388,8 +388,7 @@
                             let result = JSON.parse(data);
 
                             if (result.success == true) {
-                                window.location = "<?= base_url($module); ?>/view/" + result
-                                    .data;
+                                window.location = "<?= base_url($module); ?>";
                             } else {
                                 $("#loading").modal("hide");
                                 bootbox.alert(result.error);
