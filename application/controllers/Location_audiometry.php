@@ -58,6 +58,30 @@ class Location_audiometry extends Current_transaction
 		}
 	}
 
+	function advance_search()
+	{
+		$errors = [];
+		$data = [];
+
+		$form_data = $this->input->post();
+
+		try {
+			$result = $this->main_model->advance_search($form_data, [$this->location_id]);
+			$data["result"] = $result;
+		} catch (Exception $ex) {
+			$errors["error"] = $ex->getMessage();
+		}
+
+		if (!empty($errors)) {
+			$data["success"] = false;
+			$data["errors"] = $errors;
+		} else {
+			$data["success"] = true;
+		}
+
+		echo json_encode($data);
+	}
+
 	function search_active()
 	{
 		try {
@@ -148,29 +172,7 @@ class Location_audiometry extends Current_transaction
 		}
 	}
 
-	// function advance_search()
-	// {
-	// 	$errors = [];
-	// 	$data = [];
-
-	// 	$form_data = $this->input->post();
-
-	// 	try {
-	// 		$result = $this->main_model->advance_search($form_data, $this->uid);
-	// 		$data["result"] = $result;
-	// 	} catch (Exception $ex) {
-	// 		$errors["error"] = $ex->getMessage();
-	// 	}
-
-	// 	if (!empty($errors)) {
-	// 		$data["success"] = false;
-	// 		$data["errors"] = $errors;
-	// 	} else {
-	// 		$data["success"] = true;
-	// 	}
-
-	// 	echo json_encode($data);
-	// }
+	
 
 	// function search_active()
 	// {

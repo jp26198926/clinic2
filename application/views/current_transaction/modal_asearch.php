@@ -1,72 +1,41 @@
 <!-- bootstrap modal -->
 <div id="modal_asearch" class="modal fade" tabindex="-1" users="dialog">
-    <div class="modal-dialog modal-lg" users="document">
+    <div class="modal-dialog" users="document">
         <div class="modal-content">
             <div class="modal-header">
                 <button type="button" class="close" data-dismiss="modal">&times;</button>
                 <h4 class="blue bigger"><i class="fa fa-search-plus fa-fw"></i>Advance Search</h4>
             </div>
             <div class="modal-body">
+                <div class="alert alert-info">     
+                    <span class="fa fa-info-circle fa-fw"> </span>               
+                    Leaving the fields empty means 'ALL or ANY'
+                </div>
                 <form id="frm_asearch" name="frm_asearch">
                     <div class="row" style="margin-bottom: 0.5em;">
-                        <div class="col-md-3">
-                            <label for="transaction_no_asearch">Request No </label>
+                        <div class="col-md-6">
+                            <label for="transaction_no_asearch">Transaction No </label>
                             <input type="text" id="transaction_no_asearch" name="transaction_no_asearch"
                                 class="field_asearch form-control" />
                         </div>
-                        <div class="col-md-3">
-                            <label for="date_from_asearch">Date From</label>
-                            <input type="text" id="date_from_asearch" name="date_from_asearch"
-                                class="field_asearch form-control datepicker" readonly />
-                        </div>
-                        <div class="col-md-3">
-                            <label for="date_to_asearch">Date To</label>
-                            <input type="text" id="date_to_asearch" name="date_to_asearch"
-                                class="field_asearch form-control datepicker" readonly />
-                        </div>
-                        <div class="col-md-3">
+                        <div class="col-md-6">
                             <label for="status_asearch">Status</label>
                             <input type="text" id="status_asearch" name="status_asearch"
                                 class="field_asearch form-control" />
                         </div>
                     </div>
-
                     <div class="row" style="margin-bottom: 0.5em;">
-                        <div class="col-md-4">
-                            <label for="division_asearch">Division</label>
-                            <input type="text" id="division_asearch" name="division_asearch"
-                                class="field_asearch form-control" />
+                        <div class="col-md-6">
+                            <label for="date_from_asearch">Date From</label>
+                            <input type="text" id="date_from_asearch" name="date_from_asearch"
+                                class="field_asearch form-control datepicker" readonly />
                         </div>
-                        <div class="col-md-4">
-                            <label for="dept_asearch">Department</label>
-                            <input type="text" id="dept_asearch" name="dept_asearch"
-                                class="field_asearch form-control" />
-                        </div>
-                        <div class="col-md-4">
-                            <label for="requested_asearch">Requested By</label>
-                            <input type="text" id="requested_asearch" name="requested_asearch"
-                                class="field_asearch form-control" />
-                        </div>
+                        <div class="col-md-6">
+                            <label for="date_to_asearch">Date To</label>
+                            <input type="text" id="date_to_asearch" name="date_to_asearch"
+                                class="field_asearch form-control datepicker" readonly />
+                        </div>                        
                     </div>
-
-                    <div class="row" style="margin-bottom: 0.5em;">
-                        <div class="col-md-4">
-                            <label for="dept_approved_asearch">Dept Approved</label>
-                            <input type="text" id="dept_approved_asearch" name="dept_approved_asearch"
-                                class="field_asearch form-control" />
-                        </div>
-                        <div class="col-md-4">
-                            <label for="gm_approved_asearch">GM Approved</label>
-                            <input type="text" id="gm_approved_asearch" name="gm_approved_asearch"
-                                class="field_asearch form-control" />
-                        </div>
-                        <div class="col-md-4">
-                            <label for="purchaser_asearch">Purchaser</label>
-                            <input type="text" id="purchaser_asearch" name="purchaser_asearch"
-                                class="field_asearch form-control" />
-                        </div>
-                    </div>
-
                 </form>
             </div>
             <div class="modal-footer">

@@ -123,7 +123,7 @@ class Current_transaction extends CI_Controller
 	{
 		$search = trim($this->input->get("search"));
 		try {
-			$result = $this->main_model->search($search, [], $this->uid);
+			$result = $this->main_model->search($search, [], []);
 			echo json_encode($result);
 		} catch (Exception $ex) {
 			echo $ex->getMessage();
@@ -138,7 +138,7 @@ class Current_transaction extends CI_Controller
 		$form_data = $this->input->post();
 
 		try {
-			$result = $this->main_model->advance_search($form_data, $this->uid);
+			$result = $this->main_model->advance_search($form_data, []);
 			$data["result"] = $result;
 		} catch (Exception $ex) {
 			$errors["error"] = $ex->getMessage();
@@ -159,7 +159,7 @@ class Current_transaction extends CI_Controller
 		try {
 			$status_ids = array(2, 3);
 
-			$result = $this->main_model->search("", $status_ids, $this->uid);
+			$result = $this->main_model->search("", $status_ids, []);
 			echo json_encode($result);
 		} catch (Exception $ex) {
 			echo $ex->getMessage();

@@ -234,7 +234,6 @@ class Transaction_model extends CI_Model
 		$this->db->join("user d", "d.id=x.deleted_by", "left");
 		$this->db->join("transaction_status s", "s.id=x.status_id", "left");
 		$this->db->join("queues q", "q.id=x.queue_id", "left");
-		//$this->db->where("x.created_by", $current_user);
 		$this->db->order_by('x.id');
 
 		if ($search) {
@@ -271,7 +270,7 @@ class Transaction_model extends CI_Model
 		}
 	}
 
-	function advance_search($data_input, $current_user = 0)
+	function advance_search($data_input, $location_ids=[])
 	{
 		$this->db->select(
 			"x.*,
@@ -305,8 +304,10 @@ class Transaction_model extends CI_Model
 		$this->db->join("user d", "d.id=x.deleted_by", "left");
 		$this->db->join("transaction_status s", "s.id=x.status_id", "left");
 		$this->db->join("queues q", "q.id=x.queue_id", "left");
-		//$this->db->where("x.created_by", $current_user);
 
+		if (is_array($location_ids) && count($location_ids) > 0) { //if location id specified
+			$this->db->where_in("x.location_id", $location_ids);
+		}
 
 		foreach ($data_input as $key => $val) {
 			$col = str_replace("_asearch", "", $key);
@@ -315,19 +316,7 @@ class Transaction_model extends CI_Model
 				if ($col === "date_from") {
 					$this->db->where("x.date >=", $val);
 				} else if ($col === "date_to") {
-					$this->db->where("x.date <=", $val);
-				} else if ($col === "division") {
-					$this->db->like("CONCAT(v.code,' ',v.name)", $val);
-				} else if ($col === "dept") {
-					$this->db->like("CONCAT(t.code,' ',t.name)", $val);
-				} else if ($col === "transactioned") {
-					$this->db->like("CONCAT(e.fname,' ', e.mname,' ', e.lname)", $val);
-				} else if ($col === "dept_approved") {
-					$this->db->like("CONCAT(n.fname,' ', n.mname,' ', n.lname)", $val);
-				} else if ($col === "gm_approved") {
-					$this->db->like("CONCAT(g.fname,' ', g.mname,' ', g.lname)", $val);
-				} else if ($col === "purchaser") {
-					$this->db->like("CONCAT(p.fname,' ', p.mname,' ', p.lname)", $val);
+					$this->db->where("x.date <=", $val);	
 				} else if ($col === "transaction_no") {
 					$this->db->like("LPAD(x.id,5,'0')", $val);
 				} else if ($col === "status") {
