@@ -17,15 +17,15 @@ require_once(APPPATH . "controllers/Current_transaction.php");
  * 11 - Pharmacy
  * 12 - ER
  */
-class Location_doctor_office extends Current_transaction
+class Location_er extends Current_transaction
 {
 	protected $module_permission = array();
 	protected $prefix; //check or update app_details table in db for session_prefix field
 	protected $default_error_msg = "Error: Critical Error Encountered!";
 	protected $role_id;
-	protected $module = "location_doctor_office";
-	protected $module_description = "Doctor's Office";
-	protected $page_name = "Doctor's Office";
+	protected $module = "location_er";
+	protected $module_description = "ER";
+	protected $page_name = "ER";
 	protected $parent_menu = "Location";
 	protected $uid = 0;
 	protected $uname;
@@ -38,7 +38,7 @@ class Location_doctor_office extends Current_transaction
 	protected $company_name;
 	protected $company_address;
 	protected $company_contact;
-	protected $location_id = 5;
+	protected $location_id = 12;
 	// protected $timer_countdown;
 
 	function __construct()
@@ -51,7 +51,7 @@ class Location_doctor_office extends Current_transaction
 	{
 		$search = trim($this->input->get("search"));
 		try {
-			$result = $this->main_model->search($search, [], [$this->location_id], $this->uid, $this->role_id);
+			$result = $this->main_model->search($search, [], [$this->location_id]);
 			echo json_encode($result);
 		} catch (Exception $ex) {
 			echo $ex->getMessage();
@@ -66,7 +66,7 @@ class Location_doctor_office extends Current_transaction
 		$form_data = $this->input->post();
 
 		try {
-			$result = $this->main_model->advance_search($form_data, [$this->location_id], $this->uid, $this->role_id);
+			$result = $this->main_model->advance_search($form_data, [$this->location_id]);
 			$data["result"] = $result;
 		} catch (Exception $ex) {
 			$errors["error"] = $ex->getMessage();
@@ -87,7 +87,7 @@ class Location_doctor_office extends Current_transaction
 		try {
 			$status_ids = array(2, 3);
 
-			$result = $this->main_model->search("", $status_ids, [$this->location_id], $this->uid, $this->role_id);
+			$result = $this->main_model->search("", $status_ids, [$this->location_id] );
 			echo json_encode($result);
 		} catch (Exception $ex) {
 			echo $ex->getMessage();
@@ -98,7 +98,7 @@ class Location_doctor_office extends Current_transaction
 	{
 		if ($transaction_id) {
 			try {
-				$record = $this->main_model->view($transaction_id, [$this->location_id], $this->uid);
+				$record = $this->main_model->view($transaction_id, [$this->location_id]);
 				if ($record) {
 					$prefix = $this->prefix;
 

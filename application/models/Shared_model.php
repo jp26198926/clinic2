@@ -48,7 +48,7 @@ class Shared_model extends CI_Model
 	{
 		$this->db->select("`id`, CONCAT(`lname`,', ',`fname`,' ',`mname`) as name");
 		$this->db->where("status_id", 1); //active
-		$this->db->where_in("role_id", array(4));
+		$this->db->where_in("role_id", array(2,4)); //2-vip, 4-doctor
 		$this->db->order_by("lname, fname, mname");
 
 		if ($query = $this->db->get("user")) {

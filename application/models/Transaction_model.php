@@ -204,7 +204,7 @@ class Transaction_model extends CI_Model
 		}
 	}
 
-	function search($search = "", $status_ids = [], $location_ids = [], $doctor_id = 0)
+	function search($search = "", $status_ids = [], $location_ids = [], $doctor_id = 0, $role_id= 0)
 	{
 		$this->db->select(
 			"x.*,
@@ -257,8 +257,12 @@ class Transaction_model extends CI_Model
 				LIKE '%{$search}%'"
 			);
 		}
-		if (intval($doctor_id) > 0){
-			$this->db->where("x.doctor_id", $doctor_id);
+
+
+		if (intval($doctor_id) > 0){ //if doctor is specified
+			if (intval($role_id) > 2){ // NOT 1-admin, 2-vip
+				$this->db->where("x.doctor_id", $doctor_id); //filter by doctor_id
+			}
 		}
 
 		if (is_array($status_ids) && count($status_ids) > 0) { //if status id specified
@@ -277,7 +281,7 @@ class Transaction_model extends CI_Model
 		}
 	}
 
-	function advance_search($data_input, $location_ids=[], $doctor_id = 0)
+	function advance_search($data_input, $location_ids=[], $doctor_id = 0, $role_id=0)
 	{
 		$this->db->select(
 			"x.*,
@@ -312,9 +316,14 @@ class Transaction_model extends CI_Model
 		$this->db->join("transaction_status s", "s.id=x.status_id", "left");
 		$this->db->join("queues q", "q.id=x.queue_id", "left");
 
-		if (intval($doctor_id) > 0){
-			$this->db->where("x.doctor_id", $doctor_id);
+		if (intval($doctor_id) > 0){ //if doctor is specified
+			if (intval($role_id) > 2){ // NOT 1-admin, 2-vip
+				$this->db->where("x.doctor_id", $doctor_id); //filter by doctor_id
+			}
 		}
+		// if (intval($doctor_id) > 0){
+		// 	$this->db->where("x.doctor_id", $doctor_id);
+		// }
 
 		if (is_array($location_ids) && count($location_ids) > 0) { //if location id specified
 			$this->db->where_in("x.location_id", $location_ids);
