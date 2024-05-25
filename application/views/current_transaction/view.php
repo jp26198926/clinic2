@@ -873,6 +873,13 @@ $total_amount_due = $subtotal_total;
                             case 4: //po - after clinic hours
                                 price = Number(result.after_amount_po);
                                 break;
+
+							case 5: //cash with insurance - clinic hours
+                                price = Number(result.amount_po);
+                                break;
+                            case 6: //cash with insurance - after clinic hours
+                                price = Number(result.after_amount_po);
+                                break;
                         }
 
                         let amount = qty * price;
