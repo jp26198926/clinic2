@@ -61,10 +61,8 @@ $total_amount_due = $subtotal_total;
                                         <?= $page_name; ?>
                                         <i class="ace-icon fa fa-angle-double-right"></i>
                                         View
-                                        <span id="lbl_transaction_no"
-                                            class="badge badge-warning"><?= $transaction_no; ?></span>
-                                        <input type="hidden" id="id_update" name="id_update"
-                                            value="<?= $transaction_id; ?>" />
+                                        <span id="lbl_transaction_no" class="badge badge-warning"><?= $transaction_no; ?></span>
+                                        <input type="hidden" id="id_update" name="id_update" value="<?= $transaction_id; ?>" />
                                     </small>
                                 </h1>
                             </div><!-- /.page-header -->
@@ -82,22 +80,17 @@ $total_amount_due = $subtotal_total;
                                     <div class="row" style="margin-bottom:1em;">
                                         <div class="col-md-2 text-right">Date <i class="text-danger">*</i></div>
                                         <div class="col-md-2">
-                                            <input type="text" id="date_update" name="date_update"
-                                                value="<?= $record->date; ?>" class="form-control field_update"
-                                                autocomplete="off" readonly <?= $disabled_field; ?> />
+                                            <input type="text" id="date_update" name="date_update" value="<?= $record->date; ?>" class="form-control field_update" autocomplete="off" readonly <?= $disabled_field; ?> />
                                         </div>
 
                                         <div class="col-md-1 text-right">Status</div>
                                         <div class="col-md-2">
-                                            <input type="text" id="status_update" name="status_update"
-                                                class="form-control field_update" value="<?= $record->status; ?>"
-                                                readonly disabled />
+                                            <input type="text" id="status_update" name="status_update" class="form-control field_update" value="<?= $record->status; ?>" readonly disabled />
                                         </div>
 
                                         <div class="col-md-2 text-right">Trans Type <i class="text-danger">*</i></div>
                                         <div class="col-md-3">
-                                            <select id="trans_type_id_update" name="trans_type_id_update"
-                                                class="chosen-select form-control field_update" <?= $disabled_field; ?>>
+                                            <select id="trans_type_id_update" name="trans_type_id_update" class="chosen-select form-control field_update" <?= $disabled_field; ?>>
                                                 <option value="">-- SELECT --</option>
                                                 <?php
 												foreach ($trans_types as $key => $value) {
@@ -116,9 +109,7 @@ $total_amount_due = $subtotal_total;
                                         <div class="col-md-2 text-right">Patient <i class="text-danger">*</i></div>
                                         <div class="col-md-5">
                                             <div class="input-group">
-                                                <select id="patient_id_update" name="patient_id_update"
-                                                    class="chosen-select form-control field_update"
-                                                    <?= $disabled_field; ?>>
+                                                <select id="patient_id_update" name="patient_id_update" class="chosen-select form-control field_update" <?= $disabled_field; ?>>
                                                     <option value="">-- SELECT --</option>
                                                     <?php
 													foreach ($patients as $key => $value) {
@@ -131,8 +122,7 @@ $total_amount_due = $subtotal_total;
 													?>
                                                 </select>
                                                 <span class="input-group-btn">
-                                                    <button id="btn_add_patient" class="btn btn-sm btn-default"
-                                                        type="button" <?= $disabled_field; ?>>
+                                                    <button id="btn_add_patient" class="btn btn-sm btn-default" type="button" <?= $disabled_field; ?>>
                                                         Add New
                                                     </button>
                                                 </span>
@@ -141,8 +131,7 @@ $total_amount_due = $subtotal_total;
 
                                         <div class="col-md-2 text-right">Pay Method <i class="text-danger">*</i></div>
                                         <div class="col-md-3">
-                                            <select id="payment_method_id_update" name="payment_method_id_update"
-                                                class="chosen-select form-control field_update" <?= $disabled_field; ?>>
+                                            <select id="payment_method_id_update" name="payment_method_id_update" class="chosen-select form-control field_update" <?= $disabled_field; ?>>
                                                 <option value="">-- SELECT --</option>
                                                 <?php
 												foreach ($payment_methods as $key => $value) {
@@ -161,9 +150,7 @@ $total_amount_due = $subtotal_total;
                                         <div class="col-md-2 text-right">Company</div>
                                         <div class="col-md-5">
                                             <div class="input-group">
-                                                <select id="client_id_update" name="client_id_update"
-                                                    class="chosen-select form-control field_update"
-                                                    <?= $disabled_field; ?>>
+                                                <select id="client_id_update" name="client_id_update" class="chosen-select form-control field_update" <?= $disabled_field; ?>>
                                                     <option value="">-- SELECT --</option>
                                                     <?php
 													foreach ($clients as $key => $value) {
@@ -176,8 +163,7 @@ $total_amount_due = $subtotal_total;
 													?>
                                                 </select>
                                                 <span class="input-group-btn">
-                                                    <button id="btn_add_client" class="btn btn-sm btn-default"
-                                                        type="button" <?= $disabled_field; ?>>
+                                                    <button id="btn_add_client" class="btn btn-sm btn-default" type="button" <?= $disabled_field; ?>>
                                                         Add New
                                                     </button>
                                                 </span>
@@ -186,8 +172,7 @@ $total_amount_due = $subtotal_total;
 
                                         <div class="col-md-2 text-right">Charge To <i class="text-danger">*</i></div>
                                         <div class="col-md-3">
-                                            <select id="charging_type_id_update" name="charging_type_id_update"
-                                                class="chosen-select form-control field_update" <?= $disabled_field; ?>>
+                                            <select id="charging_type_id_update" name="charging_type_id_update" class="chosen-select form-control field_update" <?= $disabled_field; ?>>
                                                 <option value="">-- SELECT --</option>
                                                 <?php
 												foreach ($charging_types as $key => $value) {
@@ -205,8 +190,7 @@ $total_amount_due = $subtotal_total;
                                     <div class="row" style="margin-bottom:1em;">
                                         <div class="col-md-2 text-right">Insurance</div>
                                         <div class="col-md-5">
-                                            <select id="insurance_id_update" name="insurance_id_update"
-                                                class="chosen-select form-control field_update" <?= $disabled_field; ?>>
+                                            <select id="insurance_id_update" name="insurance_id_update" class="chosen-select form-control field_update" <?= $disabled_field; ?>>
                                                 <option value='0'>No Insurance</option>
                                                 <?php
 												foreach ($insurances as $key => $value) {
@@ -226,17 +210,14 @@ $total_amount_due = $subtotal_total;
 
                                         <div class="col-md-2 text-right">P.O</div>
                                         <div class="col-md-3">
-                                            <input type="text" id="po_no_update" name="po_no_update"
-                                                class="form-control field_update" value="<?= $record->po_no; ?>"
-                                                <?= $disabled_field; ?> />
+                                            <input type="text" id="po_no_update" name="po_no_update" class="form-control field_update" value="<?= $record->po_no; ?>" <?= $disabled_field; ?> />
                                         </div>
                                     </div>
 
                                     <div class="row" style="margin-bottom:1em;">
                                         <div class="col-md-2 text-right">Location</div>
                                         <div class="col-md-2">
-                                            <select id="location_id_update" name="location_id_update"
-                                                class="chosen-select form-control field_update" disabled>
+                                            <select id="location_id_update" name="location_id_update" class="chosen-select form-control field_update" disabled>
                                                 <option value="">-- SELECT --</option>
                                                 <?php
 												foreach ($locations as $key => $value) {
@@ -252,8 +233,7 @@ $total_amount_due = $subtotal_total;
 
                                         <div class="col-md-1 text-right">Queue</div>
                                         <div class="col-md-2">
-                                            <select id="queue_id_update" name="queue_id_update"
-                                                class="chosen-select form-control field_update" disabled>
+                                            <select id="queue_id_update" name="queue_id_update" class="chosen-select form-control field_update" disabled>
                                                 <option value="0">NONE</option>
                                                 <?php
 												foreach ($queues as $key => $value) {
@@ -269,9 +249,7 @@ $total_amount_due = $subtotal_total;
 
                                         <div class="col-md-2 text-right">Assigned Doctor</div>
                                         <div class="col-md-3">
-                                            <select id="doctor_id_update" name="doctor_id_update"
-                                                class="chosen-select form-control field_update"
-                                                <?= $disabled_field2; ?>>
+                                            <select id="doctor_id_update" name="doctor_id_update" class="chosen-select form-control field_update" <?= $disabled_field2; ?>>
                                                 <option value="0">NONE</option>
                                                 <?php
 												foreach ($doctors as $key => $value) {
@@ -289,16 +267,12 @@ $total_amount_due = $subtotal_total;
                                     <div class="row" style="margin-bottom:1em;">
                                         <div class="col-md-2 text-right">Remarks</div>
                                         <div class="col-md-5">
-                                            <textarea id="remarks_update" name="remarks_update"
-                                                class="form-control field_update"
-                                                <?= $disabled_field2; ?>><?= $record->remarks; ?></textarea>
+                                            <textarea id="remarks_update" name="remarks_update" class="form-control field_update" <?= $disabled_field2; ?>><?= $record->remarks; ?></textarea>
                                         </div>
 
                                         <div class="col-md-2 text-right">Diagnosis</div>
                                         <div class="col-md-3">
-                                            <textarea id="diagnosis_update" name="diagnosis_update"
-                                                class="form-control field_update"
-                                                <?= $disabled_field2; ?>><?= $record->diagnosis; ?></textarea>
+                                            <textarea id="diagnosis_update" name="diagnosis_update" class="form-control field_update" <?= $disabled_field2; ?>><?= $record->diagnosis; ?></textarea>
                                         </div>
                                     </div>
 
@@ -420,9 +394,7 @@ $total_amount_due = $subtotal_total;
                                     <div class="row" style="margin-top:1em;">
                                         <div class="col-md-12">
 
-                                            <table id="tbl_list"
-                                                class="table table-bordered table-stripe table-hover table-fixed-header"
-                                                style="font-size:90%">
+                                            <table id="tbl_list" class="table table-bordered table-stripe table-hover table-fixed-header" style="font-size:90%">
                                                 <thead class="header">
                                                     <tr>
                                                         <th class="text-center">NO.</th>
@@ -503,7 +475,7 @@ $total_amount_due = $subtotal_total;
                                                                                 ></i> ";
 																}
 
-                                                                $action .= "</span>";
+																$action .= "</span>";
 															} else if (intval($value->status_id) == 4) {
 																//completed
 																$tr_class = "success";
@@ -572,8 +544,7 @@ $total_amount_due = $subtotal_total;
                                                         </td>
                                                         <td align='right'>
                                                             <b>
-                                                                <span
-                                                                    id='lbl_total_subtotal'><?= number_format($subtotal_total, 2, '.', ','); ?>
+                                                                <span id='lbl_total_subtotal'><?= number_format($subtotal_total, 2, '.', ','); ?>
                                                                 </span>
                                                             </b>
                                                         </td>
@@ -582,8 +553,7 @@ $total_amount_due = $subtotal_total;
                                                         <td colspan='7' align='right'><b>TOTAL PAID</b></td>
                                                         <td Colspan='4' align='right'>
                                                             <b>
-                                                                <span
-                                                                    id='lbl_total_paid'><?= number_format($total_paid, 2, '.', ','); ?></span>
+                                                                <span id='lbl_total_paid'><?= number_format($total_paid, 2, '.', ','); ?></span>
                                                             </b>
                                                         </td>
                                                     </tr>
@@ -591,8 +561,7 @@ $total_amount_due = $subtotal_total;
                                                         <td colspan='7' align='right'><b>TOTAL AMOUNT DUE</b></td>
                                                         <td Colspan='4' align='right'>
                                                             <b>
-                                                                <span
-                                                                    id='lbl_amount_due'><?= number_format($total_amount_due, 2, '.', ','); ?></span>
+                                                                <span id='lbl_amount_due'><?= number_format($total_amount_due, 2, '.', ','); ?></span>
                                                             </b>
                                                         </td>
                                                     </tr>
@@ -676,12 +645,12 @@ $total_amount_due = $subtotal_total;
     let total_paid = Number(<?= $total_paid; ?>);
     let total_amount_due = 0;
 
-	let new_entry_field = '';
+    let new_entry_field = '';
 
-	<?php
+    <?php
 		if ($role_id == 1 || $this->custom_function->module_permission("item add", $module_permission)) {
-	?>
-		new_entry_field = `   <tr>
+		?>
+    new_entry_field = `   <tr>
                                     <td colspan="2">New</td>
                                     <td>
                                         <select id="product_id_new" name="product_id_new" class="field_new text-center chosen-select form-control"  >
@@ -722,9 +691,9 @@ $total_amount_due = $subtotal_total;
                                         <button id="item_save" name="item_save" class="btn btn-xs btn-primary text-center">Save</button>
                                     </td>
                                 </tr>`;
-	<?php
+    <?php
 		}
-	?>
+		?>
 
     function display_total() {
 
@@ -776,53 +745,53 @@ $total_amount_due = $subtotal_total;
                     tr_class = parseInt(item.status_id) == 2 ? "info" : "warning";
                     action = `<span>`;
 
-					<?php
+                    <?php
 						if ($role_id == 1 || $this->custom_function->module_permission("item modify", $module_permission)) {
-					?>
-						action += `<i
+						?>
+                    action += `<i
 										id = '${item.id}'
 										class = 'btn_item_modify btn btn-xs btn-warning fa fa-pencil'
 										title = 'Edit'
 										data-toggle = 'tooltip'
 									></i> `;
-					<?php
+                    <?php
 						}
 
 						if ($role_id == 1 || $this->custom_function->module_permission("item working", $module_permission)) {
-					?>
-						action += `<i
+						?>
+                    action += `<i
 										id='${item.id}'
 										class='btn_item_working btn btn-xs btn-info fa  fa-arrow-right'
 										title='Working'
 										data-toggle='tooltip'
 									></i> `;
-					<?php
+                    <?php
 						}
 
 						if ($role_id == 1 || $this->custom_function->module_permission("item complete", $module_permission)) {
-					?>
-						action += `<i
+						?>
+                    action += `<i
 										id='${item.id}'
 										class='btn_item_completed btn btn-xs btn-success fa fa-check'
 										title='Mark as Completed'
 										data-toggle='tooltip'
 									></i> `;
-					<?php
+                    <?php
 						}
 
 						if ($role_id == 1 || $this->custom_function->module_permission("item delete", $module_permission)) {
-					?>
-					action += `<i
+						?>
+                    action += `<i
                                     id = '${item.id}'
                                     class = 'btn_item_cancel btn btn-xs btn-danger fa fa-times'
                                     title = 'Delete'
                                     data-toggle = 'tooltip'
                                 ></i> `;
-					<?php
+                    <?php
 						}
-					?>
+						?>
 
-					action += `</span>`;
+                    action += `</span>`;
 
                 } else if (parseInt(item.status_id) == 4) {
                     //completed
@@ -1013,6 +982,8 @@ $total_amount_due = $subtotal_total;
         $('.chosen-select').chosen({
             allow_single_deselect: true
         });
+
+        $('#txt_prescription_product_id').trigger('chosen:updated');
 
     });
 
@@ -1631,8 +1602,13 @@ $total_amount_due = $subtotal_total;
                         }
 
                         $("#tbl_prescription tbody").html(tbl);
-
                         $("#modal_prescription").modal();
+
+                        // $('#txt_prescription_product_id').trigger('change').chosen().trigger('chosen:updated');
+
+                        $("#modal_prescription").on('shown.bs.modal', function() {
+							$('.chosen-select', this).chosen('destroy').chosen();
+                        });
                     } else {
                         bootbox.alert(error);
                     }
@@ -2079,33 +2055,6 @@ $total_amount_due = $subtotal_total;
                     }
                 }
             });
-
-
-            // bootbox.confirm("Are you sure you want to cancel this item?", function(result) {
-            //     if (result) {
-            //         $.post("<?= base_url($module); ?>/delete_item", {
-            //             id: id
-            //         }, function(data) {
-            //             if (data.indexOf("<!DOCTYPE html>") > -1) {
-            //                 alert("Error: Session Time-Out, You must login again to continue.");
-            //                 location.reload(true);
-            //             } else {
-            //                 let result = JSON.parse(data);
-
-            //                 if (result.success == true) {
-            //                     $("#tbl_list tbody").html(item_list(result.result));
-            //                     $("#tbl_list tbody").append(new_entry_field);
-            //                     $("#product_id_new").trigger("select", "focus");
-
-            //                     display_total();
-
-            //                 } else {
-            //                     bootbox.alert(result.message);
-            //                 }
-            //             }
-            //         });
-            //     }
-            // });
         }
     });
 

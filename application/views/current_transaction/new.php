@@ -279,7 +279,8 @@
         </div><!-- /.main-content -->
 
         <?php
-
+		$this->load->view("current_transaction/modal_patient");
+		$this->load->view("current_transaction/modal_client");
 		$this->load->view("template/footer");
 		$this->load->view("template/loading");
 		?>
@@ -351,13 +352,146 @@
         });
     });
 
+	//add patient
     $(document).on("click", "#btn_add_patient", function() {
-        bootbox.alert("Please goto DATA -> PATIENT, to add new patient name.")
+        $('.txt_patient_field').val('');
+        $('.modal_error, .modal_waiting').hide();
+        $('#modal_patient').modal();
+
+        $('#modal_patient').on('shown.bs.modal', function() {
+            $('#txt_patient_lastname').trigger('select', 'focus');
+        });
     });
 
-    $(document).on("click", "#btn_add_client", function() {
-        bootbox.alert("Please goto DATA -> CLIENT, to add new company name.")
+	$(document).on("keypress", ".txt_patient_field", function(e) {
+        if (e.which == 13) {
+            $("#btn_patient_save").trigger("click");
+        }
     });
+
+	$(document).on("click", "#btn_patient_save", function() {
+		var lastname = $("#txt_patient_lastname").val();
+		var firstname = $("#txt_patient_firstname").val();
+		var middlename = $("#txt_patient_middlename").val();
+		var gender_id = $("#txt_patient_gender_id").val();
+		var civil_id = $("#txt_patient_civil_id").val();
+		var contact_no = $("#txt_patient_contact_no").val();
+		var address = $("#txt_patient_address").val();
+
+		if (lastname && firstname) {
+			$(".modal_error, .modal_button").hide();
+			$(".modal_waiting").show();
+
+			$.post("<?= base_url(); ?>data_patient/add", {
+				lastname: lastname,
+				firstname: firstname,
+				middlename: middlename,
+				gender_id: gender_id,
+				civil_id: civil_id,
+				contact_no: contact_no,
+				address: address
+			}, function(data) {
+
+				$('#modal_patient .modal_error, #modal_patient .modal_waiting').hide();
+				$('#modal_patient .modal_button').show();
+
+				if (data.indexOf("<!DOCTYPE html>") > -1) {
+					alert("Error: Session Time-Out, You must login again to continue.");
+					location.reload(true);
+				} else if (data.indexOf("Error: ") > -1) {
+					$("#modal_patient .modal_error_msg").text(data);
+					$("#modal_patient  .modal_error").stop(true, true).show().delay(15000).fadeOut("slow");
+					$("#txt_patient_lastname").trigger("select", "focus");
+				} else {
+					if (data) {
+						let result_data = JSON.parse(data);
+
+						if (result_data) {
+							//prepare data to  be added to patient dropdown list
+							let label = `[${result_data[0].code}] - ${result_data[0].patient}`;
+							let newRecord = `<option value='${result_data[0].id}'>${label}</option>`;
+
+							$(`#patient_id_new`).append(newRecord).trigger(`chosen:updated`).val(`${result_data[0].id}`).trigger(`change`).trigger(`chosen:updated`);
+						}
+					}
+
+					$("#modal_patient").modal("hide");
+				}
+			});
+
+		} else {
+			$("#modal_patient .modal_error_msg").text("Error: Fields with * are required!");
+			$("#modal_patient .modal_error").stop(true, true).show().delay(15000).fadeOut("slow");
+		}
+	});
+
+	//add client or company
+    $(document).on("click", "#btn_add_client", function() {
+        $('.txt_client_field').val('');
+        $('.modal_error, .modal_waiting').hide();
+        $('#modal_client').modal();
+
+        $('#modal_client').on('shown.bs.modal', function() {
+            $('#txt_client_name').trigger('select', 'focus');
+        });
+    });
+
+	$(document).on("keypress", ".txt_client_field", function(e) {
+        if (e.which == 13) {
+            $("#btn_client_save").trigger("click");
+        }
+    });
+
+	$(document).on("click", "#btn_client_save", function() {
+
+		var name = $("#txt_client_name").val().trim();
+		var address = $("#txt_client_address").val().trim();
+		var phone = $("#txt_client_phone").val().trim();
+
+		if (name) {
+			$(".modal_error, .modal_button").hide();
+			$(".modal_waiting").show();
+
+			$.post("<?= base_url(); ?>data_client/add", {
+				name: name,
+				address: address,
+				phone: phone
+			}, function(data) {
+
+				$('.modal_error, .modal_waiting').hide();
+				$('.modal_button').show();
+
+				if (data.indexOf("<!DOCTYPE html>") > -1) {
+					alert("Error: Session Time-Out, You must login again to continue.");
+					location.reload(true);
+				} else if (data.indexOf("Error: ") > -1) {
+					$("#modal_client .modal_error_msg").text(data);
+					$("#modal_client  .modal_error").stop(true, true).show().delay(15000).fadeOut("slow");
+					$("#txt_client_name").trigger("select", "focus");
+				} else {
+					if (data) {
+						result_data = JSON.parse(data);
+
+						if (result_data) {
+							//prepare data to  be added to patient dropdown list
+							let label = `${result_data[0].name}`;
+							let newRecord = `<option value='${result_data[0].id}'>${label}</option>`;
+
+							$(`#client_id_new`).append(newRecord).trigger(`chosen:updated`).val(`${result_data[0].id}`).trigger(`change`).trigger(`chosen:updated`);
+						}
+					}
+
+					$("#modal_client").modal("hide");
+				}
+			});
+
+		} else {
+			$("#modal_client .modal_error_msg").text("Error: Fields with * are required!");
+			$("#modal_client .modal_error").stop(true, true).show().delay(15000).fadeOut("slow");
+		}
+	});
+
+
 
     //region transaction buttons
     $(document).on("click", "#btn_confirm", function() {

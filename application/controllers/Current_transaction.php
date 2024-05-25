@@ -75,6 +75,9 @@ class Current_transaction extends CI_Controller
 					$this->load->model("data_location_model");
 					$this->load->model("data_queue_model");
 
+					$this->load->model('data_gender_model');
+					$this->load->model('data_civil_model');
+
 					$this->load->model("data_product_model");
 					$this->load->model("data_package_model");
 
@@ -215,6 +218,9 @@ class Current_transaction extends CI_Controller
 			$data["doctors"] = $this->shared_model->doctors();
 			$data["locations"] = $this->data_location_model->search();
 			$data["queues"] = $this->data_queue_model->search();
+
+			$data['genders'] = $this->data_gender_model->search("");
+			$data['civils'] = $this->data_civil_model->search("");
 
 			$this->load->view("current_transaction/new", $data);
 		} else {
