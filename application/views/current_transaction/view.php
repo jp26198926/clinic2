@@ -435,6 +435,7 @@ $total_amount_due = $subtotal_total;
 																//cancelled
 																$tr_class = "danger";
 															} else if ($transaction_status_id >= 2 && intval($value->status_id) == 2 || intval($value->status_id) == 3) {
+
 																//pending
 																$tr_class = intval($value->status_id) == 2 ? "info" : "warning";
 																$action = " <span>";
@@ -480,6 +481,16 @@ $total_amount_due = $subtotal_total;
 																//completed
 																$tr_class = "success";
 																$action = "";
+
+																if ($role_id == 1 || $role_id == 2 || $this->custom_function->module_permission("item delete", $module_permission)) {
+																	$action .= "<i
+                                                                                    id='{$value->id}'
+                                                                                    class='btn_item_cancel btn btn-xs btn-danger btn-xs fa  fa-times'
+                                                                                    title='Delete'
+                                                                                    data-toggle='tooltip'
+                                                                                ></i> ";
+																}
+
 															}
 
 															$subtotal_amount += $value->amount;
@@ -758,7 +769,7 @@ $total_amount_due = $subtotal_total;
 						}
 
 						if ($role_id == 1 || $this->custom_function->module_permission("item working", $module_permission)) {
-						?>
+					?>
                     action += `<i
 										id='${item.id}'
 										class='btn_item_working btn btn-xs btn-info fa  fa-arrow-right'
@@ -769,7 +780,7 @@ $total_amount_due = $subtotal_total;
 						}
 
 						if ($role_id == 1 || $this->custom_function->module_permission("item complete", $module_permission)) {
-						?>
+					?>
                     action += `<i
 										id='${item.id}'
 										class='btn_item_completed btn btn-xs btn-success fa fa-check'
@@ -780,7 +791,7 @@ $total_amount_due = $subtotal_total;
 						}
 
 						if ($role_id == 1 || $this->custom_function->module_permission("item delete", $module_permission)) {
-						?>
+					?>
                     action += `<i
                                     id = '${item.id}'
                                     class = 'btn_item_cancel btn btn-xs btn-danger fa fa-times'
@@ -789,7 +800,7 @@ $total_amount_due = $subtotal_total;
                                 ></i> `;
                     <?php
 						}
-						?>
+					?>
 
                     action += `</span>`;
 
@@ -797,6 +808,20 @@ $total_amount_due = $subtotal_total;
                     //completed
                     tr_class = "success";
                     action = "";
+
+					<?php
+						if ($role_id == 1 || $this->custom_function->module_permission("item delete", $module_permission)) {
+					?>
+                    action += `<i
+                                    id = '${item.id}'
+                                    class = 'btn_item_cancel btn btn-xs btn-danger fa fa-times'
+                                    title = 'Delete'
+                                    data-toggle = 'tooltip'
+                                ></i> `;
+                    <?php
+						}
+					?>
+
                 }
 
                 list += `<tr class='${tr_class}'>
