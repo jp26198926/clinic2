@@ -23,9 +23,9 @@ class Location_preemp extends Current_transaction
 	protected $prefix; //check or update app_details table in db for session_prefix field
 	protected $default_error_msg = "Error: Critical Error Encountered!";
 	protected $role_id;
-	protected $module = "location_cashier";
-	protected $module_description = "Cashier";
-	protected $page_name = "Cashier";
+	protected $module = "location_preemp";
+	protected $module_description = "Pre-Employment";
+	protected $page_name = "Pre-Employment";
 	protected $parent_menu = "Location";
 	protected $uid = 0;
 	protected $uname;
