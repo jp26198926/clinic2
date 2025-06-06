@@ -500,7 +500,7 @@
         let trans_type_id = $("#trans_type_id_new").val();
         let payment_method_id = $("#payment_method_id_new").val();
         let charging_type_id = $("#charging_type_id_new").val();
-
+		
         if (dt && patient_id && trans_type_id && trans_type_id && payment_method_id && charging_type_id) {
             bootbox.confirm("Are you sure you want to confirm this transaction?", function(result) {
                 if (result) {

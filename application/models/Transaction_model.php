@@ -21,7 +21,7 @@ class Transaction_model extends CI_Model
 		}
 	}
 
-	function save($data_input, $current_user = 0)
+	function save($data_input, $current_user = 0, $current_location_id = 2) //2 - triage by default
 	{
 		$this->db->trans_start();
 
@@ -31,7 +31,10 @@ class Transaction_model extends CI_Model
 
 		$data["created_by"] = $current_user;
 		$data["status_id"] = 3; //confirmed
-		$data["location_id"] = 2; //Triage
+		// $data["location_id"] = 2; //Triage
+
+		//if current location id is reception then redirect to triage upon saving
+		$data["location_id"] = ($current_location_id === 1) ? 2 : $current_location_id;
 
 		foreach ($data_input as $key => $val) {
 			$col = str_replace("_new", "", $key);

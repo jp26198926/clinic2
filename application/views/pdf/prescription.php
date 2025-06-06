@@ -100,6 +100,9 @@ function signatory_details($record)
 
 
 $pdf = new Pdf('P', 'mm', 'A4', true, 'UTF-8', false);
+
+$pdf->setFontSubsetting(false);
+
 $pdf->myHeader($company_name, $company_address, $company_contact, "PRISCRIPTION", "", 25);
 $pdf->myFooter("Printed: " . date("Y-m-d H:i:s") . " - " . strtoupper($record->created), "Record ", -15, "");
 

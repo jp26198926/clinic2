@@ -36,6 +36,10 @@ $remarks_msg = nl2br($record->remarks . '');
 $remarks = "Received a payment amounting to <u>{$amount_paid_words}</u> (PGK {$amount_paid}) for the Invoice No. {$record->transaction_no}. Please refer to the Charge Slip.";
 
 $pdf = new Pdf('P', 'mm', 'A4', true, 'UTF-8', false);
+
+$pdf->setFontSubsetting(false);
+
+
 $pdf->myHeader($company_name, $company_address, $company_contact, "e-Receipt", "", 25);
 $pdf->myFooter("Printed: " . date("Y-m-d H:i:s") . " - " . strtoupper($record->created), "Record ", -15, "");
 

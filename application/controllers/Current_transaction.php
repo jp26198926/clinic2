@@ -22,6 +22,7 @@ class Current_transaction extends CI_Controller
 	protected $company_name;
 	protected $company_address;
 	protected $company_contact;
+	protected $location_id = 0;
 	// protected $timer_countdown;
 
 	function __construct()
@@ -206,6 +207,7 @@ class Current_transaction extends CI_Controller
 			$data["module_permission"] = $this->module_permission;
 			$data["uid"] = $this->uid;
 			$data["ufname"] = strtoupper($this->uname);
+			$data["location_id"] = $this->location_id;
 
 			$data["uoms"] = $this->data_uom_model->search();
 			$data["trans_types"] = $this->data_trans_type_model->search();
@@ -295,10 +297,10 @@ class Current_transaction extends CI_Controller
 		$patient_id = $this->input->post("patient_id_new");
 		$payment_method_id = $this->input->post("payment_method_id_new");
 		$charging_type_id = $this->input->post("charging_type_id_new");
-
+		
 		if ($dt && $trans_type_id && $patient_id && $payment_method_id && $charging_type_id){
 			try {
-				$save = $this->main_model->save($data, $this->uid);
+				$save = $this->main_model->save($data, $this->uid, $this->location_id);
 				if ($save){
 					$result["success"] = true;
 					$result["data"] = $save;
