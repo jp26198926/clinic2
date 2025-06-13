@@ -299,13 +299,22 @@ class Batch_transaction_model extends CI_Model
     function cancel_batch($batch_id, $reason = '')
     {
         $batch = $this->get_by_id($batch_id);
-        if (!$batch || $batch->status !== 'DRAFT') {
-            throw new Exception("Error: Cannot cancel this batch");
+        if (!$batch) {
+            throw new Exception("Error: Batch not found");
+        }
+        
+        if ($batch->status !== 'DRAFT' && $batch->status !== 'COMPLETED') {
+            throw new Exception("Error: Cannot cancel this batch - invalid status");
+        }
+
+        // If batch is COMPLETED, we need to reverse stock movements
+        if ($batch->status === 'COMPLETED') {
+            $this->reverse_stock_movements($batch_id, $reason);
         }
 
         $update_data = array(
             'status' => 'CANCELLED',
-            'remarks' => $batch->remarks . "\n\nCancelled: " . $reason
+            'remarks' => $batch->remarks . "\n\nCancelled: " . $reason . " (Date: " . date('Y-m-d H:i:s') . ")"
         );
 
         $this->db->where('id', $batch_id);
@@ -313,6 +322,100 @@ class Batch_transaction_model extends CI_Model
             return true;
         } else {
             throw new Exception("Error: Failed to cancel batch");
+        }
+    }
+
+    private function reverse_stock_movements($batch_id, $reason = '')
+    {
+        // Load stock movement model and stock model
+        $this->load->model('stock_movements_model', 'stock_movements');
+        $this->load->model('stock_model');
+        
+        // Get batch details
+        $batch = $this->get_by_id($batch_id);
+        $items = $this->get_items($batch_id);
+        
+        foreach ($items as $item) {
+            // Create reverse stock movement based on transaction type
+            switch ($batch->transaction_type) {
+                case 'RECEIVE':
+                    // Reverse RECEIVE - subtract from stock (negative movement)
+                    $movement_data = array(
+                        'date' => date('Y-m-d'),
+                        'product_id' => $item->product_id,
+                        'location_id' => $batch->to_location_id,
+                        'movement_type' => 'ADJUSTMENT',
+                        'qty' => -$item->qty, // Negative to reverse
+                        'unit_cost' => $item->unit_cost,
+                        'reference_type' => 'BATCH_CANCEL',
+                        'reference_id' => $batch_id,
+                        'notes' => "Cancelled batch: " . $batch->transaction_number . " - " . $reason,
+                        'created_by' => 1 // TODO: Use actual user ID
+                    );
+                    
+                    $this->stock_movements->add_movement($movement_data);
+                    $this->stock_model->update_stock($item->product_id, $batch->to_location_id, $item->qty, 'subtract');
+                    break;
+                    
+                case 'RELEASE':
+                    // Reverse RELEASE - add back to stock (positive movement)
+                    $movement_data = array(
+                        'date' => date('Y-m-d'),
+                        'product_id' => $item->product_id,
+                        'location_id' => $batch->from_location_id,
+                        'movement_type' => 'ADJUSTMENT',
+                        'qty' => $item->qty, // Positive to add back
+                        'unit_cost' => $item->unit_cost,
+                        'reference_type' => 'BATCH_CANCEL',
+                        'reference_id' => $batch_id,
+                        'notes' => "Cancelled batch: " . $batch->transaction_number . " - " . $reason,
+                        'created_by' => 1 // TODO: Use actual user ID
+                    );
+                    
+                    $this->stock_movements->add_movement($movement_data);
+                    $this->stock_model->update_stock($item->product_id, $batch->from_location_id, $item->qty, 'add');
+                    break;
+                    
+                case 'TRANSFER':
+                    // Reverse TRANSFER - add back to source
+                    $movement_data_source = array(
+                        'date' => date('Y-m-d'),
+                        'product_id' => $item->product_id,
+                        'location_id' => $batch->from_location_id,
+                        'movement_type' => 'ADJUSTMENT',
+                        'qty' => $item->qty, // Positive to add back to source
+                        'unit_cost' => $item->unit_cost,
+                        'reference_type' => 'BATCH_CANCEL',
+                        'reference_id' => $batch_id,
+                        'transfer_from_location_id' => $batch->to_location_id,
+                        'transfer_to_location_id' => $batch->from_location_id,
+                        'notes' => "Cancelled batch: " . $batch->transaction_number . " - " . $reason,
+                        'created_by' => 1 // TODO: Use actual user ID
+                    );
+                    
+                    $this->stock_movements->add_movement($movement_data_source);
+                    $this->stock_model->update_stock($item->product_id, $batch->from_location_id, $item->qty, 'add');
+                    
+                    // Reverse TRANSFER - subtract from destination
+                    $movement_data_dest = array(
+                        'date' => date('Y-m-d'),
+                        'product_id' => $item->product_id,
+                        'location_id' => $batch->to_location_id,
+                        'movement_type' => 'ADJUSTMENT',
+                        'qty' => -$item->qty, // Negative to subtract from destination
+                        'unit_cost' => $item->unit_cost,
+                        'reference_type' => 'BATCH_CANCEL',
+                        'reference_id' => $batch_id,
+                        'transfer_from_location_id' => $batch->to_location_id,
+                        'transfer_to_location_id' => $batch->from_location_id,
+                        'notes' => "Cancelled batch: " . $batch->transaction_number . " - " . $reason,
+                        'created_by' => 1 // TODO: Use actual user ID
+                    );
+                    
+                    $this->stock_movements->add_movement($movement_data_dest);
+                    $this->stock_model->update_stock($item->product_id, $batch->to_location_id, $item->qty, 'subtract');
+                    break;
+            }
         }
     }
 
@@ -351,5 +454,148 @@ class Batch_transaction_model extends CI_Model
             'batch' => $batch,
             'items' => $items
         );
+    }
+
+    function create_batch_with_items($batch_data, $items, $user_id)
+    {
+        $this->db->trans_start();
+
+        // Generate transaction number
+        $transaction_number = $this->generate_transaction_number();
+
+        // Prepare batch data
+        $batch_insert = array(
+            'transaction_number' => $transaction_number,
+            'transaction_date' => $batch_data['transaction_date'],
+            'transaction_type' => $batch_data['transaction_type'],
+            'from_location_id' => $batch_data['from_location_id'],
+            'to_location_id' => $batch_data['to_location_id'],
+            'remarks' => $batch_data['remarks'],
+            'created_by' => $batch_data['created_by'],
+            'status' => 'COMPLETED',
+            'processed_at' => date('Y-m-d H:i:s'),
+            'processed_by' => $user_id
+        );
+
+        $this->db->insert($this->batch_table, $batch_insert);
+        $batch_id = $this->db->insert_id();
+
+        if (!$batch_id) {
+            throw new Exception("Error: Failed to create batch transaction");
+        }
+
+        // Add items
+        $total_items = 0;
+        $total_qty = 0;
+        $total_cost = 0;
+
+        foreach ($items as $item) {
+            $item_insert = array(
+                'batch_transaction_id' => $batch_id,
+                'product_id' => $item['product_id'],
+                'qty' => $item['qty'],
+                'unit_cost' => $item['unit_cost'],
+                'notes' => $item['notes']
+            );
+
+            $this->db->insert($this->items_table, $item_insert);
+            
+            if (!$this->db->insert_id()) {
+                throw new Exception("Error: Failed to add item to batch");
+            }
+
+            $total_items++;
+            $total_qty += $item['qty'];
+            $total_cost += ($item['qty'] * $item['unit_cost']);
+        }
+
+        // Update batch totals
+        $this->db->where('id', $batch_id);
+        $this->db->update($this->batch_table, array(
+            'total_items' => $total_items,
+            'total_qty' => $total_qty,
+            'total_cost' => $total_cost
+        ));
+
+        // Process stock movements immediately
+        $this->process_stock_movements($batch_id, $user_id);
+
+        $this->db->trans_complete();
+
+        if ($this->db->trans_status() === FALSE) {
+            throw new Exception("Error: Failed to create and process batch transaction");
+        }
+
+        return array(
+            'batch_id' => $batch_id,
+            'transaction_number' => $transaction_number
+        );
+    }
+
+    function process_stock_movements($batch_id, $user_id)
+    {
+        // Get batch details
+        $batch = $this->get_by_id($batch_id);
+        if (!$batch) {
+            throw new Exception("Error: Batch not found");
+        }
+
+        // Get batch items
+        $items = $this->get_items($batch_id);
+        if (empty($items)) {
+            throw new Exception("Error: No items found in batch");
+        }
+
+        // Load stock movements model
+        $this->load->model('stock_movements_model');
+
+        foreach ($items as $item) {
+            try {
+                switch ($batch->transaction_type) {
+                    case 'RECEIVE':
+                        $this->stock_movements_model->receive_stock(
+                            $item->product_id,
+                            $batch->to_location_id,
+                            $item->qty,
+                            $item->unit_cost,
+                            'BATCH_RECEIVE',
+                            $batch_id,
+                            $user_id,
+                            "Batch: {$batch->transaction_number} - {$item->notes}"
+                        );
+                        break;
+
+                    case 'RELEASE':
+                        $this->stock_movements_model->release_stock(
+                            $item->product_id,
+                            $batch->from_location_id,
+                            $item->qty,
+                            'BATCH_RELEASE',
+                            $batch_id,
+                            $user_id,
+                            "Batch: {$batch->transaction_number} - {$item->notes}"
+                        );
+                        break;
+
+                    case 'TRANSFER':
+                        $this->stock_movements_model->transfer_stock(
+                            $item->product_id,
+                            $batch->from_location_id,
+                            $batch->to_location_id,
+                            $item->qty,
+                            $user_id,
+                            "Batch: {$batch->transaction_number} - {$item->notes}"
+                        );
+                        break;
+
+                    default:
+                        throw new Exception("Error: Invalid transaction type: {$batch->transaction_type}");
+                }
+            } catch (Exception $ex) {
+                throw new Exception("Error processing item {$item->product_code}: " . $ex->getMessage());
+            }
+        }
+
+        return true;
     }
 }

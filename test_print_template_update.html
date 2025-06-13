@@ -1,0 +1,83 @@
+<!-- Test Print Template for Batch Transaction (Cost Fields Removed) -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Print Template Test</title>
+    <style>
+        table { border-collapse: collapse; width: 100%; margin: 20px 0; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f8f9fa; font-weight: bold; }
+        .text-right { text-align: right; }
+        .text-center { text-align: center; }
+    </style>
+</head>
+<body>
+    <h2>Batch Transaction Print Template Test</h2>
+    
+    <h3>✅ UPDATED TABLE STRUCTURE (Without Cost Columns)</h3>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 5%;">#</th>
+                <th style="width: 20%;">Product Code</th>
+                <th style="width: 35%;">Product Name</th>
+                <th style="width: 15%;">Category</th>
+                <th style="width: 10%;">UOM</th>
+                <th style="width: 15%;" class="text-right">Quantity</th>
+                <th style="width: 25%;">Notes</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="text-center">1</td>
+                <td>PROD001</td>
+                <td>Sample Product Name</td>
+                <td>Category A</td>
+                <td class="text-center">PCS</td>
+                <td class="text-right">10.00</td>
+                <td>Test item without cost</td>
+            </tr>
+            <tr>
+                <td class="text-center">2</td>
+                <td>PROD002</td>
+                <td>Another Product</td>
+                <td>Category B</td>
+                <td class="text-center">BOX</td>
+                <td class="text-right">5.50</td>
+                <td>Sample notes</td>
+            </tr>
+        </tbody>
+    </table>
+    
+    <h3>✅ UPDATED SUMMARY SECTION (Without Total Cost)</h3>
+    <table style="width: 300px; margin-left: auto;">
+        <tr>
+            <td>Total Items:</td>
+            <td class="text-right"><strong>2</strong></td>
+        </tr>
+        <tr style="border-top: 2px solid #333; border-bottom: 2px solid #333;">
+            <td>Total Quantity:</td>
+            <td class="text-right"><strong>15.50</strong></td>
+        </tr>
+    </table>
+    
+    <h3>📊 CHANGES MADE:</h3>
+    <ul>
+        <li>✅ Removed "Unit Cost" column from table header</li>
+        <li>✅ Removed "Total Cost" column from table header</li>
+        <li>✅ Updated colspan from 9 to 7 in "No items" message</li>
+        <li>✅ Removed unit cost and total cost data from item rows</li>
+        <li>✅ Removed "Total Cost" from summary section</li>
+        <li>✅ Adjusted column widths for better spacing without cost columns</li>
+        <li>✅ Maintained all other functionality (Product Code, Name, Category, UOM, Quantity, Notes)</li>
+    </ul>
+    
+    <h3>🎯 BENEFITS:</h3>
+    <ul>
+        <li>🔥 Simplified print layout without cost information</li>
+        <li>📱 Better spacing and readability</li>
+        <li>🎨 Consistent with interface changes</li>
+        <li>✨ Clean, professional appearance</li>
+    </ul>
+</body>
+</html>

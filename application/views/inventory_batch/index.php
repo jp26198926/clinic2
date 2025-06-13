@@ -3,49 +3,101 @@ defined('BASEPATH') or exit('No direct script access allowed');
 ?>
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
     <meta charset="utf-8" />
-    <title><?= $app_title ?> - <?= $page_name ?></title>
-    
-    <meta name="description" content="<?= $module_description ?>" />
+    <title> <?= $app_title; ?> </title>
+
+    <meta name="description" content="" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
 
-    <!-- Bootstrap and core CSS -->
-    <link rel="stylesheet" href="<?= base_url() ?>assets/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="<?= base_url() ?>assets/font-awesome/4.5.0/css/font-awesome.min.css" />
-    <link rel="stylesheet" href="<?= base_url() ?>assets/css/fonts.googleapis.com.css" />
-    <link rel="stylesheet" href="<?= base_url() ?>assets/css/ace.min.css" class="ace-main-stylesheet" id="main-ace-style" />
-    
-    <!-- DataTables CSS -->
-    <link rel="stylesheet" href="<?= base_url() ?>assets/css/dataTables.bootstrap.min.css" />
-    <link rel="stylesheet" href="<?= base_url() ?>assets/css/buttons.bootstrap.min.css" />
-    
-    <!-- Chosen CSS -->
-    <link rel="stylesheet" href="<?= base_url() ?>assets/css/chosen.min.css" />
-    
-    <!-- DateTimePicker CSS -->
-    <link rel="stylesheet" href="<?= base_url() ?>assets/css/bootstrap-datetimepicker.min.css" />
-    
-    <!-- SweetAlert2 CSS -->
-    <link rel="stylesheet" href="<?= base_url() ?>assets/css/sweetalert2.min.css" />
+    <?php
+	$this->load->view('template/style');
+	?>
 
     <style>
+        /* Custom styling for DataTables export buttons */
+        .dt-buttons {
+            margin-bottom: 10px;
+        }
+        
+        .dt-button {
+            margin-left: 5px !important;
+            border-radius: 3px !important;
+            font-size: 12px !important;
+            padding: 5px 12px !important;
+            min-width: 32px !important;
+        }
+        
+        .dt-button:hover {
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2) !important;
+        }
+
         /* Mobile Responsive Styles */
         @media (max-width: 768px) {
+            .table-responsive {
+                border: none;
+            }
+            
+            #dynamic-table {
+                display: none !important;
+            }
+            
             .mobile-card-container {
                 display: block !important;
             }
-            .table-responsive {
+
+            /* Make filter section more compact on mobile */
+        
+        /* Bootbox styling */
+        .bootbox-success .modal-header {
+            background-color: #5cb85c;
+            color: white;
+        }
+        
+        .bootbox-error .modal-header {
+            background-color: #d9534f;
+            color: white;
+        }
+        
+        .bootbox .modal-dialog {
+            margin-top: 100px;
+        }
+        
+        .bootbox textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+            .widget-box .widget-main {
+                padding: 10px;
+            }
+            
+            .widget-box .row {
+                margin-left: -5px;
+                margin-right: -5px;
+            }
+            
+            .widget-box .row [class*="col-"] {
+                padding-left: 5px;
+                padding-right: 5px;
+                margin-bottom: 10px;
+            }
+
+            /* Ensure form controls have proper spacing on mobile */
+            .form-control {
+                margin-bottom: 5px;
+            }
+            
+            .input-group {
+                margin-bottom: 10px;
+            }
+
+            /* Hide export buttons container on mobile since they won't work properly */
+            .tableTools-container {
                 display: none !important;
             }
-            .mobile-action-buttons {
-                margin-bottom: 15px;
-                text-align: center;
-            }
-            .mobile-action-buttons .btn {
-                margin: 2px;
-            }
+            
             .batch-card {
                 background: #fff;
                 border: 1px solid #ddd;
@@ -53,6 +105,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
                 margin-bottom: 15px;
                 padding: 15px;
                 box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                overflow: hidden;
             }
             .batch-header {
                 border-bottom: 1px solid #eee;
@@ -98,10 +151,19 @@ defined('BASEPATH') or exit('No direct script access allowed');
                 text-align: center;
                 margin-top: 10px;
             }
-            .batch-actions .btn {
-                margin: 2px;
-                padding: 4px 8px;
-                font-size: 11px;
+            /* Mobile action buttons */
+            .mobile-action-buttons {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+                margin-bottom: 15px;
+            }
+            
+            .mobile-action-buttons .btn {
+                flex: 1;
+                min-width: calc(50% - 4px);
+                font-size: 12px;
+                padding: 8px 10px;
             }
         }
 
@@ -109,14 +171,32 @@ defined('BASEPATH') or exit('No direct script access allowed');
             .mobile-card-container {
                 display: none !important;
             }
-            .table-responsive {
-                display: block !important;
+        }
+
+        /* Form Layout Styles */
+        .search-filters .form-control {
+            margin-bottom: 5px;
+        }
+        
+        .search-filters .input-group {
+            width: 100%;
+        }
+        
+        .search-filters .input-group-addon {
+            padding: 6px 8px;
+            font-size: 12px;
+            background-color: #f5f5f5;
+            border: 1px solid #ccc;
+        }
+        
+        /* Responsive form adjustments */
+        @media (max-width: 991px) {
+            .search-filters [class*="col-"] {
+                margin-bottom: 10px;
             }
         }
 
         /* Status Badge Styles */
-        .status-draft { background-color: #6c757d; }
-        .status-processing { background-color: #17a2b8; }
         .status-completed { background-color: #28a745; }
         .status-cancelled { background-color: #dc3545; }
 
@@ -178,214 +258,210 @@ defined('BASEPATH') or exit('No direct script access allowed');
             to { background-color: transparent; }
         }
     </style>
+
 </head>
 
 <body class="no-skin">
-    <!-- Main Container -->
-    <div id="navbar" class="navbar navbar-default ace-save-state">
-        <div class="navbar-container ace-save-state" id="navbar-container">
-            <div class="navbar-header pull-left">
-                <a href="<?= base_url() ?>dashboard" class="navbar-brand">
-                    <small>
-                        <i class="fa fa-cubes"></i>
-                        <?= $app_name ?>
-                    </small>
-                </a>
-            </div>
 
-            <div class="navbar-buttons navbar-header pull-right" role="navigation">
-                <ul class="nav ace-nav">
-                    <li class="light-blue dropdown-modal">
-                        <a data-toggle="dropdown" href="#" class="dropdown-toggle">
-                            <span class="user-info">
-                                <small>Welcome,</small>
-                                <?= $uname ?>
-                            </span>
-                            <i class="ace-icon fa fa-caret-down"></i>
-                        </a>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </div>
+    <?php
+	$this->load->view('template/header');
+	?>
 
     <div class="main-container ace-save-state" id="main-container">
+        <script type="text/javascript">
+        try {
+            ace.settings.loadState('main-container')
+        } catch (e) {}
+        </script>
+
+        <?php
+		$this->load->view('template/sidebar');
+		?>
+
         <div class="main-content">
             <div class="main-content-inner">
-                <div class="breadcrumbs ace-save-state" id="breadcrumbs">
-                    <ul class="breadcrumb">
-                        <li>
-                            <i class="ace-icon fa fa-home home-icon"></i>
-                            <a href="<?= base_url() ?>dashboard">Home</a>
-                        </li>
-                        <li>
-                            <a href="#"><?= $parent_menu ?></a>
-                        </li>
-                        <li class="active"><?= $page_name ?></li>
-                    </ul>
-                </div>
 
                 <div class="page-content">
-                    <div class="page-header">
-                        <h1>
-                            <?= $page_name ?>
-                            <small>
-                                <i class="ace-icon fa fa-angle-double-right"></i>
-                                Create and manage batch inventory transactions
-                            </small>
-                        </h1>
-                    </div>
+                    <?php
+					$this->load->view('template/ace-settings');
+					?>
 
                     <div class="row">
-                        <div class="col-xs-12">
-                            <!-- Search and Filter Section -->
-                            <div class="widget-box widget-color-blue2">
-                                <div class="widget-header">
-                                    <h4 class="widget-title lighter">
-                                        <i class="ace-icon fa fa-search"></i>
-                                        Search & Filter
-                                    </h4>
-                                    <div class="widget-toolbar">
-                                        <a href="#" data-action="collapse">
-                                            <i class="ace-icon fa fa-chevron-up"></i>
-                                        </a>
-                                    </div>
-                                </div>
-                                <div class="widget-body">
-                                    <div class="widget-main">
-                                        <div class="row">
-                                            <div class="col-sm-3">
-                                                <div class="form-group">
-                                                    <label class="control-label">Search:</label>
-                                                    <input type="text" id="search_text" class="form-control" placeholder="Transaction number, remarks...">
+                        <div id='page_content' class="col-xs-12">
+                            <!-- PAGE CONTENT BEGINS -->
+                            <div class="page-header">
+                                <h1>
+                                    <?= ucwords($parent_menu); ?>
+                                    <small>
+                                        <i class="ace-icon fa fa-angle-double-right"></i>
+                                        <?= $page_name; ?>
+                                    </small>
+                                </h1>
+                            </div><!-- /.page-header -->
+
+                            <div class="row">
+                                <div class="col-xs-12">
+
+                                    <!-- Search and Filter Section -->
+                                    <div class="row">
+                                        <div class="col-sm-12">
+                                            <div class="widget-box">
+                                                <div class="widget-header">
+                                                    <h4 class="widget-title">Search & Filter</h4>
+                                                    <div class="widget-toolbar">
+                                                        <a href="#" data-action="collapse">
+                                                            <i class="ace-icon fa fa-chevron-up"></i>
+                                                        </a>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                            <div class="col-sm-2">
-                                                <div class="form-group">
-                                                    <label class="control-label">Type:</label>
-                                                    <select id="filter_type" class="form-control chosen-select">
-                                                        <option value="">All Types</option>
-                                                        <option value="RECEIVE">Receive</option>
-                                                        <option value="RELEASE">Release</option>
-                                                        <option value="TRANSFER">Transfer</option>
-                                                    </select>
-                                                </div>
-                                            </div>
-                                            <div class="col-sm-2">
-                                                <div class="form-group">
-                                                    <label class="control-label">Status:</label>
-                                                    <select id="filter_status" class="form-control chosen-select">
-                                                        <option value="">All Status</option>
-                                                        <option value="DRAFT">Draft</option>
-                                                        <option value="PROCESSING">Processing</option>
-                                                        <option value="COMPLETED">Completed</option>
-                                                        <option value="CANCELLED">Cancelled</option>
-                                                    </select>
-                                                </div>
-                                            </div>
-                                            <div class="col-sm-2">
-                                                <div class="form-group">
-                                                    <label class="control-label">Location:</label>
-                                                    <select id="filter_location" class="form-control chosen-select">
-                                                        <option value="">All Locations</option>
-                                                        <?php foreach ($locations as $location): ?>
-                                                            <option value="<?= $location->id ?>"><?= $location->location ?></option>
-                                                        <?php endforeach; ?>
-                                                    </select>
-                                                </div>
-                                            </div>
-                                            <div class="col-sm-3">
-                                                <div class="form-group">
-                                                    <label class="control-label">Date Range:</label>
-                                                    <div class="input-group">
-                                                        <input type="date" id="date_from" class="form-control">
-                                                        <span class="input-group-addon">to</span>
-                                                        <input type="date" id="date_to" class="form-control">
+
+                                                <div class="widget-body">
+                                                    <div class="widget-main search-filters">
+                                                        <!-- First Row: Search and Type filters -->
+                                                        <div class="row">
+                                                            <div class="col-sm-4 col-md-4">
+                                                                <label>Search:</label>
+                                                                <input type="text" id="search_text" class="form-control" placeholder="Transaction number, remarks...">
+                                                            </div>
+                                                            <div class="col-sm-2 col-md-2">
+                                                                <label>Type:</label>
+                                                                <select id="filter_type" class="form-control chosen-select">
+                                                                    <option value="">All Types</option>
+                                                                    <option value="RECEIVE">Receive</option>
+                                                                    <option value="RELEASE">Release</option>
+                                                                    <option value="TRANSFER">Transfer</option>
+                                                                </select>
+                                                            </div>
+                                                            <div class="col-sm-2 col-md-2">
+                                                                <label>Status:</label>
+                                                                <select id="filter_status" class="form-control chosen-select">
+                                                                    <option value="">All Status</option>
+                                                                    <option value="COMPLETED">Completed</option>
+                                                                    <option value="CANCELLED">Cancelled</option>
+                                                                </select>
+                                                            </div>
+                                                            <div class="col-sm-4 col-md-4">
+                                                                <label>Location:</label>
+                                                                <select id="filter_location" class="form-control chosen-select">
+                                                                    <option value="">All Locations</option>
+                                                                    <?php foreach ($locations as $location): ?>
+                                                                        <option value="<?= $location->id ?>"><?= $location->location ?></option>
+                                                                    <?php endforeach; ?>
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        <!-- Second Row: Date Range -->
+                                                        <div class="row" style="margin-top: 10px;">
+                                                            <div class="col-sm-6 col-md-6">
+                                                                <label>Date Range:</label>
+                                                                <div class="input-group">
+                                                                    <input type="date" id="date_from" class="form-control" placeholder="From Date">
+                                                                    <span class="input-group-addon">to</span>
+                                                                    <input type="date" id="date_to" class="form-control" placeholder="To Date">
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-sm-6 col-md-6">
+                                                                <!-- Empty column for spacing -->
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        <!-- Action Buttons Row -->
+                                                        <div class="row" style="margin-top: 15px;">
+                                                            <div class="col-sm-12">
+                                                                <button type="button" id="btn_search" class="btn btn-sm btn-primary">
+                                                                    <i class="ace-icon fa fa-search"></i> Search
+                                                                </button>
+                                                                <button type="button" id="btn_reset" class="btn btn-sm btn-warning">
+                                                                    <i class="ace-icon fa fa-refresh"></i> Reset
+                                                                </button>
+                                                                <?php if ($this->cf->module_permission("add", $module_permission)): ?>
+                                                                    <button type="button" id="btn_new_batch" class="btn btn-sm btn-success">
+                                                                        <i class="ace-icon fa fa-plus"></i> New Batch Transaction
+                                                                    </button>
+                                                                <?php endif; ?>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="form-actions">
-                                            <button type="button" id="btn_search" class="btn btn-info">
-                                                <i class="ace-icon fa fa-search"></i> Search
-                                            </button>
-                                            <button type="button" id="btn_reset" class="btn btn-warning">
-                                                <i class="ace-icon fa fa-refresh"></i> Reset
-                                            </button>
-                                            <?php if ($this->cf->module_permission("add", $module_permission)): ?>
-                                                <button type="button" id="btn_new_batch" class="btn btn-success">
-                                                    <i class="ace-icon fa fa-plus"></i> New Batch Transaction
-                                                </button>
-                                            <?php endif; ?>
-                                        </div>
                                     </div>
-                                </div>
-                            </div>
 
-                            <!-- Results Section -->
-                            <div class="widget-box">
-                                <div class="widget-header">
-                                    <h4 class="widget-title">
-                                        <i class="ace-icon fa fa-list"></i>
-                                        Batch Transactions
-                                        <span id="lbl_result_info" class="badge badge-warning"></span>
-                                    </h4>
-                                    <div class="widget-toolbar">
-                                        <div class="pull-right tableTools-container"></div>
-                                    </div>
-                                </div>
-                                <div class="widget-body">
-                                    <div class="widget-main">
-                                        <!-- Desktop Table View -->
-                                        <div class="table-responsive">
-                                            <table id="dynamic-table" class="table table-striped table-bordered table-hover">
-                                                <thead>
-                                                    <tr>
-                                                        <th>Transaction #</th>
-                                                        <th>Date</th>
-                                                        <th>Type</th>
-                                                        <th>From Location</th>
-                                                        <th>To Location</th>
-                                                        <th>Items</th>
-                                                        <th>Total Qty</th>
-                                                        <th>Total Cost</th>
-                                                        <th>Status</th>
-                                                        <th>Created By</th>
-                                                        <th>Actions</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody id="table_body">
-                                                    <!-- Data will be loaded via AJAX -->
-                                                </tbody>
-                                            </table>
-                                        </div>
+                                    <!-- Results Section -->
+                                    <div class="row">
+                                        <div class="col-sm-12">
+                                            <div class="widget-box">
+                                                <div class="widget-header">
+                                                    <h4 class="widget-title">
+                                                        <i class="ace-icon fa fa-list"></i>
+                                                        Batch Transactions
+                                                        <span id="lbl_result_info" class="badge badge-warning"></span>
+                                                    </h4>
+                                                    <div class="widget-toolbar">
+                                                        <div class="pull-right tableTools-container"></div>
+                                                    </div>
+                                                </div>
+                                                <div class="widget-body">
+                                                    <div class="widget-main no-padding">
+                                                        <!-- Desktop Table View -->
+                                                        <div class="table-responsive">
+                                                            <table id="dynamic-table" class="table table-striped table-bordered table-hover">
+                                                                <thead class="thin-border-bottom">
+                                                                    <tr>
+                                                                        <th>Transaction #</th>
+                                                                        <th>Date</th>
+                                                                        <th>Type</th>
+                                                                        <th>From Location</th>
+                                                                        <th>To Location</th>
+                                                                        <th>Items</th>
+                                                                        <th>Total Qty</th>
+                                                                        <th>Status</th>
+                                                                        <th>Actions</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody id="table_body">
+                                                                    <!-- Data will be loaded via AJAX -->
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
 
-                                        <!-- Mobile Card View -->
-                                        <div class="mobile-card-container" style="display: none;">
-                                            <div class="mobile-action-buttons">
-                                                <?php if ($this->cf->module_permission("add", $module_permission)): ?>
-                                                    <button type="button" id="mobile_btn_new_batch" class="btn btn-sm btn-success">
-                                                        <i class="ace-icon fa fa-plus"></i> New Batch
-                                                    </button>
-                                                <?php endif; ?>
-                                            </div>
-                                            <div id="mobile-cards-container">
-                                                <!-- Mobile cards will be populated here -->
+                                                        <!-- Mobile Card View -->
+                                                        <div class="mobile-card-container" style="display: none;">
+                                                            <div class="mobile-action-buttons">
+                                                                <?php if ($this->cf->module_permission("add", $module_permission)): ?>
+                                                                    <button type="button" id="mobile_btn_new_batch" class="btn btn-sm btn-success">
+                                                                        <i class="ace-icon fa fa-plus"></i> New Batch
+                                                                    </button>
+                                                                <?php endif; ?>
+                                                            </div>
+                                                            <div id="mobile-cards-container">
+                                                                <!-- Mobile cards will be populated here -->
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
+
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                </div>
+
+                            <!-- PAGE CONTENT ENDS -->
+                        </div><!-- /.col -->
+                    </div><!-- /.row -->
+
+                </div><!-- /.page-content -->
+
             </div>
-        </div>
-    </div>
+        </div><!-- /.main-content -->
+
+    </div><!-- /.main-container -->
 
     <!-- New Batch Modal -->
     <div id="modal_new_batch" class="modal fade" tabindex="-1">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog modal-xl">
             <div class="modal-content">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal">&times;</button>
@@ -395,50 +471,123 @@ defined('BASEPATH') or exit('No direct script access allowed');
                     </h4>
                 </div>
                 <div class="modal-body">
-                    <form id="form_new_batch" class="form-horizontal">
-                        <div class="form-group">
-                            <label class="col-sm-3 control-label">Transaction Date <span class="text-danger">*</span></label>
-                            <div class="col-sm-9">
-                                <input type="date" id="nb_transaction_date" class="form-control" required>
+                    <form id="form_new_batch">
+                        <!-- Header Information -->
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <div class="form-group">
+                                    <label>Transaction Date <span class="text-danger">*</span></label>
+                                    <input type="date" id="nb_transaction_date" class="form-control" required>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="form-group">
+                                    <label>Transaction Type <span class="text-danger">*</span></label>
+                                    <select id="nb_transaction_type" class="form-control chosen-select" required>
+                                        <option value="">Select Type</option>
+                                        <option value="RECEIVE">Receive Stock</option>
+                                        <option value="RELEASE">Release Stock</option>
+                                        <option value="TRANSFER">Transfer Stock</option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
-                        <div class="form-group">
-                            <label class="col-sm-3 control-label">Transaction Type <span class="text-danger">*</span></label>
-                            <div class="col-sm-9">
-                                <select id="nb_transaction_type" class="form-control chosen-select" required>
-                                    <option value="">Select Type</option>
-                                    <option value="RECEIVE">Receive Stock</option>
-                                    <option value="RELEASE">Release Stock</option>
-                                    <option value="TRANSFER">Transfer Stock</option>
-                                </select>
+                        
+                        <div class="row">
+                            <div class="col-sm-6" id="nb_from_location_group" style="display: none;">
+                                <div class="form-group">
+                                    <label>From Location</label>
+                                    <select id="nb_from_location" class="form-control chosen-select">
+                                        <option value="">Select Location</option>
+                                        <?php foreach ($locations as $location): ?>
+                                            <option value="<?= $location->id ?>"><?= $location->location ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-sm-6" id="nb_to_location_group" style="display: none;">
+                                <div class="form-group">
+                                    <label>To Location</label>
+                                    <select id="nb_to_location" class="form-control chosen-select">
+                                        <option value="">Select Location</option>
+                                        <?php foreach ($locations as $location): ?>
+                                            <option value="<?= $location->id ?>"><?= $location->location ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
                             </div>
                         </div>
-                        <div class="form-group" id="nb_from_location_group" style="display: none;">
-                            <label class="col-sm-3 control-label">From Location</label>
-                            <div class="col-sm-9">
-                                <select id="nb_from_location" class="form-control chosen-select">
-                                    <option value="">Select Location</option>
-                                    <?php foreach ($locations as $location): ?>
-                                        <option value="<?= $location->id ?>"><?= $location->location ?></option>
-                                    <?php endforeach; ?>
-                                </select>
+                        
+                        <div class="row">
+                            <div class="col-sm-12">
+                                <div class="form-group">
+                                    <label>Remarks</label>
+                                    <textarea id="nb_remarks" class="form-control" rows="2" placeholder="Optional remarks about this batch transaction"></textarea>
+                                </div>
                             </div>
                         </div>
-                        <div class="form-group" id="nb_to_location_group" style="display: none;">
-                            <label class="col-sm-3 control-label">To Location</label>
-                            <div class="col-sm-9">
-                                <select id="nb_to_location" class="form-control chosen-select">
-                                    <option value="">Select Location</option>
-                                    <?php foreach ($locations as $location): ?>
-                                        <option value="<?= $location->id ?>"><?= $location->location ?></option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label class="col-sm-3 control-label">Remarks</label>
-                            <div class="col-sm-9">
-                                <textarea id="nb_remarks" class="form-control" rows="3" placeholder="Optional remarks about this batch transaction"></textarea>
+
+                        <hr>
+                        
+                        <!-- Items Section -->
+                        <div class="row">
+                            <div class="col-sm-12">
+                                <h5><strong>Transaction Items <span class="text-danger">*</span></strong></h5>
+                                
+                                <!-- Add Item Row -->
+                                <div class="well well-sm">
+                                    <div class="row">
+                                        <div class="col-sm-4">
+                                            <div class="form-group">
+                                                <label>Product <span class="text-danger">*</span></label>
+                                                <select id="nb_product_id" class="form-control chosen-select-products">
+                                                    <option value="">Select Product</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-sm-3">
+                                            <div class="form-group">
+                                                <label>Quantity <span class="text-danger">*</span></label>
+                                                <input type="number" id="nb_qty" class="form-control" min="0.01" step="0.01" placeholder="0.00">
+                                            </div>
+                                        </div>
+                                        <div class="col-sm-4">
+                                            <div class="form-group">
+                                                <label>Notes</label>
+                                                <input type="text" id="nb_notes" class="form-control" placeholder="Optional notes">
+                                            </div>
+                                        </div>
+                                        <div class="col-sm-1">
+                                            <div class="form-group">
+                                                <label>&nbsp;</label><br>
+                                                <button type="button" id="btn_add_item" class="btn btn-sm btn-success">
+                                                    <i class="ace-icon fa fa-plus"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Items Table -->
+                                <div class="table-responsive">
+                                    <table id="items_table" class="table table-striped table-bordered">
+                                        <thead>
+                                            <tr>
+                                                <th>Product Code</th>
+                                                <th>Product Name</th>
+                                                <th>UOM</th>
+                                                <th class="text-right">Quantity</th>
+                                                <th>Notes</th>
+                                                <th class="text-center">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="items_table_body">
+                                            <tr id="no_items_row">
+                                                <td colspan="6" class="text-center text-muted">No items added yet</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                     </form>
@@ -448,7 +597,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
                         <i class="ace-icon fa fa-times"></i> Cancel
                     </button>
                     <button type="button" id="btn_save_batch" class="btn btn-sm btn-primary">
-                        <i class="ace-icon fa fa-check"></i> Create Batch
+                        <i class="ace-icon fa fa-check"></i> Create & Complete Transaction
                     </button>
                 </div>
             </div>
@@ -481,29 +630,9 @@ defined('BASEPATH') or exit('No direct script access allowed');
     </div>
 
     <!-- Loading Scripts -->
-    <script src="<?= base_url() ?>assets/js/jquery.2.1.1.min.js"></script>
-    <script src="<?= base_url() ?>assets/js/bootstrap.min.js"></script>
-    
-    <!-- DataTables -->
-    <script src="<?= base_url() ?>assets/js/jquery.dataTables.min.js"></script>
-    <script src="<?= base_url() ?>assets/js/dataTables.bootstrap.min.js"></script>
-    <script src="<?= base_url() ?>assets/js/dataTables.buttons.min.js"></script>
-    <script src="<?= base_url() ?>assets/js/buttons.bootstrap.min.js"></script>
-    <script src="<?= base_url() ?>assets/js/buttons.html5.min.js"></script>
-    <script src="<?= base_url() ?>assets/js/buttons.print.min.js"></script>
-    <script src="<?= base_url() ?>assets/js/jszip.min.js"></script>
-    <script src="<?= base_url() ?>assets/js/pdfmake.min.js"></script>
-    <script src="<?= base_url() ?>assets/js/vfs_fonts.js"></script>
-    
-    <!-- Chosen -->
-    <script src="<?= base_url() ?>assets/js/chosen.jquery.min.js"></script>
-    
-    <!-- SweetAlert2 -->
-    <script src="<?= base_url() ?>assets/js/sweetalert2.min.js"></script>
-    
-    <!-- Ace scripts -->
-    <script src="<?= base_url() ?>assets/js/ace-extra.min.js"></script>
-    <script src="<?= base_url() ?>assets/js/ace.min.js"></script>
+    <?php
+    $this->load->view('template/script');
+    ?>
 
     <script>
         const base_url = "<?= base_url() ?>";
@@ -534,6 +663,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
             $('#btn_reset').on('click', resetFilters);
             $('#btn_new_batch, #mobile_btn_new_batch').on('click', showNewBatchModal);
             $('#btn_save_batch').on('click', saveBatch);
+            $('#btn_add_item').on('click', addItem);
 
             // Transaction type change handler
             $('#nb_transaction_type').on('change', handleTransactionTypeChange);
@@ -542,6 +672,14 @@ defined('BASEPATH') or exit('No direct script access allowed');
             $('#form_new_batch').on('submit', function(e) {
                 e.preventDefault();
                 saveBatch();
+            });
+
+            // Allow adding item with Enter key
+            $('#nb_qty, #nb_notes').on('keypress', function(e) {
+                if (e.which === 13) { // Enter key
+                    e.preventDefault();
+                    addItem();
+                }
             });
 
             // Auto-search on input
@@ -569,8 +707,8 @@ defined('BASEPATH') or exit('No direct script access allowed');
                 pageLength: 25,
                 order: [[1, "desc"]], // Order by date descending
                 columnDefs: [
-                    { targets: [5, 6, 7], className: "text-right" },
-                    { targets: [10], orderable: false }
+                    { targets: [5, 6], className: "text-right" },
+                    { targets: [8], orderable: false }
                 ],
                 dom: 'Bfrtip',
                 buttons: [
@@ -581,7 +719,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
                         titleAttr: 'Export to Excel',
                         title: 'Batch Transactions Report',
                         exportOptions: {
-                            columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+                            columns: [0, 1, 2, 3, 4, 5, 6, 7, 8]
                         }
                     },
                     {
@@ -592,7 +730,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
                         title: 'Batch Transactions Report',
                         orientation: 'landscape',
                         exportOptions: {
-                            columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+                            columns: [0, 1, 2, 3, 4, 5, 6, 7, 8]
                         }
                     },
                     {
@@ -602,7 +740,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
                         titleAttr: 'Print Report',
                         title: 'Batch Transactions Report',
                         exportOptions: {
-                            columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+                            columns: [0, 1, 2, 3, 4, 5, 6, 7, 8]
                         }
                     }
                 ]
@@ -621,8 +759,8 @@ defined('BASEPATH') or exit('No direct script access allowed');
             const date_to = $('#date_to').val();
 
             $.ajax({
-                url: base_url + 'inventory_batch/search',
-                type: 'GET',
+                url: base_url + 'inventory_batch/get_batch_list',
+                type: 'POST',
                 data: {
                     search: search,
                     transaction_type: transaction_type,
@@ -635,15 +773,21 @@ defined('BASEPATH') or exit('No direct script access allowed');
                 beforeSend: function() {
                     $('#lbl_result_info').text('Loading...');
                 },
-                success: function(data) {
-                    populateTable(data);
-                    populateMobileCards(data);
-                    $('#lbl_result_info').text(data.length + ' records found');
+                success: function(response) {
+                    if (response.success) {
+                        populateTable(response.data);
+                        populateMobileCards(response.data);
+                        $('#lbl_result_info').text(response.data.length + ' records found');
+                    } else {
+                        console.error('Search error:', response.message);
+                        $('#lbl_result_info').text('Error loading data');
+                        toastr.error(response.message || 'Failed to load batch transactions');
+                    }
                 },
                 error: function(xhr, status, error) {
                     console.error('Search error:', error);
                     $('#lbl_result_info').text('Error loading data');
-                    Swal.fire('Error', 'Failed to load batch transactions', 'error');
+                    toastr.error('Failed to load batch transactions');
                 }
             });
         }
@@ -658,7 +802,6 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
                 const fromLocation = row.from_location || '-';
                 const toLocation = row.to_location || '-';
-                const totalCost = row.total_cost ? parseFloat(row.total_cost).toFixed(2) : '0.00';
 
                 oTable1.row.add([
                     row.transaction_number,
@@ -668,9 +811,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
                     toLocation,
                     row.total_items || 0,
                     parseFloat(row.total_qty || 0).toFixed(2),
-                    totalCost,
                     statusBadge,
-                    row.created_by_name || '-',
                     actions
                 ]);
             });
@@ -694,7 +835,6 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
                 const fromLocation = row.from_location || 'N/A';
                 const toLocation = row.to_location || 'N/A';
-                const totalCost = row.total_cost ? parseFloat(row.total_cost).toFixed(2) : '0.00';
 
                 const cardHtml = `
                     <div class="batch-card">
@@ -724,14 +864,6 @@ defined('BASEPATH') or exit('No direct script access allowed');
                                 <span class="batch-info-label">Total Qty:</span>
                                 <span class="batch-info-value">${parseFloat(row.total_qty || 0).toFixed(2)}</span>
                             </div>
-                            <div class="batch-info-row">
-                                <span class="batch-info-label">Total Cost:</span>
-                                <span class="batch-info-value">₱${totalCost}</span>
-                            </div>
-                        </div>
-                        <div class="batch-info-row">
-                            <span class="batch-info-label">Created By:</span>
-                            <span class="batch-info-value">${row.created_by_name || '-'}</span>
                         </div>
                         <div class="batch-actions">
                             ${actions}
@@ -760,26 +892,24 @@ defined('BASEPATH') or exit('No direct script access allowed');
                 </button>
             `;
 
-            if (row.status === 'DRAFT') {
+            if (row.status === 'DRAFT' || row.status === 'COMPLETED') {
+                <?php if ($role_id == 1 || $this->custom_function->module_permission("modify", $module_permission)): ?>
                 buttons += `
-                    <button type="button" class="btn btn-xs btn-primary" onclick="editBatch(${row.id})" title="Edit">
-                        <i class="ace-icon fa fa-edit"></i>
-                    </button>
-                    <button type="button" class="btn btn-xs btn-success" onclick="processBatch(${row.id})" title="Process">
-                        <i class="ace-icon fa fa-play"></i>
-                    </button>
-                    <button type="button" class="btn btn-xs btn-danger" onclick="cancelBatch(${row.id})" title="Cancel">
+                    <button type="button" class="btn btn-xs btn-danger" onclick="cancelBatch(${row.id})" title="Cancel Batch">
                         <i class="ace-icon fa fa-times"></i>
                     </button>
                 `;
+                <?php endif; ?>
             }
 
             if (row.status === 'COMPLETED') {
+                <?php if ($role_id == 1 || $this->custom_function->module_permission("print", $module_permission)): ?>
                 buttons += `
                     <button type="button" class="btn btn-xs btn-purple" onclick="printBatch(${row.id})" title="Print">
                         <i class="ace-icon fa fa-print"></i>
                     </button>
                 `;
+                <?php endif; ?>
             }
 
             return `<div class="btn-group">${buttons}</div>`;
@@ -792,23 +922,24 @@ defined('BASEPATH') or exit('No direct script access allowed');
                 </button>
             `;
 
-            if (row.status === 'DRAFT') {
+            if (row.status === 'DRAFT' || row.status === 'COMPLETED') {
+                <?php if ($role_id == 1 || $this->custom_function->module_permission("modify", $module_permission)): ?>
                 buttons += `
-                    <button type="button" class="btn btn-xs btn-primary" onclick="editBatch(${row.id})">
-                        <i class="ace-icon fa fa-edit"></i> Edit
-                    </button>
-                    <button type="button" class="btn btn-xs btn-success" onclick="processBatch(${row.id})">
-                        <i class="ace-icon fa fa-play"></i> Process
+                    <button type="button" class="btn btn-xs btn-danger" onclick="cancelBatch(${row.id})">
+                        <i class="ace-icon fa fa-times"></i> Cancel
                     </button>
                 `;
+                <?php endif; ?>
             }
 
             if (row.status === 'COMPLETED') {
+                <?php if ($role_id == 1 || $this->custom_function->module_permission("print", $module_permission)): ?>
                 buttons += `
                     <button type="button" class="btn btn-xs btn-purple" onclick="printBatch(${row.id})">
                         <i class="ace-icon fa fa-print"></i> Print
                     </button>
                 `;
+                <?php endif; ?>
             }
 
             return buttons;
@@ -824,6 +955,12 @@ defined('BASEPATH') or exit('No direct script access allowed');
             
             // Hide location groups
             $('#nb_from_location_group, #nb_to_location_group').hide();
+            
+            // Clear items table
+            clearItemsTable();
+            
+            // Load products
+            loadProducts();
             
             $('#modal_new_batch').modal('show');
         }
@@ -850,44 +987,240 @@ defined('BASEPATH') or exit('No direct script access allowed');
         }
 
         function saveBatch() {
+            // Validate basic fields
+            if (!$('#nb_transaction_date').val() || !$('#nb_transaction_type').val()) {
+                toastr.warning('Please fill in all required fields');
+                return;
+            }
+
+            // Get items from table
+            const items = getItemsFromTable();
+            if (items.length === 0) {
+                toastr.warning('Please add at least one item to the transaction');
+                return;
+            }
+
             const formData = {
                 transaction_date: $('#nb_transaction_date').val(),
                 transaction_type: $('#nb_transaction_type').val(),
                 from_location_id: $('#nb_from_location').val(),
                 to_location_id: $('#nb_to_location').val(),
-                remarks: $('#nb_remarks').val()
+                remarks: $('#nb_remarks').val(),
+                items: items
             };
 
-            // Basic validation
-            if (!formData.transaction_date || !formData.transaction_type) {
-                Swal.fire('Validation Error', 'Please fill in all required fields', 'warning');
-                return;
-            }
-
             $.ajax({
-                url: base_url + 'inventory_batch/create_batch',
+                url: base_url + 'inventory_batch/create_batch_with_items',
                 type: 'POST',
-                data: formData,
+                data: JSON.stringify(formData),
+                contentType: 'application/json',
+                dataType: 'json',
                 beforeSend: function() {
                     $('#btn_save_batch').prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Creating...');
                 },
                 success: function(response) {
-                    if (response.includes('Success:')) {
-                        Swal.fire('Success', response, 'success');
+                    console.log('Response received:', response);
+                    if (response.success) {
+                        toastr.success(response.message);
                         $('#modal_new_batch').modal('hide');
                         searchBatches();
                     } else {
-                        Swal.fire('Error', response, 'error');
+                        toastr.error(response.message || 'Failed to create batch transaction');
                     }
                 },
                 error: function(xhr, status, error) {
-                    console.error('Save error:', error);
-                    Swal.fire('Error', 'Failed to create batch transaction', 'error');
+                    console.error('Save error:', xhr);
+                    console.error('Response text:', xhr.responseText);
+                    let errorMsg = 'Failed to create batch transaction';
+                    try {
+                        const errorResponse = JSON.parse(xhr.responseText);
+                        errorMsg = errorResponse.message || errorMsg;
+                    } catch (e) {
+                        if (xhr.responseText) {
+                            errorMsg += ': ' + xhr.responseText.substring(0, 200);
+                        }
+                    }
+                    toastr.error(errorMsg);
                 },
                 complete: function() {
-                    $('#btn_save_batch').prop('disabled', false).html('<i class="ace-icon fa fa-check"></i> Create Batch');
+                    $('#btn_save_batch').prop('disabled', false).html('<i class="ace-icon fa fa-check"></i> Create & Complete Transaction');
                 }
             });
+        }
+
+        // Items Management Functions
+        let itemsCounter = 0;
+
+        function loadProducts() {
+            // First test the diagnostic endpoint
+            $.ajax({
+                url: base_url + 'inventory_batch/test_products',
+                type: 'GET',
+                dataType: 'json',
+                success: function(testResult) {
+                    console.log('Diagnostic test result:', testResult);
+                    
+                    // If diagnostic test passes, load actual products
+                    if (testResult.success) {
+                        loadActualProducts();
+                    } else {
+                        console.error('Diagnostic test failed:', testResult);
+                        toastr.error('Database connection issue: ' + (testResult.error || 'Unknown error'));
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Diagnostic test error:', xhr.responseText);
+                    console.error('Status:', status, 'Error:', error);
+                    toastr.error('Failed to connect to server for diagnostic test');
+                    
+                    // Try loading products anyway
+                    loadActualProducts();
+                }
+            });
+        }
+
+        function loadActualProducts() {
+            $.ajax({
+                url: base_url + 'inventory_batch/get_products',
+                type: 'GET',
+                dataType: 'json',
+                success: function(products) {
+                    console.log('Products loaded:', products);
+                    
+                    if (products.error) {
+                        toastr.error('Error loading products: ' + products.error);
+                        return;
+                    }
+                    
+                    const productSelect = $('#nb_product_id');
+                    productSelect.empty().append('<option value="">Select Product</option>');
+                    
+                    $.each(products, function(i, product) {
+                        productSelect.append(`<option value="${product.id}" data-code="${product.product_code}" data-name="${product.product_name}" data-uom="${product.uom || ''}" data-cost="${product.cost || 0}">${product.product_code} - ${product.product_name}</option>`);
+                    });
+                    
+                    // Refresh chosen
+                    $('.chosen-select-products').chosen({
+                        allow_single_deselect: true,
+                        no_results_text: "No products match",
+                        width: "100%"
+                    });
+                    
+                    console.log('Product dropdown populated with', products.length, 'products');
+                },
+                error: function(xhr, status, error) {
+                    console.error('Products load error:', xhr);
+                    console.error('Response text:', xhr.responseText);
+                    console.error('Status:', status, 'Error:', error);
+                    
+                    let errorMsg = 'Failed to load products';
+                    if (xhr.responseText) {
+                        try {
+                            const errorResponse = JSON.parse(xhr.responseText);
+                            errorMsg += ': ' + (errorResponse.error || errorResponse.message || 'Unknown error');
+                        } catch (e) {
+                            if (xhr.responseText.includes('<!DOCTYPE html>')) {
+                                errorMsg += ': Server returned HTML instead of JSON (possible PHP error)';
+                            } else {
+                                errorMsg += ': ' + xhr.responseText.substring(0, 100);
+                            }
+                        }
+                    }
+                    toastr.error(errorMsg);
+                }
+            });
+        }
+
+        function clearItemsTable() {
+            $('#items_table_body').html('<tr id="no_items_row"><td colspan="6" class="text-center text-muted">No items added yet</td></tr>');
+            updateTotals();
+            itemsCounter = 0;
+        }
+
+        function addItem() {
+            const productId = $('#nb_product_id').val();
+            const qty = parseFloat($('#nb_qty').val()) || 0;
+            const notes = $('#nb_notes').val();
+
+            if (!productId || qty <= 0) {
+                toastr.warning('Please select a product and enter valid quantity');
+                return;
+            }
+
+            // Get product data
+            const selectedOption = $('#nb_product_id option:selected');
+            const productCode = selectedOption.data('code');
+            const productName = selectedOption.data('name');
+            const uom = selectedOption.data('uom') || '';
+
+            // Check if product already exists
+            if ($(`#item_row_${productId}`).length > 0) {
+                toastr.warning('Product already added. Please remove it first to add again.');
+                return;
+            }
+
+            // Remove "no items" row
+            $('#no_items_row').remove();
+
+            // Add new row
+            const rowHtml = `
+                <tr id="item_row_${productId}" data-product-id="${productId}">
+                    <td>${productCode}</td>
+                    <td>${productName}</td>
+                    <td>${uom}</td>
+                    <td class="text-right">${qty.toFixed(2)}</td>
+                    <td>${notes}</td>
+                    <td class="text-center">
+                        <button type="button" class="btn btn-xs btn-danger" onclick="removeItem(${productId})" title="Remove">
+                            <i class="ace-icon fa fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+
+            $('#items_table_body').append(rowHtml);
+
+            // Clear form
+            $('#nb_product_id').val('').trigger('chosen:updated');
+            $('#nb_qty').val('');
+            $('#nb_notes').val('');
+
+            updateTotals();
+            itemsCounter++;
+        }
+
+        function removeItem(productId) {
+            $(`#item_row_${productId}`).remove();
+            
+            // If no items left, show "no items" row
+            if ($('#items_table_body tr').length === 0) {
+                $('#items_table_body').html('<tr id="no_items_row"><td colspan="6" class="text-center text-muted">No items added yet</td></tr>');
+            }
+            
+            updateTotals();
+        }
+
+        function updateTotals() {
+            // Total row removed - function kept for compatibility but no longer updates display
+        }
+
+        function getItemsFromTable() {
+            const items = [];
+            
+            $('#items_table_body tr[data-product-id]').each(function() {
+                const productId = $(this).data('product-id');
+                const qty = parseFloat($(this).find('td:eq(3)').text()) || 0;
+                const notes = $(this).find('td:eq(4)').text();
+                
+                items.push({
+                    product_id: productId,
+                    qty: qty,
+                    unit_cost: 0, // Default to 0 since we removed cost input
+                    notes: notes
+                });
+            });
+            
+            return items;
         }
 
         function viewBatchDetails(batchId) {
@@ -944,7 +1277,6 @@ defined('BASEPATH') or exit('No direct script access allowed');
                         <table class="table table-borderless">
                             <tr><td><strong>Total Items:</strong></td><td>${batch.total_items || 0}</td></tr>
                             <tr><td><strong>Total Quantity:</strong></td><td>${parseFloat(batch.total_qty || 0).toFixed(2)}</td></tr>
-                            <tr><td><strong>Total Cost:</strong></td><td>₱${parseFloat(batch.total_cost || 0).toFixed(2)}</td></tr>
                         </table>
                     </div>
                 </div>
@@ -974,8 +1306,6 @@ defined('BASEPATH') or exit('No direct script access allowed');
                                         <th>Category</th>
                                         <th>UOM</th>
                                         <th class="text-right">Quantity</th>
-                                        <th class="text-right">Unit Cost</th>
-                                        <th class="text-right">Total Cost</th>
                                         <th>Notes</th>
                                     </tr>
                                 </thead>
@@ -983,12 +1313,9 @@ defined('BASEPATH') or exit('No direct script access allowed');
             `;
 
             if (items.length === 0) {
-                html += '<tr><td colspan="8" class="text-center">No items in this batch</td></tr>';
+                html += '<tr><td colspan="6" class="text-center">No items in this batch</td></tr>';
             } else {
                 $.each(items, function(i, item) {
-                    const unitCost = parseFloat(item.unit_cost || 0).toFixed(2);
-                    const totalCost = parseFloat(item.total_cost || 0).toFixed(2);
-                    
                     html += `
                         <tr>
                             <td>${item.product_code}</td>
@@ -996,8 +1323,6 @@ defined('BASEPATH') or exit('No direct script access allowed');
                             <td>${item.category || '-'}</td>
                             <td>${item.uom || '-'}</td>
                             <td class="text-right">${parseFloat(item.qty).toFixed(2)}</td>
-                            <td class="text-right">₱${unitCost}</td>
-                            <td class="text-right">₱${totalCost}</td>
                             <td>${item.notes || '-'}</td>
                         </tr>
                     `;
@@ -1015,83 +1340,52 @@ defined('BASEPATH') or exit('No direct script access allowed');
             return html;
         }
 
-        function processBatch(batchId) {
-            Swal.fire({
-                title: 'Process Batch Transaction?',
-                text: 'This will execute all inventory movements in this batch. This action cannot be undone.',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#3085d6',
-                cancelButtonColor: '#d33',
-                confirmButtonText: 'Yes, process it!'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    $.ajax({
-                        url: base_url + 'inventory_batch/process_batch',
-                        type: 'POST',
-                        data: { batch_id: batchId },
-                        beforeSend: function() {
-                            Swal.fire({
-                                title: 'Processing...',
-                                text: 'Please wait while the batch is being processed',
-                                allowOutsideClick: false,
-                                didOpen: () => {
-                                    Swal.showLoading();
-                                }
-                            });
-                        },
-                        success: function(response) {
-                            if (response.includes('Success:')) {
-                                Swal.fire('Success', response, 'success');
-                                searchBatches();
-                            } else {
-                                Swal.fire('Error', response, 'error');
-                            }
-                        },
-                        error: function(xhr, status, error) {
-                            console.error('Process error:', error);
-                            Swal.fire('Error', 'Failed to process batch transaction', 'error');
-                        }
-                    });
-                }
-            });
-        }
-
         function cancelBatch(batchId) {
-            Swal.fire({
+            bootbox.prompt({
                 title: 'Cancel Batch Transaction?',
-                input: 'textarea',
-                inputLabel: 'Reason for cancellation',
-                inputPlaceholder: 'Enter reason for cancelling this batch...',
-                inputAttributes: {
-                    'aria-label': 'Reason for cancellation'
-                },
-                showCancelButton: true,
-                confirmButtonColor: '#d33',
-                cancelButtonColor: '#3085d6',
-                confirmButtonText: 'Yes, cancel it!'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    $.ajax({
-                        url: base_url + 'inventory_batch/cancel_batch',
-                        type: 'POST',
-                        data: { 
-                            batch_id: batchId,
-                            reason: result.value || 'No reason provided'
-                        },
-                        success: function(response) {
-                            if (response.includes('Success:')) {
-                                Swal.fire('Success', response, 'success');
-                                searchBatches();
-                            } else {
-                                Swal.fire('Error', response, 'error');
+                message: 'Please enter the reason for cancelling this batch transaction:',
+                inputType: 'textarea',
+                placeholder: 'Enter reason for cancelling this batch...',
+                callback: function(reason) {
+                    if (reason !== null && reason.trim() !== '') {
+                        $.ajax({
+                            url: base_url + 'inventory_batch/cancel_batch',
+                            type: 'POST',
+                            data: { 
+                                batch_id: batchId,
+                                reason: reason.trim(),
+                                [csrf_name]: csrf_hash
+                            },
+                            success: function(response) {
+                                if (response.includes('Success:')) {
+                                    bootbox.alert({
+                                        message: response,
+                                        className: 'bootbox-success',
+                                        callback: function() {
+                                            searchBatches();
+                                        }
+                                    });
+                                } else {
+                                    bootbox.alert({
+                                        message: response,
+                                        className: 'bootbox-error'
+                                    });
+                                }
+                            },
+                            error: function(xhr, status, error) {
+                                console.error('Cancel error:', error);
+                                bootbox.alert({
+                                    message: 'Failed to cancel batch transaction. Please try again.',
+                                    className: 'bootbox-error'
+                                });
                             }
-                        },
-                        error: function(xhr, status, error) {
-                            console.error('Cancel error:', error);
-                            Swal.fire('Error', 'Failed to cancel batch transaction', 'error');
-                        }
-                    });
+                        });
+                    } else if (reason !== null) {
+                        bootbox.alert({
+                            message: 'Cancellation reason is required.',
+                            className: 'bootbox-error'
+                        });
+                    }
                 }
             });
         }

@@ -291,20 +291,18 @@ defined('BASEPATH') or exit('No direct script access allowed');
         <thead>
             <tr>
                 <th style="width: 5%;">#</th>
-                <th style="width: 15%;">Product Code</th>
-                <th style="width: 30%;">Product Name</th>
+                <th style="width: 20%;">Product Code</th>
+                <th style="width: 35%;">Product Name</th>
                 <th style="width: 15%;">Category</th>
-                <th style="width: 8%;">UOM</th>
-                <th style="width: 10%;" class="text-right">Quantity</th>
-                <th style="width: 10%;" class="text-right">Unit Cost</th>
-                <th style="width: 12%;" class="text-right">Total Cost</th>
-                <th style="width: 20%;">Notes</th>
+                <th style="width: 10%;">UOM</th>
+                <th style="width: 15%;" class="text-right">Quantity</th>
+                <th style="width: 25%;">Notes</th>
             </tr>
         </thead>
         <tbody>
             <?php if (empty($items)): ?>
                 <tr>
-                    <td colspan="9" class="text-center" style="padding: 20px; font-style: italic; color: #666;">
+                    <td colspan="7" class="text-center" style="padding: 20px; font-style: italic; color: #666;">
                         No items in this batch transaction
                     </td>
                 </tr>
@@ -317,8 +315,6 @@ defined('BASEPATH') or exit('No direct script access allowed');
                     <td><?= htmlspecialchars($item->category ?: '-') ?></td>
                     <td class="text-center"><?= htmlspecialchars($item->uom ?: '-') ?></td>
                     <td class="text-right"><?= number_format($item->qty, 2) ?></td>
-                    <td class="text-right">₱<?= number_format($item->unit_cost ?: 0, 2) ?></td>
-                    <td class="text-right">₱<?= number_format($item->total_cost ?: 0, 2) ?></td>
                     <td style="font-size: 10px;"><?= htmlspecialchars($item->notes ?: '-') ?></td>
                 </tr>
                 <?php endforeach; ?>
@@ -333,13 +329,9 @@ defined('BASEPATH') or exit('No direct script access allowed');
                 <td>Total Items:</td>
                 <td class="text-right"><strong><?= $batch->total_items ?: 0 ?></strong></td>
             </tr>
-            <tr>
+            <tr class="total-row">
                 <td>Total Quantity:</td>
                 <td class="text-right"><strong><?= number_format($batch->total_qty ?: 0, 2) ?></strong></td>
-            </tr>
-            <tr class="total-row">
-                <td>Total Cost:</td>
-                <td class="text-right"><strong>₱<?= number_format($batch->total_cost ?: 0, 2) ?></strong></td>
             </tr>
         </table>
     </div>
