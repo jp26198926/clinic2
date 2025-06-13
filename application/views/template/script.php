@@ -61,11 +61,11 @@
 <script src="<?= base_url(); ?>assets/js/dataTables.select.min.js"></script>
 
 <!-- PDF export dependencies -->
-<script src="<?= base_url(); ?>assets/js/pdfmake.min.js"></script>
-<script src="<?= base_url(); ?>assets/js/vfs_fonts.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.70/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.70/vfs_fonts.js"></script>
 
-<!-- Excel export dependencies -->
-<script src="<?= base_url(); ?>assets/js/jszip.min.js"></script>
+<!-- Excel export dependencies - Use JSZip 2.6.1 for compatibility with DataTables Buttons -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/2.6.1/jszip.min.js"></script>
 
 <script src="<?= base_url(); ?>assets/js/jquery.hotkeys.index.min.js"></script>
 <script src="<?= base_url(); ?>assets/js/bootstrap-wysiwyg.min.js"></script>

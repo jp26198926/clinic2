@@ -267,10 +267,11 @@
                             columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] // Exclude Actions column
                         },
                         customize: function(doc) {
-                            // Adjust column widths for landscape orientation
-                            doc.content[1].table.widths = ['8%', '12%', '15%', '8%', '12%', '8%', '8%', '8%', '8%', '8%', '7%', '8%'];
-                            doc.styles.tableHeader.fontSize = 7;
-                            doc.defaultStyle.fontSize = 6;
+                            // Adjust column widths for landscape orientation - 13 exported columns
+                            doc.content[1].table.widths = ['7%', '8%', '12%', '8%', '8%', '8%', '7%', '7%', '7%', '7%', '8%', '8%', '7%'];
+                            doc.styles.tableHeader.fontSize = 6;
+                            doc.defaultStyle.fontSize = 5;
+                            doc.styles.tableHeader.alignment = 'left';
                             
                             // Add header with filter information
                             var filters = [];
@@ -294,6 +295,12 @@
                                 ],
                                 alignment: 'center'
                             });
+                            
+                            // Ensure proper table structure
+                            if (doc.content[1] && doc.content[1].table) {
+                                doc.content[1].table.headerRows = 1;
+                                doc.content[1].table.keepWithHeaderRows = 1;
+                            }
                         }
                     },
                     {
@@ -304,25 +311,105 @@
                         exportOptions: {
                             columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] // Exclude Actions column
                         },
+                    {
+                        extend: 'print',
+                        text: '<i class="ace-icon fa fa-print"></i> Print',
+                        className: 'btn btn-info btn-sm',
+                        title: 'Stock Movements Report',
+                        exportOptions: {
+                            columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] // Exclude Actions column
+                        },
                         customize: function(win) {
-                            // Add filter information to print view
+                            // Add custom CSS for proper printing
+                            $(win.document.head).append(
+                                '<style type="text/css">' +
+                                '@page { ' +
+                                    'margin: 1in 0.5in; ' +
+                                    'size: A4 landscape; ' +
+                                '}' +
+                                'body { ' +
+                                    'font-family: Arial, sans-serif; ' +
+                                    'font-size: 9px; ' +
+                                    'line-height: 1.2; ' +
+                                    'margin: 0; ' +
+                                    'padding: 20px; ' +
+                                '}' +
+                                'h1 { ' +
+                                    'font-size: 18px; ' +
+                                    'text-align: center; ' +
+                                    'margin-bottom: 10px; ' +
+                                    'color: #333; ' +
+                                '}' +
+                                'table { ' +
+                                    'width: 100%; ' +
+                                    'border-collapse: collapse; ' +
+                                    'margin-top: 20px; ' +
+                                    'table-layout: fixed; ' +
+                                '}' +
+                                'th, td { ' +
+                                    'border: 1px solid #ddd; ' +
+                                    'padding: 4px 2px; ' +
+                                    'text-align: left; ' +
+                                    'word-wrap: break-word; ' +
+                                    'overflow-wrap: break-word; ' +
+                                    'hyphens: auto; ' +
+                                '}' +
+                                'th { ' +
+                                    'background-color: #f5f5f5; ' +
+                                    'font-weight: bold; ' +
+                                    'font-size: 8px; ' +
+                                '}' +
+                                'td { ' +
+                                    'font-size: 7px; ' +
+                                '}' +
+                                '/* Column widths for movements table */' +
+                                'th:nth-child(1), td:nth-child(1) { width: 7%; }' +
+                                'th:nth-child(2), td:nth-child(2) { width: 8%; }' +
+                                'th:nth-child(3), td:nth-child(3) { width: 12%; }' +
+                                'th:nth-child(4), td:nth-child(4) { width: 8%; }' +
+                                'th:nth-child(5), td:nth-child(5) { width: 8%; }' +
+                                'th:nth-child(6), td:nth-child(6) { width: 8%; }' +
+                                'th:nth-child(7), td:nth-child(7) { width: 7%; }' +
+                                'th:nth-child(8), td:nth-child(8) { width: 7%; }' +
+                                'th:nth-child(9), td:nth-child(9) { width: 7%; }' +
+                                'th:nth-child(10), td:nth-child(10) { width: 7%; }' +
+                                'th:nth-child(11), td:nth-child(11) { width: 8%; }' +
+                                'th:nth-child(12), td:nth-child(12) { width: 8%; }' +
+                                'th:nth-child(13), td:nth-child(13) { width: 7%; }' +
+                                '.print-info { ' +
+                                    'text-align: center; ' +
+                                    'font-size: 9px; ' +
+                                    'margin-bottom: 15px; ' +
+                                    'color: #666; ' +
+                                '}' +
+                                '</style>'
+                            );
+                            
+                            // Add header with filter information
                             var filters = [];
                             var location = $("#filter_location option:selected").text();
                             var movementType = $("#filter_movement_type").val();
                             var dateFrom = $("#filter_date_from").val();
                             var dateTo = $("#filter_date_to").val();
+                            var searchText = $("#search_text").val();
                             
                             if (location && location !== "All Locations") filters.push("Location: " + location);
-                            if (movementType) filters.push("Movement Type: " + movementType);
-                            if (dateFrom) filters.push("Date From: " + dateFrom);
-                            if (dateTo) filters.push("Date To: " + dateTo);
+                            if (movementType) filters.push("Type: " + movementType);
+                            if (dateFrom) filters.push("From: " + dateFrom);
+                            if (dateTo) filters.push("To: " + dateTo);
+                            if (searchText) filters.push("Search: \"" + searchText + "\"");
                             
-                            if (filters.length > 0) {
-                                $(win.document.body).prepend('<div style="text-align: center; margin-bottom: 20px;"><h3>Stock Movements Report</h3><p>Generated on: ' + new Date().toLocaleString() + '</p><p style="font-style: italic;">Filters Applied: ' + filters.join(", ") + '</p></div>');
-                            } else {
-                                $(win.document.body).prepend('<div style="text-align: center; margin-bottom: 20px;"><h3>Stock Movements Report</h3><p>Generated on: ' + new Date().toLocaleString() + '</p></div>');
-                            }
+                            var filterText = filters.length > 0 ? filters.join(" | ") + " | " : "";
+                            filterText += "Generated: " + new Date().toLocaleString();
+                            
+                            $(win.document.body).prepend(
+                                '<div style="text-align: center; margin-bottom: 20px;">' +
+                                '<h1>Stock Movements Report</h1>' +
+                                '<div class="print-info">' + filterText + '</div>' +
+                                '</div>'
+                            );
                         }
+                    }
                     }
                 ]
             });

@@ -442,9 +442,13 @@
                             columns: [0, 1, 2, 3, 4, 5, 6, 7, 8] // Exclude Actions column
                         },
                         customize: function(doc) {
-                            doc.content[1].table.widths = ['10%', '25%', '15%', '8%', '12%', '10%', '10%', '10%'];
+                            // Set column widths to match the 9 exported columns
+                            doc.content[1].table.widths = ['10%', '25%', '15%', '8%', '12%', '10%', '10%', '10%', '10%'];
+                            
+                            // Adjust font sizes for better fit
                             doc.styles.tableHeader.fontSize = 8;
                             doc.defaultStyle.fontSize = 7;
+                            doc.styles.tableHeader.alignment = 'left';
                             
                             // Add header
                             doc.content.splice(0, 0, {
@@ -454,6 +458,12 @@
                                 ],
                                 alignment: 'center'
                             });
+                            
+                            // Ensure proper table structure
+                            if (doc.content[1] && doc.content[1].table) {
+                                doc.content[1].table.headerRows = 1;
+                                doc.content[1].table.keepWithHeaderRows = 1;
+                            }
                         }
                     },
                     {
@@ -463,6 +473,87 @@
                         title: 'Stock Levels Report',
                         exportOptions: {
                             columns: [0, 1, 2, 3, 4, 5, 6, 7, 8] // Exclude Actions column
+                        },
+                        customize: function(win) {
+                            // Add custom CSS for proper printing
+                            $(win.document.head).append(
+                                '<style type="text/css">' +
+                                '@page { ' +
+                                    'margin: 1in 0.5in; ' +
+                                    'size: A4 landscape; ' +
+                                '}' +
+                                'body { ' +
+                                    'font-family: Arial, sans-serif; ' +
+                                    'font-size: 10px; ' +
+                                    'line-height: 1.3; ' +
+                                    'margin: 0; ' +
+                                    'padding: 20px; ' +
+                                '}' +
+                                'h1 { ' +
+                                    'font-size: 18px; ' +
+                                    'text-align: center; ' +
+                                    'margin-bottom: 10px; ' +
+                                    'color: #333; ' +
+                                '}' +
+                                'table { ' +
+                                    'width: 100%; ' +
+                                    'border-collapse: collapse; ' +
+                                    'margin-top: 20px; ' +
+                                    'table-layout: fixed; ' +
+                                '}' +
+                                'th, td { ' +
+                                    'border: 1px solid #ddd; ' +
+                                    'padding: 6px 4px; ' +
+                                    'text-align: left; ' +
+                                    'word-wrap: break-word; ' +
+                                    'overflow-wrap: break-word; ' +
+                                '}' +
+                                'th { ' +
+                                    'background-color: #f5f5f5; ' +
+                                    'font-weight: bold; ' +
+                                    'font-size: 9px; ' +
+                                '}' +
+                                'td { ' +
+                                    'font-size: 8px; ' +
+                                '}' +
+                                '/* Column widths for auto-fit */' +
+                                'th:nth-child(1), td:nth-child(1) { width: 10%; }' +
+                                'th:nth-child(2), td:nth-child(2) { width: 25%; }' +
+                                'th:nth-child(3), td:nth-child(3) { width: 15%; }' +
+                                'th:nth-child(4), td:nth-child(4) { width: 8%; }' +
+                                'th:nth-child(5), td:nth-child(5) { width: 12%; }' +
+                                'th:nth-child(6), td:nth-child(6) { width: 10%; }' +
+                                'th:nth-child(7), td:nth-child(7) { width: 10%; }' +
+                                'th:nth-child(8), td:nth-child(8) { width: 10%; }' +
+                                'th:nth-child(9), td:nth-child(9) { width: 12%; }' +
+                                '.print-info { ' +
+                                    'text-align: center; ' +
+                                    'font-size: 10px; ' +
+                                    'margin-bottom: 15px; ' +
+                                    'color: #666; ' +
+                                '}' +
+                                '</style>'
+                            );
+                            
+                            // Add header with current filters and generation info
+                            var location_filter = $("#filter_location option:selected").text();
+                            var search_text = $("#search_text").val();
+                            var filterInfo = '';
+                            
+                            if (location_filter && location_filter !== 'All Locations') {
+                                filterInfo += 'Location: ' + location_filter + ' | ';
+                            }
+                            if (search_text) {
+                                filterInfo += 'Search: "' + search_text + '" | ';
+                            }
+                            filterInfo += 'Generated: ' + new Date().toLocaleString();
+                            
+                            $(win.document.body).prepend(
+                                '<div style="text-align: center; margin-bottom: 20px;">' +
+                                '<h1>Stock Levels Report</h1>' +
+                                '<div class="print-info">' + filterInfo + '</div>' +
+                                '</div>'
+                            );
                         }
                     }
                 ]
