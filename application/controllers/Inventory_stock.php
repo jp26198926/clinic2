@@ -134,7 +134,7 @@ class Inventory_stock extends CI_Controller
 		$prefix = $this->prefix;
 		$input_data = $this->input->post();
 
-		if ($this->cf->module_permission("create", $this->module_permission)) {
+		if ($this->cf->module_permission("add", $this->module_permission)) {
 			$product_id = intval($input_data['product_id']);
 			$location_id = intval($input_data['location_id']);
 			$qty = intval($input_data['qty']);
@@ -177,7 +177,7 @@ class Inventory_stock extends CI_Controller
 		$prefix = $this->prefix;
 		$input_data = $this->input->post();
 
-		if ($this->cf->module_permission("create", $this->module_permission)) {
+		if ($this->cf->module_permission("add", $this->module_permission)) {
 			$product_id = intval($input_data['product_id']);
 			$location_id = intval($input_data['location_id']);
 			$qty = intval($input_data['qty']);
@@ -218,7 +218,7 @@ class Inventory_stock extends CI_Controller
 		$prefix = $this->prefix;
 		$input_data = $this->input->post();
 
-		if ($this->cf->module_permission("create", $this->module_permission)) {
+		if ($this->cf->module_permission("add", $this->module_permission)) {
 			$product_id = intval($input_data['product_id']);
 			$from_location_id = intval($input_data['from_location_id']);
 			$to_location_id = intval($input_data['to_location_id']);
@@ -257,28 +257,97 @@ class Inventory_stock extends CI_Controller
 		$prefix = $this->prefix;
 		$input_data = $this->input->post();
 
-		if ($this->cf->module_permission("update", $this->module_permission)) {
+		if ($this->cf->module_permission("add", $this->module_permission)) {
 			$product_id = intval($input_data['product_id']);
 			$location_id = intval($input_data['location_id']);
-			$new_qty = intval($input_data['new_qty']);
+			$adjust_type = $input_data['adjust_type'];
+			$adjust_reason = $input_data['adjust_reason'];
 			$notes = $input_data['notes'] ?? '';
 
-			if ($product_id && $location_id && $new_qty >= 0) {
+			if ($product_id && $location_id && $adjust_type && $adjust_reason) {
 				try {
-					$result = $this->stock_movements_model->adjust_stock(
-						$product_id, 
-						$location_id, 
-						$new_qty, 
-						$this->uid, 
-						$notes
+					// Get current stock
+					$current_stock_data = $this->main_model->search_by_product_location($product_id, $location_id);
+					$current_qty = $current_stock_data ? floatval($current_stock_data->qty_on_hand) : 0;
+
+					$adjustment_qty = 0;
+					$final_qty = 0;
+
+					// Calculate adjustment based on type
+					if ($adjust_type === 'ADD') {
+						$adjustment_qty = floatval($input_data['adjust_qty']);
+						if ($adjustment_qty <= 0) {
+							echo "Error: Please enter a valid positive quantity to add!";
+							return;
+						}
+						$final_qty = $current_qty + $adjustment_qty;
+					} elseif ($adjust_type === 'SUBTRACT') {
+						$adjustment_qty = -floatval($input_data['adjust_qty']);
+						if (abs($adjustment_qty) <= 0) {
+							echo "Error: Please enter a valid positive quantity to subtract!";
+							return;
+						}
+						if (abs($adjustment_qty) > $current_qty) {
+							echo "Error: Cannot subtract more than current stock (" . $current_qty . ")!";
+							return;
+						}
+						$final_qty = $current_qty + $adjustment_qty; // adjustment_qty is negative
+					} elseif ($adjust_type === 'SET') {
+						$final_qty = floatval($input_data['new_qty']);
+						if ($final_qty < 0) {
+							echo "Error: New quantity cannot be negative!";
+							return;
+						}
+						$adjustment_qty = $final_qty - $current_qty;
+					} else {
+						echo "Error: Invalid adjustment type!";
+						return;
+					}
+
+					// Create movement record
+					$movement_data = array(
+						'date' => date('Y-m-d'),
+						'product_id' => $product_id,
+						'location_id' => $location_id,
+						'movement_type' => 'ADJUSTMENT',
+						'qty' => abs($adjustment_qty),
+						'reference_type' => $adjust_reason,
+						'reference_id' => null,
+						'unit_cost' => 0, // Adjustments don't change cost
+						'notes' => $notes . ' (Type: ' . $adjust_type . ', Reason: ' . $adjust_reason . ', Previous: ' . $current_qty . ', Final: ' . $final_qty . ')',
+						'created_by' => $this->uid
 					);
 
-					echo "Success: Stock adjusted successfully!";
+					// Save the movement using add_movement method
+					$result = $this->stock_movements_model->add_movement($movement_data);
+
+					if ($result) {
+						// Update stock levels directly using stock model
+						$this->load->model('stock_model');
+						
+						// Calculate the net change
+						$net_change = $final_qty - $current_qty;
+						$operation = $net_change >= 0 ? 'add' : 'subtract';
+						$this->stock_model->update_stock($product_id, $location_id, abs($net_change), $operation);
+						
+						$action_desc = '';
+						if ($adjust_type === 'ADD') {
+							$action_desc = "Added " . abs($adjustment_qty) . " units";
+						} elseif ($adjust_type === 'SUBTRACT') {
+							$action_desc = "Subtracted " . abs($adjustment_qty) . " units";
+						} else {
+							$action_desc = "Set quantity to " . $final_qty . " units";
+						}
+						
+						echo "Success: Stock adjustment completed! " . $action_desc . " (Previous: " . $current_qty . ", Current: " . $final_qty . ")";
+					} else {
+						echo "Error: Failed to create stock adjustment record!";
+					}
 				} catch (Exception $ex) {
-					echo $ex->getMessage();
+					echo "Error: " . $ex->getMessage();
 				}
 			} else {
-				echo "Error: Please provide valid adjustment details!";
+				echo "Error: Please provide all required fields (product, location, adjustment type, reason)!";
 			}
 		} else {
 			echo "Error: You don't have permission to perform this action!";

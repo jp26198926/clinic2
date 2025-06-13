@@ -15,26 +15,158 @@
 
     <style>
         /* Custom styling for DataTables export buttons */
-        .dataTables_wrapper .dt-buttons {
-            float: left;
+        .dt-buttons {
             margin-bottom: 10px;
         }
         
-        .dataTables_wrapper .dt-buttons .btn {
-            margin-right: 5px;
-            margin-bottom: 5px;
+        .dt-button {
+            margin-left: 5px !important;
+            border-radius: 3px !important;
+            font-size: 12px !important;
+            padding: 5px 12px !important;
+            min-width: 32px !important;
         }
         
+        .dt-button:hover {
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2) !important;
+        }
+
+        /* Mobile responsive card layout for movements */
         @media (max-width: 768px) {
-            .dataTables_wrapper .dt-buttons {
-                text-align: center;
-                width: 100%;
+            .table-responsive {
+                border: none;
             }
             
-            .dataTables_wrapper .dt-buttons .btn {
-                margin: 2px;
-                font-size: 11px;
+            #dynamic-table {
+                display: none !important;
+            }
+            
+            .mobile-card-container {
+                display: block !important;
+            }
+
+            /* Make filter section more compact on mobile */
+            .widget-box .widget-main {
+                padding: 10px;
+            }
+            
+            .widget-box .row {
+                margin-left: -5px;
+                margin-right: -5px;
+            }
+            
+            .widget-box .row [class*="col-"] {
+                padding-left: 5px;
+                padding-right: 5px;
+            }
+
+            /* Hide export buttons container on mobile since they won't work properly */
+            .tableTools-container {
+                display: none !important;
+            }
+            
+            .movement-card {
+                background: white;
+                border: 1px solid #ddd;
+                border-radius: 8px;
+                margin-bottom: 15px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                overflow: hidden;
+            }
+            
+            .movement-card-header {
+                padding: 12px 15px;
+                border-bottom: 1px solid #ddd;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+            
+            .movement-card-title {
+                font-weight: bold;
+                font-size: 16px;
+                color: #333;
+            }
+            
+            .movement-type-badge {
                 padding: 4px 8px;
+                border-radius: 12px;
+                font-size: 11px;
+                font-weight: bold;
+                text-transform: uppercase;
+            }
+            
+            .movement-card-body {
+                padding: 15px;
+            }
+            
+            .movement-info-row {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 6px 0;
+                border-bottom: 1px solid #f0f0f0;
+            }
+            
+            .movement-info-row:last-child {
+                border-bottom: none;
+            }
+            
+            .movement-info-label {
+                font-weight: 600;
+                color: #555;
+                font-size: 13px;
+            }
+            
+            .movement-info-value {
+                font-size: 13px;
+                color: #333;
+                text-align: right;
+            }
+            
+            .movement-qty {
+                font-size: 18px;
+                font-weight: bold;
+                text-align: center;
+                padding: 10px;
+                margin: 10px 0;
+                border-radius: 5px;
+                background: #f8f9fa;
+            }
+            
+            .movement-notes {
+                background: #f8f9fa;
+                padding: 10px;
+                border-radius: 5px;
+                margin-top: 10px;
+                font-style: italic;
+                color: #666;
+                font-size: 12px;
+            }
+            
+            .mobile-search-bar {
+                margin-bottom: 15px;
+            }
+            
+            .mobile-search-bar input {
+                width: 100%;
+                padding: 10px;
+                border: 1px solid #ddd;
+                border-radius: 5px;
+                font-size: 14px;
+            }
+
+            /* Movement type colors */
+            .badge-receive { background: #28a745; color: white; }
+            .badge-release { background: #dc3545; color: white; }
+            .badge-transfer { background: #17a2b8; color: white; }
+            .badge-adjustment { background: #ffc107; color: #212529; }
+            .badge-reserve { background: #6c757d; color: white; }
+        }
+
+        @media (min-width: 769px) {
+            .mobile-card-container {
+                display: none !important;
             }
         }
     </style>
@@ -109,7 +241,7 @@
                                                             </div>
                                                             <div class="col-sm-3">
                                                                 <label>Movement Type:</label>
-                                                                <select id="filter_movement_type" class="form-control">
+                                                                <select id="filter_movement_type" class="form-control chosen-select">
                                                                     <option value="">All Types</option>
                                                                     <option value="RECEIVE">RECEIVE</option>
                                                                     <option value="RELEASE">RELEASE</option>
@@ -126,19 +258,18 @@
                                                                 <label>Date To:</label>
                                                                 <input type="date" id="filter_date_to" class="form-control" value="<?= date('Y-m-d'); ?>">
                                                             </div>
-                                                        </div>
+                                                        </div>                                        <div class="row" style="margin-top: 10px;">
+                                            <div class="col-sm-12">
+                                                <label>Search:</label>
+                                                <input type="text" id="search_text" class="form-control" placeholder="Search products, categories, notes, etc...">
+                                            </div>
+                                        </div>
                                                         <div class="row" style="margin-top: 10px;">
                                                             <div class="col-sm-12">
-                                                                <label>Search:</label>
-                                                                <input type="text" id="search_text" class="form-control" placeholder="Search products, categories, notes, etc...">
-                                                            </div>
-                                                        </div>
-                                                        <div class="row" style="margin-top: 10px;">
-                                                            <div class="col-sm-12">
-                                                                <button type="button" id="btn_search" class="btn btn-primary">
+                                                                <button type="button" id="btn_search" class="btn btn-sm btn-primary">
                                                                     <i class="ace-icon fa fa-search"></i> Search
                                                                 </button>
-                                                                <button type="button" id="btn_export" class="btn btn-success">
+                                                                <button type="button" id="btn_export" class="btn btn-sm btn-success">
                                                                     <i class="ace-icon fa fa-download"></i> Export
                                                                 </button>
                                                             </div>
@@ -150,11 +281,15 @@
                                     </div>
 
                                     <!-- Results Table -->
-                                    <div class="table-header">
-                                        Stock Movement History
+                                    <div class="table-header clearfix">
+                                        Stock Movement History <span id="lbl_result_info" class="badge badge-warning"></span>
+                                        <div class="pull-right" style="padding-right: 0.5em; padding-top: 0.4em;">
+                                            <div class="pull-right tableTools-container"></div>
+                                        </div>
                                     </div>
 
-                                    <div>
+                                    <!-- Desktop Table View -->
+                                    <div class="table-responsive">
                                         <table id="dynamic-table" class="table table-striped table-bordered table-hover">
                                             <thead>
                                                 <tr>
@@ -178,6 +313,16 @@
                                                 <!-- Data will be loaded via AJAX -->
                                             </tbody>
                                         </table>
+                                    </div>
+
+                                    <!-- Mobile Card View -->
+                                    <div class="mobile-card-container" style="display: none;">
+                                        <div class="mobile-search-bar">
+                                            <input type="text" id="mobile-search" placeholder="Search in results..." class="form-control">
+                                        </div>
+                                        <div id="mobile-cards-container">
+                                            <!-- Mobile cards will be populated here -->
+                                        </div>
                                     </div>
 
                                 </div>
@@ -235,8 +380,9 @@
                 "buttons": [
                     {
                         extend: 'excel',
-                        text: '<i class="ace-icon fa fa-file-excel-o"></i> Export to Excel',
-                        className: 'btn btn-success btn-sm',
+                        text: '<i class="ace-icon fa fa-file-excel-o bigger-110 green"></i> <span class="hidden">Export to Excel</span>',
+                        className: 'btn btn-white btn-primary btn-bold',
+                        titleAttr: 'Export to Excel',
                         title: function() {
                             var filters = [];
                             var location = $("#filter_location option:selected").text();
@@ -258,8 +404,9 @@
                     },
                     {
                         extend: 'pdf',
-                        text: '<i class="ace-icon fa fa-file-pdf-o"></i> Export to PDF',
-                        className: 'btn btn-danger btn-sm',
+                        text: '<i class="ace-icon fa fa-file-pdf-o bigger-110 red"></i> <span class="hidden">Export to PDF</span>',
+                        className: 'btn btn-white btn-primary btn-bold',
+                        titleAttr: 'Export to PDF',
                         title: 'Stock Movements Report',
                         orientation: 'landscape',
                         pageSize: 'A4',
@@ -305,113 +452,25 @@
                     },
                     {
                         extend: 'print',
-                        text: '<i class="ace-icon fa fa-print"></i> Print',
-                        className: 'btn btn-info btn-sm',
+                        text: '<i class="ace-icon fa fa-print bigger-110 grey"></i> <span class="hidden">Print</span>',
+                        className: 'btn btn-white btn-primary btn-bold',
+                        titleAttr: 'Print Report',
                         title: 'Stock Movements Report',
                         exportOptions: {
                             columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] // Exclude Actions column
-                        },
-                    {
-                        extend: 'print',
-                        text: '<i class="ace-icon fa fa-print"></i> Print',
-                        className: 'btn btn-info btn-sm',
-                        title: 'Stock Movements Report',
-                        exportOptions: {
-                            columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] // Exclude Actions column
-                        },
-                        customize: function(win) {
-                            // Add custom CSS for proper printing
-                            $(win.document.head).append(
-                                '<style type="text/css">' +
-                                '@page { ' +
-                                    'margin: 1in 0.5in; ' +
-                                    'size: A4 landscape; ' +
-                                '}' +
-                                'body { ' +
-                                    'font-family: Arial, sans-serif; ' +
-                                    'font-size: 9px; ' +
-                                    'line-height: 1.2; ' +
-                                    'margin: 0; ' +
-                                    'padding: 20px; ' +
-                                '}' +
-                                'h1 { ' +
-                                    'font-size: 18px; ' +
-                                    'text-align: center; ' +
-                                    'margin-bottom: 10px; ' +
-                                    'color: #333; ' +
-                                '}' +
-                                'table { ' +
-                                    'width: 100%; ' +
-                                    'border-collapse: collapse; ' +
-                                    'margin-top: 20px; ' +
-                                    'table-layout: fixed; ' +
-                                '}' +
-                                'th, td { ' +
-                                    'border: 1px solid #ddd; ' +
-                                    'padding: 4px 2px; ' +
-                                    'text-align: left; ' +
-                                    'word-wrap: break-word; ' +
-                                    'overflow-wrap: break-word; ' +
-                                    'hyphens: auto; ' +
-                                '}' +
-                                'th { ' +
-                                    'background-color: #f5f5f5; ' +
-                                    'font-weight: bold; ' +
-                                    'font-size: 8px; ' +
-                                '}' +
-                                'td { ' +
-                                    'font-size: 7px; ' +
-                                '}' +
-                                '/* Column widths for movements table */' +
-                                'th:nth-child(1), td:nth-child(1) { width: 7%; }' +
-                                'th:nth-child(2), td:nth-child(2) { width: 8%; }' +
-                                'th:nth-child(3), td:nth-child(3) { width: 12%; }' +
-                                'th:nth-child(4), td:nth-child(4) { width: 8%; }' +
-                                'th:nth-child(5), td:nth-child(5) { width: 8%; }' +
-                                'th:nth-child(6), td:nth-child(6) { width: 8%; }' +
-                                'th:nth-child(7), td:nth-child(7) { width: 7%; }' +
-                                'th:nth-child(8), td:nth-child(8) { width: 7%; }' +
-                                'th:nth-child(9), td:nth-child(9) { width: 7%; }' +
-                                'th:nth-child(10), td:nth-child(10) { width: 7%; }' +
-                                'th:nth-child(11), td:nth-child(11) { width: 8%; }' +
-                                'th:nth-child(12), td:nth-child(12) { width: 8%; }' +
-                                'th:nth-child(13), td:nth-child(13) { width: 7%; }' +
-                                '.print-info { ' +
-                                    'text-align: center; ' +
-                                    'font-size: 9px; ' +
-                                    'margin-bottom: 15px; ' +
-                                    'color: #666; ' +
-                                '}' +
-                                '</style>'
-                            );
-                            
-                            // Add header with filter information
-                            var filters = [];
-                            var location = $("#filter_location option:selected").text();
-                            var movementType = $("#filter_movement_type").val();
-                            var dateFrom = $("#filter_date_from").val();
-                            var dateTo = $("#filter_date_to").val();
-                            var searchText = $("#search_text").val();
-                            
-                            if (location && location !== "All Locations") filters.push("Location: " + location);
-                            if (movementType) filters.push("Type: " + movementType);
-                            if (dateFrom) filters.push("From: " + dateFrom);
-                            if (dateTo) filters.push("To: " + dateTo);
-                            if (searchText) filters.push("Search: \"" + searchText + "\"");
-                            
-                            var filterText = filters.length > 0 ? filters.join(" | ") + " | " : "";
-                            filterText += "Generated: " + new Date().toLocaleString();
-                            
-                            $(win.document.body).prepend(
-                                '<div style="text-align: center; margin-bottom: 20px;">' +
-                                '<h1>Stock Movements Report</h1>' +
-                                '<div class="print-info">' + filterText + '</div>' +
-                                '</div>'
-                            );
                         }
                     }
-                    }
                 ]
+            });
+
+            // Append buttons to the table header container
+            oTable1.buttons().container().appendTo($('.tableTools-container'));
+
+            // Initialize chosen dropdowns
+            $('.chosen-select').chosen({
+                allow_single_deselect: true,
+                no_results_text: "No results match",
+                width: "100%"
             });
 
             // Initial load
@@ -432,8 +491,31 @@
                 searchMovements();
             });
 
+            // Handle chosen dropdown changes
+            $("#filter_location").chosen().change(function() {
+                searchMovements();
+            });
+
+            $("#filter_movement_type").chosen().change(function() {
+                searchMovements();
+            });
+
             $("#btn_export").click(function() {
                 exportMovements();
+            });
+
+            // Mobile search functionality
+            $("#mobile-search").on('input', function() {
+                var searchTerm = $(this).val().toLowerCase();
+                
+                $('.movement-card').each(function() {
+                    var searchData = $(this).data('search');
+                    if (searchData.includes(searchTerm)) {
+                        $(this).show();
+                    } else {
+                        $(this).hide();
+                    }
+                });
             });
         });
 
@@ -501,6 +583,103 @@
             });
 
             oTable1.draw();
+            
+            // Populate mobile cards
+            populateMobileMovementCards(data);
+        }
+
+        function populateMobileMovementCards(data) {
+            var container = $('#mobile-cards-container');
+            container.empty();
+
+            if (data.length === 0) {
+                container.html('<div class="text-center" style="padding: 20px; color: #666;">No movement data found</div>');
+                return;
+            }
+
+            $.each(data, function(i, row) {
+                var unitCost = row.unit_cost ? parseFloat(row.unit_cost).toFixed(2) : '-';
+                var movementDate = row.date || row.created_at.split(' ')[0];
+                var movementTime = row.created_at.split(' ')[1] || '';
+                var badgeClass = getMovementBadgeClass(row.movement_type);
+                
+                var transferInfo = '';
+                if (row.movement_type === 'TRANSFER' && row.transfer_from_location && row.transfer_to_location) {
+                    transferInfo = `
+                        <div class="movement-info-row">
+                            <span class="movement-info-label">Transfer:</span>
+                            <span class="movement-info-value">${row.transfer_from_location} → ${row.transfer_to_location}</span>
+                        </div>
+                    `;
+                }
+                
+                var notesSection = '';
+                if (row.notes && row.notes.trim()) {
+                    notesSection = `<div class="movement-notes">Notes: ${row.notes}</div>`;
+                }
+                
+                var card = $(`
+                    <div class="movement-card" data-search="${row.product_code.toLowerCase()} ${row.product_name.toLowerCase()} ${row.category.toLowerCase()} ${row.location.toLowerCase()} ${row.movement_type.toLowerCase()}">
+                        <div class="movement-card-header">
+                            <div class="movement-card-title">${row.product_name}</div>
+                            <span class="movement-type-badge ${badgeClass}">${row.movement_type}</span>
+                        </div>
+                        <div class="movement-card-body">
+                            <div class="movement-info-row">
+                                <span class="movement-info-label">Product Code:</span>
+                                <span class="movement-info-value">${row.product_code}</span>
+                            </div>
+                            <div class="movement-info-row">
+                                <span class="movement-info-label">Category:</span>
+                                <span class="movement-info-value">${row.category}</span>
+                            </div>
+                            <div class="movement-info-row">
+                                <span class="movement-info-label">Location:</span>
+                                <span class="movement-info-value">${row.location}</span>
+                            </div>
+                            ${transferInfo}
+                            <div class="movement-qty">
+                                Quantity: ${row.qty}
+                            </div>
+                            <div class="movement-info-row">
+                                <span class="movement-info-label">Unit Cost:</span>
+                                <span class="movement-info-value">${unitCost}</span>
+                            </div>
+                            <div class="movement-info-row">
+                                <span class="movement-info-label">Reference:</span>
+                                <span class="movement-info-value">${row.reference_type} ${row.reference_id ? '#' + row.reference_id : ''}</span>
+                            </div>
+                            <div class="movement-info-row">
+                                <span class="movement-info-label">Date:</span>
+                                <span class="movement-info-value">${movementDate} ${movementTime}</span>
+                            </div>
+                            <div class="movement-info-row">
+                                <span class="movement-info-label">Created By:</span>
+                                <span class="movement-info-value">${row.created_by_name || '-'}</span>
+                            </div>
+                            ${notesSection}
+                            <div style="text-align: center; margin-top: 15px;">
+                                <button type="button" class="btn btn-sm btn-info" onclick="viewMovementDetails(${row.id})">
+                                    <i class="ace-icon fa fa-eye"></i> View Details
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `);
+                
+                container.append(card);
+            });
+        }
+
+        function getMovementBadgeClass(type) {
+            var classes = {
+                'RECEIVE': 'badge-receive',
+                'RELEASE': 'badge-release', 
+                'TRANSFER': 'badge-transfer',
+                'ADJUSTMENT': 'badge-adjustment',
+                'RESERVE': 'badge-reserve'
+            };
+            return classes[type] || 'badge-secondary';
         }
 
         function getMovementTypeLabel(type) {
