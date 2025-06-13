@@ -9,6 +9,8 @@ class Stock_movements_model extends CI_Model
     {
         $this->db->select(
             "sm.*,
+             DATE_FORMAT(sm.date, '%Y-%m-%d') as date,
+             DATE_FORMAT(sm.created_at, '%Y-%m-%d %H:%i') as created_at,
              p.code as product_code,
              p.name as product_name,
              c.category,
@@ -60,6 +62,8 @@ class Stock_movements_model extends CI_Model
     {
         $this->db->select(
             "sm.*,
+             DATE_FORMAT(sm.date, '%Y-%m-%d') as date,
+             DATE_FORMAT(sm.created_at, '%Y-%m-%d %H:%i') as created_at,
              p.code as product_code,
              p.name as product_name,
              l.location,
@@ -294,6 +298,8 @@ class Stock_movements_model extends CI_Model
     {
         $this->db->select(
             "sm.*,
+             DATE_FORMAT(sm.date, '%Y-%m-%d') as date,
+             DATE_FORMAT(sm.created_at, '%Y-%m-%d %H:%i') as created_at,
              l.location,
              lf.location as transfer_from_location,
              lt.location as transfer_to_location,

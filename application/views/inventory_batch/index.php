@@ -199,6 +199,16 @@ defined('BASEPATH') or exit('No direct script access allowed');
         /* Status Badge Styles */
         .status-completed { background-color: #28a745; }
         .status-cancelled { background-color: #dc3545; }
+        .status-draft { background-color: #6c757d; }
+        
+        /* Datepicker styling */
+        .datepicker {
+            background-color: white !important;
+        }
+        
+        .ui-datepicker {
+            font-size: 12px;
+        }
 
         /* Transaction Type Badge Styles */
         .type-receive { background-color: #28a745; }
@@ -256,6 +266,31 @@ defined('BASEPATH') or exit('No direct script access allowed');
         @keyframes fadeHighlight {
             from { background-color: #d4edda; }
             to { background-color: transparent; }
+        }
+
+        /* Force date inputs to show YYYY-MM-DD format */
+        input[type="date"] {
+            min-width: 150px;
+        }
+        
+        /* Ensure consistent date display across all browsers */
+        input[type="date"]::-webkit-datetime-edit-text {
+            color: #333;
+        }
+        
+        input[type="date"]::-webkit-datetime-edit-month-field,
+        input[type="date"]::-webkit-datetime-edit-day-field,
+        input[type="date"]::-webkit-datetime-edit-year-field {
+            color: #333;
+        }
+        
+        /* Show placeholder when empty */
+        input[type="date"]:invalid::-webkit-datetime-edit {
+            color: #999;
+        }
+        
+        input[type="date"]:focus::-webkit-datetime-edit {
+            color: #333 !important;
         }
     </style>
 
@@ -356,9 +391,9 @@ defined('BASEPATH') or exit('No direct script access allowed');
                                                             <div class="col-sm-6 col-md-6">
                                                                 <label>Date Range:</label>
                                                                 <div class="input-group">
-                                                                    <input type="date" id="date_from" class="form-control" placeholder="From Date">
+                                                                    <input type="text" id="date_from" class="form-control datepicker" placeholder="YYYY-MM-DD" readonly>
                                                                     <span class="input-group-addon">to</span>
-                                                                    <input type="date" id="date_to" class="form-control" placeholder="To Date">
+                                                                    <input type="text" id="date_to" class="form-control datepicker" placeholder="YYYY-MM-DD" readonly>
                                                                 </div>
                                                             </div>
                                                             <div class="col-sm-6 col-md-6">
@@ -477,7 +512,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
                             <div class="col-sm-6">
                                 <div class="form-group">
                                     <label>Transaction Date <span class="text-danger">*</span></label>
-                                    <input type="date" id="nb_transaction_date" class="form-control" required>
+                                    <input type="text" id="nb_transaction_date" class="form-control datepicker" required readonly>
                                 </div>
                             </div>
                             <div class="col-sm-6">
@@ -639,11 +674,67 @@ defined('BASEPATH') or exit('No direct script access allowed');
         let oTable1;
         let currentBatchId = null;
 
+        // Date formatting function to ensure yyyy-mm-dd format
+        function formatDate(dateString) {
+            if (!dateString) return '';
+            
+            // If it's already in yyyy-mm-dd format, return as is
+            if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+                return dateString;
+            }
+            
+            // Try to parse and format the date
+            try {
+                const date = new Date(dateString);
+                if (isNaN(date.getTime())) return dateString; // Return original if invalid
+                
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                
+                return `${year}-${month}-${day}`;
+            } catch (e) {
+                return dateString; // Return original if parsing fails
+            }
+        }
+
+        // DateTime formatting function for timestamps
+        function formatDateTime(dateTimeString) {
+            if (!dateTimeString) return '';
+            
+            try {
+                const date = new Date(dateTimeString);
+                if (isNaN(date.getTime())) return dateTimeString;
+                
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                const hours = String(date.getHours()).padStart(2, '0');
+                const minutes = String(date.getMinutes()).padStart(2, '0');
+                
+                return `${year}-${month}-${day} ${hours}:${minutes}`;
+            } catch (e) {
+                return dateTimeString;
+            }
+        }
+
         $(document).ready(function() {
-            // Set default date to today
-            $('#nb_transaction_date').val(new Date().toISOString().split('T')[0]);
-            $('#date_from').val(new Date(Date.now() - 30*24*60*60*1000).toISOString().split('T')[0]); // 30 days ago
-            $('#date_to').val(new Date().toISOString().split('T')[0]); // Today
+            // Set default date to today using YYYY-MM-DD format for datepickers
+            const today = new Date();
+            const todayStr = today.toISOString().split('T')[0];
+            const thirtyDaysAgo = new Date(Date.now() - 30*24*60*60*1000).toISOString().split('T')[0];
+            
+            $('#nb_transaction_date').val(todayStr);
+            $('#date_from').val(thirtyDaysAgo);
+            $('#date_to').val(todayStr);
+            
+            // Initialize datepickers (they will automatically use YYYY-MM-DD format)
+            $('.datepicker').datepicker({
+                dateFormat: "yy-mm-dd",
+                changeMonth: true,
+                changeYear: true,
+                yearRange: "c-5:c+5"
+            });
 
             // Initialize DataTable
             initializeDataTable();
@@ -779,13 +870,11 @@ defined('BASEPATH') or exit('No direct script access allowed');
                         populateMobileCards(response.data);
                         $('#lbl_result_info').text(response.data.length + ' records found');
                     } else {
-                        console.error('Search error:', response.message);
                         $('#lbl_result_info').text('Error loading data');
                         toastr.error(response.message || 'Failed to load batch transactions');
                     }
                 },
                 error: function(xhr, status, error) {
-                    console.error('Search error:', error);
                     $('#lbl_result_info').text('Error loading data');
                     toastr.error('Failed to load batch transactions');
                 }
@@ -805,7 +894,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
                 oTable1.row.add([
                     row.transaction_number,
-                    row.transaction_date,
+                    formatDate(row.transaction_date),
                     typeBadge,
                     fromLocation,
                     toLocation,
@@ -845,7 +934,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
                         </div>
                         <div class="batch-info-row">
                             <span class="batch-info-label">Date:</span>
-                            <span class="batch-info-value">${row.transaction_date}</span>
+                            <span class="batch-info-value">${formatDate(row.transaction_date)}</span>
                         </div>
                         <div class="batch-info-row">
                             <span class="batch-info-label">From:</span>
@@ -1019,7 +1108,6 @@ defined('BASEPATH') or exit('No direct script access allowed');
                     $('#btn_save_batch').prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Creating...');
                 },
                 success: function(response) {
-                    console.log('Response received:', response);
                     if (response.success) {
                         toastr.success(response.message);
                         $('#modal_new_batch').modal('hide');
@@ -1029,8 +1117,6 @@ defined('BASEPATH') or exit('No direct script access allowed');
                     }
                 },
                 error: function(xhr, status, error) {
-                    console.error('Save error:', xhr);
-                    console.error('Response text:', xhr.responseText);
                     let errorMsg = 'Failed to create batch transaction';
                     try {
                         const errorResponse = JSON.parse(xhr.responseText);
@@ -1058,19 +1144,14 @@ defined('BASEPATH') or exit('No direct script access allowed');
                 type: 'GET',
                 dataType: 'json',
                 success: function(testResult) {
-                    console.log('Diagnostic test result:', testResult);
-                    
                     // If diagnostic test passes, load actual products
                     if (testResult.success) {
                         loadActualProducts();
                     } else {
-                        console.error('Diagnostic test failed:', testResult);
                         toastr.error('Database connection issue: ' + (testResult.error || 'Unknown error'));
                     }
                 },
                 error: function(xhr, status, error) {
-                    console.error('Diagnostic test error:', xhr.responseText);
-                    console.error('Status:', status, 'Error:', error);
                     toastr.error('Failed to connect to server for diagnostic test');
                     
                     // Try loading products anyway
@@ -1085,8 +1166,6 @@ defined('BASEPATH') or exit('No direct script access allowed');
                 type: 'GET',
                 dataType: 'json',
                 success: function(products) {
-                    console.log('Products loaded:', products);
-                    
                     if (products.error) {
                         toastr.error('Error loading products: ' + products.error);
                         return;
@@ -1105,14 +1184,8 @@ defined('BASEPATH') or exit('No direct script access allowed');
                         no_results_text: "No products match",
                         width: "100%"
                     });
-                    
-                    console.log('Product dropdown populated with', products.length, 'products');
                 },
                 error: function(xhr, status, error) {
-                    console.error('Products load error:', xhr);
-                    console.error('Response text:', xhr.responseText);
-                    console.error('Status:', status, 'Error:', error);
-                    
                     let errorMsg = 'Failed to load products';
                     if (xhr.responseText) {
                         try {
@@ -1244,7 +1317,6 @@ defined('BASEPATH') or exit('No direct script access allowed');
                     $('#batch_details_content').html(html);
                 },
                 error: function(xhr, status, error) {
-                    console.error('Details error:', error);
                     $('#batch_details_content').html('<div class="alert alert-danger">Failed to load batch details</div>');
                 }
             });
@@ -1260,11 +1332,11 @@ defined('BASEPATH') or exit('No direct script access allowed');
                         <h5><strong>Batch Information</strong></h5>
                         <table class="table table-borderless">
                             <tr><td><strong>Transaction Number:</strong></td><td>${batch.transaction_number}</td></tr>
-                            <tr><td><strong>Date:</strong></td><td>${batch.transaction_date}</td></tr>
+                            <tr><td><strong>Date:</strong></td><td>${formatDate(batch.transaction_date)}</td></tr>
                             <tr><td><strong>Type:</strong></td><td>${typeBadge}</td></tr>
                             <tr><td><strong>Status:</strong></td><td>${statusBadge}</td></tr>
                             <tr><td><strong>Created By:</strong></td><td>${batch.created_by_name || '-'}</td></tr>
-                            <tr><td><strong>Created At:</strong></td><td>${batch.created_at}</td></tr>
+                            <tr><td><strong>Created At:</strong></td><td>${formatDateTime(batch.created_at)}</td></tr>
                         </table>
                     </div>
                     <div class="col-sm-6">
@@ -1373,7 +1445,6 @@ defined('BASEPATH') or exit('No direct script access allowed');
                                 }
                             },
                             error: function(xhr, status, error) {
-                                console.error('Cancel error:', error);
                                 bootbox.alert({
                                     message: 'Failed to cancel batch transaction. Please try again.',
                                     className: 'bootbox-error'
@@ -1403,8 +1474,13 @@ defined('BASEPATH') or exit('No direct script access allowed');
         function resetFilters() {
             $('#search_text').val('');
             $('#filter_type, #filter_status, #filter_location').val('').trigger('chosen:updated');
-            $('#date_from').val(new Date(Date.now() - 30*24*60*60*1000).toISOString().split('T')[0]);
-            $('#date_to').val(new Date().toISOString().split('T')[0]);
+            
+            // Reset date fields with proper format for datepickers
+            const thirtyDaysAgo = new Date(Date.now() - 30*24*60*60*1000).toISOString().split('T')[0];
+            const today = new Date().toISOString().split('T')[0];
+            $('#date_from').val(thirtyDaysAgo);
+            $('#date_to').val(today);
+            
             searchBatches();
         }
 

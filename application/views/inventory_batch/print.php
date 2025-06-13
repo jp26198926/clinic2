@@ -233,7 +233,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
             </div>
             <div class="info-row">
                 <span class="info-label">Date:</span>
-                <span class="info-value"><?= date('F j, Y', strtotime($batch->transaction_date)) ?></span>
+                <span class="info-value"><?= date('Y-m-d', strtotime($batch->transaction_date)) ?></span>
             </div>
             <div class="info-row">
                 <span class="info-label">Type:</span>
@@ -268,12 +268,12 @@ defined('BASEPATH') or exit('No direct script access allowed');
             </div>
             <div class="info-row">
                 <span class="info-label">Created Date:</span>
-                <span class="info-value"><?= date('M j, Y g:i A', strtotime($batch->created_at)) ?></span>
+                <span class="info-value"><?= date('Y-m-d H:i', strtotime($batch->created_at)) ?></span>
             </div>
             <?php if ($batch->processed_at): ?>
             <div class="info-row">
                 <span class="info-label">Processed Date:</span>
-                <span class="info-value"><?= date('M j, Y g:i A', strtotime($batch->processed_at)) ?></span>
+                <span class="info-value"><?= date('Y-m-d H:i', strtotime($batch->processed_at)) ?></span>
             </div>
             <?php endif; ?>
         </div>
@@ -351,7 +351,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
     <!-- Footer -->
     <div class="footer">
         <div style="float: left;">
-            Document Generated: <?= date('F j, Y g:i A') ?>
+            Document Generated: <?= date('Y-m-d H:i') ?>
         </div>
         <div style="float: right;">
             <?= $page_name ?> - <?= $company_name ?>

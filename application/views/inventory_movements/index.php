@@ -31,6 +31,16 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.2) !important;
         }
 
+        /* Date picker styling */
+        .datepicker {
+            background-color: white !important;
+            cursor: pointer !important;
+        }
+        
+        .datepicker:focus {
+            background-color: white !important;
+        }
+
         /* Mobile responsive card layout for movements */
         @media (max-width: 768px) {
             .table-responsive {
@@ -252,11 +262,11 @@
                                                             </div>
                                                             <div class="col-sm-3">
                                                                 <label>Date From:</label>
-                                                                <input type="date" id="filter_date_from" class="form-control" value="<?= date('Y-m-d', strtotime('-30 days')); ?>">
+                                                                <input type="text" id="filter_date_from" class="form-control datepicker" readonly value="<?= date('Y-m-d', strtotime('-30 days')); ?>">
                                                             </div>
                                                             <div class="col-sm-3">
                                                                 <label>Date To:</label>
-                                                                <input type="date" id="filter_date_to" class="form-control" value="<?= date('Y-m-d'); ?>">
+                                                                <input type="text" id="filter_date_to" class="form-control datepicker" readonly value="<?= date('Y-m-d'); ?>">
                                                             </div>
                                                         </div>                                        <div class="row" style="margin-top: 10px;">
                                             <div class="col-sm-12">
@@ -366,6 +376,18 @@
         var oTable1;
 
         $(document).ready(function() {
+            // Initialize datepickers with YYYY-MM-DD format
+            $('.datepicker').datepicker({
+                dateFormat: "yy-mm-dd",
+                changeMonth: true,
+                changeYear: true,
+                showButtonPanel: true,
+                maxDate: 0, // Cannot select future dates
+                onSelect: function() {
+                    searchMovements();
+                }
+            });
+
             // Initialize DataTable with export buttons
             oTable1 = $('#dynamic-table').DataTable({
                 "aoColumns": [
@@ -396,7 +418,8 @@
                             if (dateTo) filters.push("To: " + dateTo);
                             
                             var filterText = filters.length > 0 ? " (" + filters.join(", ") + ")" : "";
-                            return 'Stock Movements Report - ' + new Date().toLocaleDateString() + filterText;
+                            var currentDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+                            return 'Stock Movements Report - ' + currentDate + filterText;
                         },
                         exportOptions: {
                             columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] // Exclude Actions column
@@ -519,6 +542,31 @@
             });
         });
 
+        // Date formatting functions for consistent YYYY-MM-DD display
+        function formatDate(dateString) {
+            if (!dateString) return '';
+            
+            var date = new Date(dateString);
+            if (isNaN(date.getTime())) return dateString;
+            
+            return date.toISOString().split('T')[0]; // YYYY-MM-DD format
+        }
+
+        function formatDateTime(dateTimeString) {
+            if (!dateTimeString) return '';
+            
+            var date = new Date(dateTimeString);
+            if (isNaN(date.getTime())) return dateTimeString;
+            
+            var year = date.getFullYear();
+            var month = String(date.getMonth() + 1).padStart(2, '0');
+            var day = String(date.getDate()).padStart(2, '0');
+            var hours = String(date.getHours()).padStart(2, '0');
+            var minutes = String(date.getMinutes()).padStart(2, '0');
+            
+            return `${year}-${month}-${day} ${hours}:${minutes}`;
+        }
+
         function searchMovements() {
             var search = $("#search_text").val();
             var location_id = $("#filter_location").val();
@@ -563,9 +611,10 @@
                 
                 var movementTypeLabel = getMovementTypeLabel(row.movement_type);
                 var unitCost = row.unit_cost ? parseFloat(row.unit_cost).toFixed(2) : '-';
+                var movementDate = formatDate(row.date || row.created_at);
                 
                 oTable1.row.add([
-                    row.date || row.created_at.split(' ')[0],
+                    movementDate,
                     row.product_code,
                     row.product_name,
                     row.category,
@@ -599,8 +648,8 @@
 
             $.each(data, function(i, row) {
                 var unitCost = row.unit_cost ? parseFloat(row.unit_cost).toFixed(2) : '-';
-                var movementDate = row.date || row.created_at.split(' ')[0];
-                var movementTime = row.created_at.split(' ')[1] || '';
+                var movementDate = formatDate(row.date || row.created_at);
+                var movementTime = row.created_at ? formatDateTime(row.created_at).split(' ')[1] : '';
                 var badgeClass = getMovementBadgeClass(row.movement_type);
                 
                 var transferInfo = '';
@@ -716,7 +765,7 @@
             html += '<h5><strong>Movement Information</strong></h5>';
             html += '<table class="table table-borderless">';
             html += '<tr><td><strong>ID:</strong></td><td>' + movement.id + '</td></tr>';
-            html += '<tr><td><strong>Date:</strong></td><td>' + (movement.date || movement.created_at.split(' ')[0]) + '</td></tr>';
+            html += '<tr><td><strong>Date:</strong></td><td>' + formatDate(movement.date || movement.created_at) + '</td></tr>';
             html += '<tr><td><strong>Product:</strong></td><td>' + movement.product_code + ' - ' + movement.product_name + '</td></tr>';
             html += '<tr><td><strong>Location:</strong></td><td>' + movement.location + '</td></tr>';
             html += '<tr><td><strong>Movement Type:</strong></td><td>' + getMovementTypeLabel(movement.movement_type) + '</td></tr>';
@@ -747,7 +796,7 @@
                 }
             }
             
-            html += '<tr><td><strong>Created:</strong></td><td>' + movement.created_at + '</td></tr>';
+            html += '<tr><td><strong>Created:</strong></td><td>' + formatDateTime(movement.created_at) + '</td></tr>';
             html += '</table>';
             html += '</div>';
             html += '</div>';

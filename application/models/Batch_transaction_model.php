@@ -10,6 +10,8 @@ class Batch_transaction_model extends CI_Model
     {
         $this->db->select(
             "bt.*,
+             DATE_FORMAT(bt.transaction_date, '%Y-%m-%d') as transaction_date,
+             DATE_FORMAT(bt.created_at, '%Y-%m-%d %H:%i') as created_at,
              lf.location as from_location,
              lt.location as to_location,
              CONCAT(u.fname,' ', u.mname,' ', u.lname) as created_by_name"
@@ -57,6 +59,8 @@ class Batch_transaction_model extends CI_Model
     {
         $this->db->select(
             "bt.*,
+             DATE_FORMAT(bt.transaction_date, '%Y-%m-%d') as transaction_date,
+             DATE_FORMAT(bt.created_at, '%Y-%m-%d %H:%i') as created_at,
              lf.location as from_location,
              lt.location as to_location,
              CONCAT(u.fname,' ', u.mname,' ', u.lname) as created_by_name"
