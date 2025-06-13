@@ -261,4 +261,19 @@ class Data_product extends CI_Controller
 			echo $this->default_error_msg;
 		}
 	}
+
+	// New function to get all active products for select dropdowns
+	function search_all_active_ajax()
+	{
+		$this->output->set_content_type('application/json');
+		try {
+			// Use existing search method with active_only = 1
+			$products = $this->main_model->search("", 1);
+			echo json_encode(array('success' => true, 'data' => $products));
+		} catch (Exception $ex) {
+			// Ensure a 500 status code is set on error for AJAX
+			$this->output->set_status_header(500);
+			echo json_encode(array('success' => false, 'message' => $ex->getMessage()));
+		}
+	}
 }

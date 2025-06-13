@@ -246,4 +246,19 @@ class Data_location extends CI_Controller
 			echo $this->default_error_msg;
 		}
 	}
+
+	function search_all_active_ajax()
+	{
+		// Ensure the output is always JSON
+		$this->output->set_content_type('application/json'); 
+		try {
+			// Use existing search method with active_only = 1
+			$result = $this->main_model->search("", 1);
+			echo json_encode(array('success' => true, 'data' => $result));
+		} catch (Exception $ex) {
+			// Set a 500 status code for server errors
+			$this->output->set_status_header(500);
+			echo json_encode(array('success' => false, 'message' => $ex->getMessage()));
+		}
+	}
 }

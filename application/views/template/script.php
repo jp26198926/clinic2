@@ -15,9 +15,27 @@
 <script src="<?= base_url(); ?>assets/js/popper.min.js"></script>
 <script src="<?= base_url(); ?>assets/js/bootstrap.min.js"></script>
 
+<script type="text/javascript">
+    // CSRF Protection
+    var csrf_name = '<?= $this->security->get_csrf_token_name(); ?>';
+    var csrf_hash = '<?= $this->security->get_csrf_hash(); ?>';
+
+    function regenerate_csrf(new_hash) {
+        if (new_hash) {
+            csrf_hash = new_hash;
+            // If you use CSRF tokens in hidden form fields that are not part of AJAX submissions,
+            // you might want to update them here as well. For example:
+            // if (typeof $ === 'function') {
+            //     $('input[name="' + csrf_name + '"]').val(new_hash);
+            // }
+        }
+    }
+</script>
+
 <!-- page specific plugin scripts -->
 <script src="<?= base_url(); ?>assets/js/jquery-ui.min.js"></script>
 <script src="<?= base_url(); ?>assets/js/bootbox.js"></script>
+<script src="<?= base_url(); ?>assets/js/toastr.min.js"></script>
 <script src="<?= base_url(); ?>assets/js/wizard.min.js"></script>
 <script src="<?= base_url(); ?>assets/js/multiselect.js"></script>
 <script src="<?= base_url(); ?>assets/js/bootstrap-clockpicker.js"></script>
@@ -41,6 +59,13 @@
 <script src="<?= base_url(); ?>assets/js/buttons.print.min.js"></script>
 <script src="<?= base_url(); ?>assets/js/buttons.colVis.min.js"></script>
 <script src="<?= base_url(); ?>assets/js/dataTables.select.min.js"></script>
+
+<!-- PDF export dependencies -->
+<script src="<?= base_url(); ?>assets/js/pdfmake.min.js"></script>
+<script src="<?= base_url(); ?>assets/js/vfs_fonts.js"></script>
+
+<!-- Excel export dependencies -->
+<script src="<?= base_url(); ?>assets/js/jszip.min.js"></script>
 
 <script src="<?= base_url(); ?>assets/js/jquery.hotkeys.index.min.js"></script>
 <script src="<?= base_url(); ?>assets/js/bootstrap-wysiwyg.min.js"></script>
@@ -125,6 +150,25 @@
         html: true
     });
     $('.table-fixed-header').fixedHeader();
+
+    // Toastr options
+    toastr.options = {
+        "closeButton": true,
+        "debug": false,
+        "newestOnTop": false,
+        "progressBar": true,
+        "positionClass": "toast-top-right",
+        "preventDuplicates": false,
+        "onclick": null,
+        "showDuration": "300",
+        "hideDuration": "1000",
+        "timeOut": "5000",
+        "extendedTimeOut": "1000",
+        "showEasing": "swing",
+        "hideEasing": "linear",
+        "showMethod": "fadeIn",
+        "hideMethod": "fadeOut"
+    };
 
     $(function() {
         $('.clockpicker').clockpicker();
@@ -648,4 +692,4 @@
     */
     //chat
     //chat
-</script>
+    </script>

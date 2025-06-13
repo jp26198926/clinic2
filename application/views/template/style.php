@@ -9,6 +9,7 @@
 <!--
 <link rel="stylesheet" href="<?= base_url(); ?>assets/css/table-fixed-header.css" />
 -->
+<link rel="stylesheet" href="<?= base_url(); ?>assets/css/toastr.min.css" />
 
 <!-- text fonts -->
 <link rel="stylesheet" href="<?= base_url(); ?>assets/css/fonts.googleapis.com.css" />
