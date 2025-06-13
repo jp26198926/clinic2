@@ -654,7 +654,7 @@
                         text: '<i class="ace-icon fa fa-file-excel-o bigger-110 green"></i> <span class="hidden">Export to Excel</span>',
                         className: 'btn btn-white btn-primary btn-bold',
                         titleAttr: 'Export to Excel',
-                        title: 'Stock Levels Report - ' + new Date().toLocaleDateString(),
+                        title: 'Stock Levels Report - ' + new Date().toISOString().split('T')[0],
                         exportOptions: {
                             columns: [0, 1, 2, 3, 4, 5, 6, 7, 8] // Exclude Actions column
                         }
@@ -671,28 +671,96 @@
                             columns: [0, 1, 2, 3, 4, 5, 6, 7, 8] // Exclude Actions column
                         },
                         customize: function(doc) {
-                            // Set column widths to match the 9 exported columns
-                            doc.content[1].table.widths = ['10%', '25%', '15%', '8%', '12%', '10%', '10%', '10%', '10%'];
+                            // Enable auto width and word wrapping
+                            doc.pageSize = 'A4';
+                            doc.pageOrientation = 'landscape';
+                            doc.pageMargins = [20, 20, 20, 20];
                             
-                            // Adjust font sizes for better fit
+                            // Configure table for auto width with word wrap
+                            if (doc.content[1] && doc.content[1].table) {
+                                doc.content[1].table.headerRows = 1;
+                                doc.content[1].table.keepWithHeaderRows = 1;
+                                doc.content[1].table.dontBreakRows = true;
+                                
+                                // Use auto width instead of fixed percentages
+                                doc.content[1].table.widths = ['auto', '*', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto'];
+                                
+                                // Set table layout to auto for better fitting
+                                doc.content[1].layout = {
+                                    fillColor: function (rowIndex, node, columnIndex) {
+                                        return (rowIndex === 0) ? '#f8f9fa' : null;
+                                    },
+                                    hLineWidth: function (i, node) {
+                                        return 0.5;
+                                    },
+                                    vLineWidth: function (i, node) {
+                                        return 0.5;
+                                    },
+                                    hLineColor: function (i, node) {
+                                        return '#cccccc';
+                                    },
+                                    vLineColor: function (i, node) {
+                                        return '#cccccc';
+                                    }
+                                };
+                            }
+                            
+                            // Adjust font sizes for better readability
                             doc.styles.tableHeader.fontSize = 8;
-                            doc.defaultStyle.fontSize = 7;
+                            doc.styles.tableHeader.bold = true;
                             doc.styles.tableHeader.alignment = 'left';
+                            doc.styles.tableHeader.fillColor = '#f8f9fa';
+                            doc.styles.tableHeader.color = '#333333';
                             
-                            // Add header
+                            doc.defaultStyle.fontSize = 7;
+                            doc.defaultStyle.alignment = 'left';
+                            
+                            // Configure table body style for word wrapping
+                            doc.styles.tableBodyEven = {
+                                fontSize: 7,
+                                alignment: 'left'
+                            };
+                            doc.styles.tableBodyOdd = {
+                                fontSize: 7,
+                                alignment: 'left'
+                            };
+                            
+                            // Add custom styles for text wrapping
+                            doc.styles.tableCell = {
+                                fontSize: 7,
+                                alignment: 'left',
+                                noWrap: false
+                            };
+                            
+                            // Modify content to enable text wrapping in cells
+                            if (doc.content[1] && doc.content[1].table && doc.content[1].table.body) {
+                                doc.content[1].table.body.forEach(function(row, rowIndex) {
+                                    row.forEach(function(cell, cellIndex) {
+                                        if (typeof cell === 'string') {
+                                            // Convert string to object with text wrapping
+                                            row[cellIndex] = {
+                                                text: cell,
+                                                style: 'tableCell',
+                                                noWrap: false
+                                            };
+                                        } else if (cell && typeof cell === 'object' && cell.text) {
+                                            // Ensure existing objects have no wrap disabled
+                                            cell.noWrap = false;
+                                            cell.style = 'tableCell';
+                                        }
+                                    });
+                                });
+                            }
+                            
+                            // Add header with better spacing
                             doc.content.splice(0, 0, {
                                 text: [
                                     { text: 'Stock Levels Report\n', fontSize: 16, bold: true },
                                     { text: 'Generated on: ' + new Date().toLocaleString() + '\n\n', fontSize: 10 }
                                 ],
-                                alignment: 'center'
+                                alignment: 'center',
+                                margin: [0, 0, 0, 20]
                             });
-                            
-                            // Ensure proper table structure
-                            if (doc.content[1] && doc.content[1].table) {
-                                doc.content[1].table.headerRows = 1;
-                                doc.content[1].table.keepWithHeaderRows = 1;
-                            }
                         }
                     },
                     {
@@ -967,6 +1035,31 @@
             });
         });
 
+        // Date formatting functions for consistent YYYY-MM-DD display
+        function formatDate(dateString) {
+            if (!dateString) return '';
+            
+            var date = new Date(dateString);
+            if (isNaN(date.getTime())) return dateString;
+            
+            return date.toISOString().split('T')[0]; // YYYY-MM-DD format
+        }
+
+        function formatDateTime(dateTimeString) {
+            if (!dateTimeString) return '';
+            
+            var date = new Date(dateTimeString);
+            if (isNaN(date.getTime())) return dateTimeString;
+            
+            var year = date.getFullYear();
+            var month = String(date.getMonth() + 1).padStart(2, '0');
+            var day = String(date.getDate()).padStart(2, '0');
+            var hours = String(date.getHours()).padStart(2, '0');
+            var minutes = String(date.getMinutes()).padStart(2, '0');
+            
+            return `${year}-${month}-${day} ${hours}:${minutes}`;
+        }
+
         function searchStock() {
             var search = $("#search_text").val();
             var location_id = $("#filter_location").val();
@@ -1002,7 +1095,7 @@
                     parseFloat(row.qty_on_hand).toFixed(2),
                     parseFloat(row.qty_reserved).toFixed(2),
                     parseFloat(row.qty_available).toFixed(2),
-                    row.last_updated,
+                    formatDateTime(row.last_updated),
                     actions
                 ]);
             });
@@ -1061,7 +1154,7 @@
                             </div>
                             <div class="stock-info-row">
                                 <span class="stock-info-label">Last Updated:</span>
-                                <span class="stock-info-value">${row.last_updated}</span>
+                                <span class="stock-info-value">${formatDateTime(row.last_updated)}</span>
                             </div>
                         </div>
                         <div class="stock-card-actions">
@@ -1473,13 +1566,13 @@
                     desktopHtml += '</tr></thead><tbody>';
                     
                     $.each(recentMovements, function(i, mov) {
-                        var movementDate = mov.date || mov.created_at.split(' ')[0];
+                        var movementDate = formatDate(mov.date || mov.created_at);
                         var transferFrom = mov.transfer_from_location || '-';
                         var transferTo = mov.transfer_to_location || '-';
                         
                         desktopHtml += '<tr>';
                         desktopHtml += '<td>' + movementDate + '</td>';
-                        desktopHtml += '<td>' + mov.created_at + '</td>';
+                        desktopHtml += '<td>' + formatDateTime(mov.created_at) + '</td>';
                         desktopHtml += '<td><span class="label label-' + getMovementColor(mov.movement_type) + '">' + mov.movement_type + '</span></td>';
                         desktopHtml += '<td>' + mov.qty + '</td>';
                         desktopHtml += '<td>' + transferFrom + '</td>';
@@ -1498,8 +1591,8 @@
                         mobileHtml += '<div class="text-center" style="padding: 20px; color: #666;">No movement history found</div>';
                     } else {
                         $.each(recentMovements, function(i, mov) {
-                            var movementDate = mov.date || mov.created_at.split(' ')[0];
-                            var movementTime = mov.created_at.split(' ')[1] || '';
+                            var movementDate = formatDate(mov.date || mov.created_at);
+                            var movementTime = formatDateTime(mov.created_at).split(' ')[1] || '';
                             var transferInfo = '';
                             
                             if (mov.movement_type === 'TRANSFER' && mov.transfer_from_location && mov.transfer_to_location) {
