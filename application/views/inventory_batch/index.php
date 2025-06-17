@@ -888,14 +888,11 @@ defined('BASEPATH') or exit('No direct script access allowed');
                         }
                     },
                     {
-                        extend: 'pdf',
                         text: '<i class="ace-icon fa fa-file-pdf-o bigger-110 red"></i> <span class="hidden">PDF</span>',
                         className: 'btn btn-white btn-primary btn-bold',
                         titleAttr: 'Export to PDF',
-                        title: 'Batch Transactions Report',
-                        orientation: 'landscape',
-                        exportOptions: {
-                            columns: [1, 2, 3, 4, 5, 6, 7, 8] // Exclude row count (0) and actions (9)
+                        action: function(e, dt, node, config) {
+                            exportToPdf();
                         }
                     },
                     {
@@ -1744,6 +1741,36 @@ defined('BASEPATH') or exit('No direct script access allowed');
             $('#date_to').val(today);
             
             searchBatches();
+        }
+
+        function exportToPdf() {
+            // Get current filter values
+            const search = $('#search_text').val();
+            const transaction_type = $('#filter_type').val();
+            const status = $('#filter_status').val();
+            const location_id = $('#filter_location').val();
+            const date_from = $('#date_from').val();
+            const date_to = $('#date_to').val();
+
+            // Create a form and submit to PDF export endpoint
+            const form = $('<form>', {
+                'method': 'POST',
+                'action': base_url + 'inventory_batch/export_pdf',
+                'target': '_blank'
+            });
+
+            // Add filter parameters as hidden inputs
+            form.append($('<input>', {'type': 'hidden', 'name': 'search', 'value': search}));
+            form.append($('<input>', {'type': 'hidden', 'name': 'transaction_type', 'value': transaction_type}));
+            form.append($('<input>', {'type': 'hidden', 'name': 'status', 'value': status}));
+            form.append($('<input>', {'type': 'hidden', 'name': 'location_id', 'value': location_id}));
+            form.append($('<input>', {'type': 'hidden', 'name': 'date_from', 'value': date_from}));
+            form.append($('<input>', {'type': 'hidden', 'name': 'date_to', 'value': date_to}));
+
+            // Append form to body, submit, then remove
+            $('body').append(form);
+            form.submit();
+            form.remove();
         }
 
         function checkMobileView() {
