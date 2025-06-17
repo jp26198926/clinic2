@@ -314,6 +314,7 @@
                                     <div class="table-responsive">
                                         <table id="dynamic-table" class="table table-striped table-bordered table-hover">                                            <thead>
                                                 <tr>
+                                                    <th>#</th>
                                                     <th>Product Code</th>
                                                     <th>Product Name</th>
                                                     <th>Category</th>
@@ -473,8 +474,9 @@
             // Initialize DataTable with export buttons
             oTable1 = $('#dynamic-table').DataTable({
                 "aoColumns": [
+                    {"bSortable": false}, // Row count column
                     null, null, null, null, null, null, null, null, null, null, null, null,
-                    {"bSortable": false}
+                    {"bSortable": false} // Actions column
                 ],
                 "aaSorting": [],
                 "select": {
@@ -488,7 +490,7 @@
                         titleAttr: 'Export to Excel',
                         title: 'Stock Levels Report - ' + new Date().toISOString().split('T')[0],
                         exportOptions: {
-                            columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] // Exclude Actions column (12)
+                            columns: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] // Exclude row count (0) and Actions column (13)
                         }
                     },
                     {
@@ -500,7 +502,7 @@
                         orientation: 'landscape',
                         pageSize: 'A4',
                         exportOptions: {
-                            columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] // Exclude Actions column (12)
+                            columns: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] // Exclude row count (0) and Actions column (13)
                         },
                         customize: function(doc) {
                             // Enable auto width and word wrapping
@@ -515,7 +517,7 @@
                                 doc.content[1].table.dontBreakRows = true;
                                 
                                 // Use auto width instead of fixed percentages
-                                doc.content[1].table.widths = ['auto', '*', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto'];
+                                doc.content[1].table.widths = ['auto', '*', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto'];
                                 
                                 // Set table layout to auto for better fitting
                                 doc.content[1].layout = {
@@ -602,7 +604,7 @@
                         titleAttr: 'Print Report',
                         title: 'Stock Levels Report',
                         exportOptions: {
-                            columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] // Exclude Actions column (12)
+                            columns: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] // Exclude row count (0) and Actions column (13)
                         },
                         customize: function(win) {
                             // Add custom CSS for proper printing
@@ -860,7 +862,10 @@
         }
 
         function populateTable(data) {
-            oTable1.clear();            $.each(data, function(i, row) {
+            oTable1.clear();
+            
+            $.each(data, function(i, row) {
+                var rowNumber = i + 1; // Row count starting from 1
                 var actions = '<button type="button" class="btn btn-xs btn-info" onclick="viewStockDetails(' + row.product_id + ',' + row.location_id + ')"><i class="ace-icon fa fa-eye"></i></button>';
                 
                 // Format expiration date and status
@@ -884,6 +889,7 @@
                 var totalValue = (parseFloat(row.qty_on_hand) * parseFloat(row.unit_cost || 0)).toFixed(2);
                 
                 oTable1.row.add([
+                    rowNumber, // Row count column
                     row.product_code,
                     row.product_name,
                     row.category,
