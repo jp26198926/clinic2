@@ -34,11 +34,12 @@ function stock_items_list($items, $currency_symbol)
 {
     $list = "<table cellpadding=\"1\">
                 <tr>
+                    <th width=\"4%\" align=\"center\" border=\"1\"><b>#</b></th>
                     <th width=\"8%\" align=\"center\" border=\"1\"><b>CODE</b></th>
-                    <th width=\"25%\" align=\"center\" border=\"1\"><b>PRODUCT NAME</b></th>
-                    <th width=\"12%\" align=\"center\" border=\"1\"><b>CATEGORY</b></th>
+                    <th width=\"23%\" align=\"center\" border=\"1\"><b>PRODUCT NAME</b></th>
+                    <th width=\"11%\" align=\"center\" border=\"1\"><b>CATEGORY</b></th>
                     <th width=\"6%\" align=\"center\" border=\"1\"><b>UOM</b></th>
-                    <th width=\"12%\" align=\"center\" border=\"1\"><b>LOCATION</b></th>
+                    <th width=\"11%\" align=\"center\" border=\"1\"><b>LOCATION</b></th>
                     <th width=\"8%\" align=\"center\" border=\"1\"><b>ON HAND</b></th>
                     <th width=\"8%\" align=\"center\" border=\"1\"><b>RESERVED</b></th>
                     <th width=\"8%\" align=\"center\" border=\"1\"><b>AVAILABLE</b></th>
@@ -51,6 +52,7 @@ function stock_items_list($items, $currency_symbol)
     $total_available = 0;
 
     if (count($items) > 0) {
+        $row_number = 1; // Initialize row counter
         foreach ($items as $item) {
             $total_items++;
             $on_hand = floatval($item->qty_on_hand);
@@ -78,6 +80,7 @@ function stock_items_list($items, $currency_symbol)
             }
 
             $list .= "<tr>";
+            $list .= "  <td align=\"center\">{$row_number}</td>";
             $list .= "  <td align=\"left\">{$item->product_code}</td>";
             $list .= "  <td align=\"left\">{$product_name}</td>";
             $list .= "  <td align=\"center\">{$category}</td>";
@@ -88,12 +91,14 @@ function stock_items_list($items, $currency_symbol)
             $list .= "  <td align=\"right\">" . number_format($available, 2, '.', ',') . "</td>";
             $list .= "  <td align=\"center\">{$expiration_display}</td>";
             $list .= "</tr>";
+            
+            $row_number++; // Increment row counter
         }
         
         // Summary row
-        $list .= "<tr><td colspan=\"9\"> <hr /> </td></tr>";
+        $list .= "<tr><td colspan=\"10\"> <hr /> </td></tr>";
         $list .= "<tr>";
-        $list .= "  <td colspan=\"5\" align=\"right\"><b>TOTALS</b></td>";
+        $list .= "  <td colspan=\"6\" align=\"right\"><b>TOTALS</b></td>";
         $list .= "  <td align=\"right\"><b>" . number_format($total_on_hand, 2, '.', ',') . "</b></td>";
         $list .= "  <td align=\"right\"><b>" . number_format($total_reserved, 2, '.', ',') . "</b></td>";
         $list .= "  <td align=\"right\"><b>" . number_format($total_available, 2, '.', ',') . "</b></td>";
@@ -101,7 +106,7 @@ function stock_items_list($items, $currency_symbol)
         $list .= "</tr>";
     } else {
         $list .= "<tr>";
-        $list .= "  <td align=\"center\" colspan=\"9\" style=\"padding: 20px; font-style: italic;\">No stock data found</td>";
+        $list .= "  <td align=\"center\" colspan=\"10\" style=\"padding: 20px; font-style: italic;\">No stock data found</td>";
         $list .= "</tr>";
     }
 
