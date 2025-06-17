@@ -470,7 +470,7 @@
             // Initialize DataTable with export buttons
             oTable1 = $('#dynamic-table').DataTable({
                 "aoColumns": [
-                    null, null, null, null, null, null, null, null, null,
+                    null, null, null, null, null, null, null, null, null, null, null, null,
                     {"bSortable": false}
                 ],
                 "aaSorting": [],
@@ -485,7 +485,7 @@
                         titleAttr: 'Export to Excel',
                         title: 'Stock Levels Report - ' + new Date().toISOString().split('T')[0],
                         exportOptions: {
-                            columns: [0, 1, 2, 3, 4, 5, 6, 7, 8] // Exclude Actions column
+                            columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] // Exclude Actions column (12)
                         }
                     },
                     {
