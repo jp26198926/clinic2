@@ -150,6 +150,20 @@
             </ul>
         </div>
 
+        <div class="test-section">
+            <h3><span class="tag export">PDF Export Enhancement</span> Custom PDF Following System Standards</h3>
+            <ul class="checklist">
+                <li>Created custom PDF template in application/views/pdf/inventory_stock.php</li>
+                <li>Added controller method export_pdf() with proper security</li>
+                <li>Professional layout with company branding and clinic header</li>
+                <li>Summary statistics section with inventory value and item counts</li>
+                <li>Detailed stock table in landscape format for better readability</li>
+                <li>Filter documentation showing applied search and location filters</li>
+                <li>Dynamic currency integration throughout the PDF</li>
+                <li>Follows exact pattern of existing PDF exports (batch_transaction.php, etc.)</li>
+            </ul>
+        </div>
+
         <h2>🔧 Testing Instructions</h2>
 
         <div class="step">
@@ -196,9 +210,14 @@
             <h4><span class="tag export">PDF Export</span></h4>
             <ul>
                 <li>Click PDF export button</li>
-                <li>Verify landscape orientation with proper column widths</li>
-                <li>Check that currency shows as "K" in cost columns</li>
-                <li>Ensure no row count column in PDF</li>
+                <li>Verify PDF opens in new browser window/tab</li>
+                <li>Check professional layout with company header</li>
+                <li>Verify summary statistics section with inventory value in "K" currency</li>
+                <li>Check detailed stock table with proper column formatting</li>
+                <li>Verify filter information is documented in PDF header</li>
+                <li>Check that expiration status shows (EXPIRED)/(EXPIRING) indicators</li>
+                <li>Ensure landscape orientation with proper table fit</li>
+                <li>Verify totals row with item count and quantity summaries</li>
             </ul>
             
             <h4><span class="tag export">Print Export</span></h4>
@@ -361,12 +380,16 @@
                 <li>Row count column appears as first column with sequential numbers</li>
                 <li>Currency displays as "K" in all cost columns and reports</li>
                 <li>Excel export contains 12 columns with proper currency</li>
-                <li>PDF export is properly formatted in landscape with "K" currency</li>
+                <li>PDF export opens in new window with professional clinic-branded layout</li>
+                <li>PDF shows summary statistics with total inventory value in "K" currency</li>
+                <li>PDF documents applied filters and generation timestamp</li>
+                <li>PDF detailed table shows all stock data in landscape format</li>
                 <li>Print export excludes row count and shows proper currency</li>
                 <li>Mobile view displays currency correctly in cards</li>
                 <li>All inventory reports show "K" instead of "₱"</li>
                 <li>DataTable sorting works correctly (row count column non-sortable)</li>
                 <li>Search and filters maintain sequential row numbering</li>
+                <li>PDF export respects current search and location filters</li>
             </ul>
         </div>
 
@@ -375,12 +398,21 @@
         <div class="code">
         Controller: application/controllers/Inventory_stock.php
         - Added currency support and helper methods
+        - Added export_pdf() method for custom PDF generation
         
         View: application/views/inventory_stock/index.php  
         - Added row count column
         - Updated currency display
         - Updated export configurations
         - Updated DataTable population
+        - Updated PDF button to use custom export
+        
+        PDF Template: application/views/pdf/inventory_stock.php (NEW)
+        - Professional PDF layout following system standards
+        - Summary statistics section
+        - Detailed stock table with proper formatting
+        - Dynamic currency integration
+        - Filter documentation
         </div>
 
         <div class="warning">

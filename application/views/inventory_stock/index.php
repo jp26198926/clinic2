@@ -494,107 +494,31 @@
                         }
                     },
                     {
-                        extend: 'pdf',
                         text: '<i class="ace-icon fa fa-file-pdf-o bigger-110 red"></i> <span class="hidden">Export to PDF</span>',
                         className: 'btn btn-white btn-primary btn-bold',
                         titleAttr: 'Export to PDF',
-                        title: 'Stock Levels Report',
-                        orientation: 'landscape',
-                        pageSize: 'A4',
-                        exportOptions: {
-                            columns: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] // Exclude row count (0) and Actions column (13)
-                        },
-                        customize: function(doc) {
-                            // Enable auto width and word wrapping
-                            doc.pageSize = 'A4';
-                            doc.pageOrientation = 'landscape';
-                            doc.pageMargins = [20, 20, 20, 20];
+                        action: function(e, dt, node, config) {
+                            // Get current filter values
+                            var search = $("#search_text").val();
+                            var location_id = $("#filter_location").val();
                             
-                            // Configure table for auto width with word wrap
-                            if (doc.content[1] && doc.content[1].table) {
-                                doc.content[1].table.headerRows = 1;
-                                doc.content[1].table.keepWithHeaderRows = 1;
-                                doc.content[1].table.dontBreakRows = true;
-                                
-                                // Use auto width instead of fixed percentages
-                                doc.content[1].table.widths = ['auto', '*', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto'];
-                                
-                                // Set table layout to auto for better fitting
-                                doc.content[1].layout = {
-                                    fillColor: function (rowIndex, node, columnIndex) {
-                                        return (rowIndex === 0) ? '#f8f9fa' : null;
-                                    },
-                                    hLineWidth: function (i, node) {
-                                        return 0.5;
-                                    },
-                                    vLineWidth: function (i, node) {
-                                        return 0.5;
-                                    },
-                                    hLineColor: function (i, node) {
-                                        return '#cccccc';
-                                    },
-                                    vLineColor: function (i, node) {
-                                        return '#cccccc';
-                                    }
-                                };
+                            // Build URL with filters
+                            var url = base_url + 'inventory_stock/export_pdf';
+                            var params = [];
+                            
+                            if (search) {
+                                params.push('search=' + encodeURIComponent(search));
+                            }
+                            if (location_id) {
+                                params.push('location_id=' + encodeURIComponent(location_id));
                             }
                             
-                            // Adjust font sizes for better readability
-                            doc.styles.tableHeader.fontSize = 8;
-                            doc.styles.tableHeader.bold = true;
-                            doc.styles.tableHeader.alignment = 'left';
-                            doc.styles.tableHeader.fillColor = '#f8f9fa';
-                            doc.styles.tableHeader.color = '#333333';
-                            
-                            doc.defaultStyle.fontSize = 7;
-                            doc.defaultStyle.alignment = 'left';
-                            
-                            // Configure table body style for word wrapping
-                            doc.styles.tableBodyEven = {
-                                fontSize: 7,
-                                alignment: 'left'
-                            };
-                            doc.styles.tableBodyOdd = {
-                                fontSize: 7,
-                                alignment: 'left'
-                            };
-                            
-                            // Add custom styles for text wrapping
-                            doc.styles.tableCell = {
-                                fontSize: 7,
-                                alignment: 'left',
-                                noWrap: false
-                            };
-                            
-                            // Modify content to enable text wrapping in cells
-                            if (doc.content[1] && doc.content[1].table && doc.content[1].table.body) {
-                                doc.content[1].table.body.forEach(function(row, rowIndex) {
-                                    row.forEach(function(cell, cellIndex) {
-                                        if (typeof cell === 'string') {
-                                            // Convert string to object with text wrapping
-                                            row[cellIndex] = {
-                                                text: cell,
-                                                style: 'tableCell',
-                                                noWrap: false
-                                            };
-                                        } else if (cell && typeof cell === 'object' && cell.text) {
-                                            // Ensure existing objects have no wrap disabled
-                                            cell.noWrap = false;
-                                            cell.style = 'tableCell';
-                                        }
-                                    });
-                                });
+                            if (params.length > 0) {
+                                url += '?' + params.join('&');
                             }
                             
-                            // Add header with better spacing
-                            doc.content.splice(0, 0, {
-                                text: [
-                                    { text: 'Stock Levels Report\n', fontSize: 16, bold: true },
-                                    { text: 'Generated on: ' + new Date().toLocaleString() + '\n\n', fontSize: 10 }
-                                ],
-                                alignment: 'center',
-                                margin: [0, 0, 0, 20]
-                            });
+                            // Open PDF in new window
+                            window.open(url, '_blank');
                         }
                     },
                     {

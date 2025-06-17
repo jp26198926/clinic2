@@ -92,10 +92,10 @@ class Inventory_stock extends CI_Controller
 			$data['locations'] = $this->data_location_model->search("", 1);
 			
 			// Get currency information from system settings
-			$this->load->model('batch_transaction_model', 'batch_model');
-			$currency_info = $this->batch_model->get_currency_info();
-			$data['currency_code'] = $currency_info->code ?? 'USD';
-			$data['currency_symbol'] = $this->get_currency_symbol($currency_info->code ?? 'USD');
+			$app_details = $this->ad->get_details();
+			$currency_code = $app_details->currency_code ?? 'USD';
+			$data['currency_code'] = $currency_code;
+			$data['currency_symbol'] = $this->get_currency_symbol($currency_code);
 			
 			$this->load->view('inventory_stock/index', $data);
 		} else {
@@ -499,6 +499,63 @@ class Inventory_stock extends CI_Controller
 			} catch (Exception $ex) {
 				echo $ex->getMessage();
 			}
+		} else {
+			echo "Error: You don't have permission to perform this action!";
+		}
+	}
+	
+	/**
+	 * Export stock levels to PDF
+	 */
+	public function export_pdf()
+	{
+		if ($this->cf->module_permission("view", $this->module_permission)) {
+			// Get filters from request
+			$search = $this->input->get('search', TRUE);
+			$location_id = $this->input->get('location_id', TRUE);
+			
+			// Get currency info from app details (already loaded in constructor)
+			$app_details = $this->ad->get_details();
+			$currency_code = $app_details->currency_code ?? 'USD';
+			$currency_symbol = $this->get_currency_symbol($currency_code);
+			
+			// Get location name for filters
+			$location_name = 'All Locations';
+			if ($location_id) {
+				$location = $this->data_location_model->get_by_id($location_id);
+				if ($location) {
+					$location_name = $location->location;
+				}
+			}
+			
+			// Get stock data using the same method as the search
+			$stock_data = $this->main_model->search($search, $location_id, 1);
+			
+			// Prepare data for PDF
+			$filters = array(
+				'search_text' => $search,
+				'location_name' => $location_name
+			);
+			
+			// Load PDF library
+			$this->load->library('Pdf');
+			
+			// Set data for PDF view
+			$data = array(
+				'stock_data' => $stock_data,
+				'filters' => $filters,
+				'currency_symbol' => $currency_symbol,
+				'company_name' => $this->company_name,
+				'company_address' => $this->company_address,
+				'company_contact' => $this->company_contact,
+				'page_name' => $this->page_name
+			);
+			
+			// Extract variables for the PDF view
+			extract($data);
+			
+			// Load PDF view
+			$this->load->view('pdf/inventory_stock', $data);
 		} else {
 			echo "Error: You don't have permission to perform this action!";
 		}
