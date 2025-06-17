@@ -33,13 +33,15 @@ CREATE TABLE batch_transaction_items (
     product_id INT NOT NULL,
     qty DECIMAL(20,4) NOT NULL,
     unit_cost DECIMAL(10,2) DEFAULT 0,
+    expiration_date DATE NULL,
     total_cost DECIMAL(12,2) GENERATED ALWAYS AS (qty * unit_cost) STORED,
     notes VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (batch_transaction_id) REFERENCES batch_transactions(id) ON DELETE CASCADE,
     FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE RESTRICT,
     INDEX idx_batch_transaction (batch_transaction_id),
-    INDEX idx_product (product_id)
+    INDEX idx_product (product_id),
+    INDEX idx_expiration_date (expiration_date)
 );
 
 -- Add menu for Batch Transaction

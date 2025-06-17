@@ -90,6 +90,11 @@ class Inventory_batch extends CI_Controller
             // Load dropdown data
             $data['locations'] = $this->data_location_model->search('', 0, 1);
             $data['products'] = $this->data_product_model->search('', '', 0, 1);
+            
+            // Get currency information from system settings
+            $currency_info = $this->main_model->get_currency_info();
+            $data['currency_code'] = $currency_info->code ?? 'USD';
+            $data['currency_symbol'] = $this->get_currency_symbol($currency_info->code ?? 'USD');
 
             $this->load->view('inventory_batch/index', $data);
         } else {
@@ -404,6 +409,11 @@ class Inventory_batch extends CI_Controller
             // Load dropdown data
             $data['locations'] = $this->data_location_model->search('', 0, 1);
             $data['products'] = $this->data_product_model->search('', '', 0, 1);
+            
+            // Get currency information from system settings
+            $currency_info = $this->main_model->get_currency_info();
+            $data['currency_code'] = $currency_info->code ?? 'USD';
+            $data['currency_symbol'] = $this->get_currency_symbol($currency_info->code ?? 'USD');
 
             $this->load->view('inventory_batch/manage', $data);
         } else {
@@ -499,6 +509,7 @@ class Inventory_batch extends CI_Controller
                     echo json_encode([
                         'success' => true, 
                         'message' => 'Batch transaction created and completed successfully!',
+                        'batch_id' => $result['batch_id'],
                         'transaction_number' => $result['transaction_number']
                     ]);
                 } else {
@@ -575,5 +586,36 @@ class Inventory_batch extends CI_Controller
         } catch (Exception $ex) {
             echo json_encode(array('error' => 'Exception: ' . $ex->getMessage()));
         }
+    }
+    
+    /**
+     * Get currency symbol based on currency code
+     */
+    private function get_currency_symbol($currency_code)
+    {
+        $currency_symbols = array(
+            'USD' => '$',
+            'EUR' => '€',
+            'GBP' => '£',
+            'JPY' => '¥',
+            'PHP' => '₱',
+            'PGK' => 'K',  // Papua New Guinea Kina
+            'AUD' => 'A$',
+            'CAD' => 'C$',
+            'SGD' => 'S$',
+            'MYR' => 'RM',
+            'THB' => '฿',
+            'IDR' => 'Rp',
+            'VND' => '₫',
+            'KRW' => '₩',
+            'CNY' => '¥',
+            'INR' => '₹',
+            'CHF' => 'CHF',
+            'NZD' => 'NZ$',
+            'ZAR' => 'R',
+            'BRL' => 'R$'
+        );
+        
+        return $currency_symbols[$currency_code] ?? $currency_code;
     }
 }

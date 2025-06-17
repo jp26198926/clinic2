@@ -139,6 +139,7 @@ class Inventory_stock extends CI_Controller
 			$location_id = intval($input_data['location_id']);
 			$qty = intval($input_data['qty']);
 			$unit_cost = floatval($input_data['unit_cost']);
+			$expiration_date = !empty($input_data['expiration_date']) ? $input_data['expiration_date'] : null;
 			$reference_type = $input_data['reference_type'];
 			$reference_id = $input_data['reference_id'] ?? null;
 			$notes = $input_data['notes'] ?? '';
@@ -153,7 +154,8 @@ class Inventory_stock extends CI_Controller
 						$reference_type, 
 						$reference_id, 
 						$this->uid, 
-						$notes
+						$notes,
+						$expiration_date
 					);
 
 					if ($result) {
@@ -387,6 +389,112 @@ class Inventory_stock extends CI_Controller
 			}
 		} else {
 			echo "Error: Product ID and Location ID are required!";
+		}
+	}
+
+	function get_expiring_stock()
+	{
+		$location_id = intval($this->input->get('location_id'));
+		$days_ahead = intval($this->input->get('days_ahead')) ?: 30;
+		
+		try {
+			$result = $this->main_model->get_expiring_products($location_id, $days_ahead);
+			echo json_encode($result);
+		} catch (Exception $ex) {
+			echo $ex->getMessage();
+		}
+	}
+
+	function get_expired_stock()
+	{
+		$location_id = intval($this->input->get('location_id'));
+		
+		try {
+			$result = $this->main_model->get_expired_products($location_id);
+			echo json_encode($result);
+		} catch (Exception $ex) {
+			echo $ex->getMessage();
+		}
+	}
+
+	function get_stock_valuation()
+	{
+		$location_id = intval($this->input->get('location_id'));
+		
+		try {
+			$result = $this->main_model->get_stock_valuation($location_id);
+			$total_value = 0;
+			foreach ($result as $item) {
+				$total_value += $item->stock_value;
+			}
+			
+			echo json_encode(array(
+				'items' => $result,
+				'total_value' => $total_value
+			));
+		} catch (Exception $ex) {
+			echo $ex->getMessage();
+		}
+	}
+
+	function export_expiring_stock()
+	{
+		if ($this->cf->module_permission("view", $this->module_permission)) {
+			$location_id = intval($this->input->get('location_id'));
+			$days_ahead = intval($this->input->get('days_ahead')) ?: 30;
+			
+			try {
+				$data = $this->main_model->get_expiring_products($location_id, $days_ahead);
+				
+				$this->load->library('excel');
+				$this->excel->setActiveSheetIndex(0);
+				$this->excel->getActiveSheet()->setTitle('Expiring Stock Report');
+				
+				// Headers
+				$headers = array('Product Code', 'Product Name', 'Category', 'Location', 'Qty On Hand', 'Unit Cost', 'Total Value', 'Expiration Date', 'Days Until Expiry', 'Status');
+				$col = 'A';
+				foreach ($headers as $header) {
+					$this->excel->getActiveSheet()->setCellValue($col . '1', $header);
+					$col++;
+				}
+				
+				// Data
+				$row = 2;
+				foreach ($data as $item) {
+					$status = '';
+					if ($item->days_until_expiry < 0) {
+						$status = 'EXPIRED';
+					} elseif ($item->days_until_expiry <= 7) {
+						$status = 'CRITICAL';
+					} elseif ($item->days_until_expiry <= 30) {
+						$status = 'WARNING';
+					}
+					
+					$this->excel->getActiveSheet()->setCellValue('A' . $row, $item->product_code);
+					$this->excel->getActiveSheet()->setCellValue('B' . $row, $item->product_name);
+					$this->excel->getActiveSheet()->setCellValue('C' . $row, $item->category);
+					$this->excel->getActiveSheet()->setCellValue('D' . $row, $item->location);
+					$this->excel->getActiveSheet()->setCellValue('E' . $row, $item->qty_on_hand);
+					$this->excel->getActiveSheet()->setCellValue('F' . $row, $item->unit_cost);
+					$this->excel->getActiveSheet()->setCellValue('G' . $row, $item->qty_on_hand * $item->unit_cost);
+					$this->excel->getActiveSheet()->setCellValue('H' . $row, $item->expiration_date_formatted);
+					$this->excel->getActiveSheet()->setCellValue('I' . $row, $item->days_until_expiry);
+					$this->excel->getActiveSheet()->setCellValue('J' . $row, $status);
+					$row++;
+				}
+				
+				$filename = 'Expiring_Stock_Report_' . date('Y-m-d_H-i-s') . '.xlsx';
+				header('Content-Type: application/vnd.ms-excel');
+				header('Content-Disposition: attachment;filename="' . $filename . '"');
+				header('Cache-Control: max-age=0');
+				
+				$objWriter = PHPExcel_IOFactory::createWriter($this->excel, 'Excel2007');
+				$objWriter->save('php://output');
+			} catch (Exception $ex) {
+				echo $ex->getMessage();
+			}
+		} else {
+			echo "Error: You don't have permission to perform this action!";
 		}
 	}
 }

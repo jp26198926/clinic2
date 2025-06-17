@@ -230,7 +230,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
                                 </div>
                                 <div class="col-sm-3">
                                     <div class="summary-card">
-                                        <div class="summary-number" id="total_cost">₱0.00</div>
+                                        <div class="summary-number" id="total_cost">0.00</div>
                                         <div class="summary-label">Total Cost</div>
                                     </div>
                                 </div>
@@ -408,6 +408,8 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
     <script>
         const base_url = "<?= base_url() ?>";
+        const currency_symbol = "<?= $currency_symbol ?? '₱' ?>";
+        const currency_code = "<?= $currency_code ?? 'PHP' ?>";
         let currentBatch = null;
         let itemsTable;
 
@@ -428,7 +430,11 @@ defined('BASEPATH') or exit('No direct script access allowed');
             // Initialize components
             initializeDataTable();
             initializeChosenDropdowns();
+            initializeCurrencyDisplay();
             loadBatchDetails(batchId);
+            
+            // Initialize currency display
+            $('#total_cost').text(currency_symbol + '0.00');
 
             // Event handlers
             $('#form_add_item').on('submit', addItem);
@@ -463,6 +469,11 @@ defined('BASEPATH') or exit('No direct script access allowed');
                 no_results_text: "No results match",
                 width: "100%"
             });
+        }
+
+        function initializeCurrencyDisplay() {
+            // Set initial currency display for total cost
+            $('#total_cost').text(currency_symbol + '0.00');
         }
 
         function loadBatchDetails(batchId) {
@@ -535,8 +546,8 @@ defined('BASEPATH') or exit('No direct script access allowed');
                     item.category || '-',
                     item.uom || '-',
                     parseFloat(item.qty).toFixed(2),
-                    '₱' + unitCost,
-                    '₱' + totalCost,
+                    currency_symbol + unitCost,
+                    currency_symbol + totalCost,
                     item.notes || '-',
                     actions
                 ]);
@@ -568,7 +579,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
         function updateSummary(batch) {
             $('#total_items').text(batch.total_items || 0);
             $('#total_quantity').text(parseFloat(batch.total_qty || 0).toFixed(2));
-            $('#total_cost').text('₱' + parseFloat(batch.total_cost || 0).toFixed(2));
+            $('#total_cost').text(currency_symbol + parseFloat(batch.total_cost || 0).toFixed(2));
         }
 
         function addItem(e) {

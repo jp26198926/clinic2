@@ -572,7 +572,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
                                 <!-- Add Item Row -->
                                 <div class="well well-sm">
                                     <div class="row">
-                                        <div class="col-sm-4">
+                                        <div class="col-sm-3">
                                             <div class="form-group">
                                                 <label>Product <span class="text-danger">*</span></label>
                                                 <select id="nb_product_id" class="form-control chosen-select-products">
@@ -580,22 +580,42 @@ defined('BASEPATH') or exit('No direct script access allowed');
                                                 </select>
                                             </div>
                                         </div>
-                                        <div class="col-sm-3">
+                                        <div class="col-sm-1">
+                                            <div class="form-group">
+                                                <label>UOM</label>
+                                                <input type="text" id="nb_uom" class="form-control" readonly placeholder="UOM">
+                                                <small class="help-block">Unit of Measure</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-sm-1">
                                             <div class="form-group">
                                                 <label>Quantity <span class="text-danger">*</span></label>
                                                 <input type="number" id="nb_qty" class="form-control" min="0.01" step="0.01" placeholder="0.00">
                                             </div>
                                         </div>
-                                        <div class="col-sm-4">
+                                        <div class="col-sm-1">
+                                            <div class="form-group">
+                                                <label>Unit Cost</label>
+                                                <input type="number" id="nb_unit_cost" class="form-control" min="0" step="0.01" placeholder="0.00">
+                                            </div>
+                                        </div>
+                                        <div class="col-sm-2">
+                                            <div class="form-group">
+                                                <label>Expiration Date</label>
+                                                <input type="text" id="nb_expiration_date" class="form-control datepicker" placeholder="yyyy-mm-dd" readonly>
+                                                <small class="help-block">Optional</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-sm-3">
                                             <div class="form-group">
                                                 <label>Notes</label>
-                                                <input type="text" id="nb_notes" class="form-control" placeholder="Optional notes">
+                                                <input type="text" id="nb_notes" class="form-control" placeholder="Optional">
                                             </div>
                                         </div>
                                         <div class="col-sm-1">
                                             <div class="form-group">
-                                                <label>&nbsp;</label><br>
-                                                <button type="button" id="btn_add_item" class="btn btn-sm btn-success">
+                                                <label>&nbsp;</label>
+                                                <button type="button" id="btn_add_item" class="btn btn-success" style="width: 100%;">
                                                     <i class="ace-icon fa fa-plus"></i>
                                                 </button>
                                             </div>
@@ -612,13 +632,16 @@ defined('BASEPATH') or exit('No direct script access allowed');
                                                 <th>Product Name</th>
                                                 <th>UOM</th>
                                                 <th class="text-right">Quantity</th>
+                                                <th class="text-right">Unit Cost</th>
+                                                <th class="text-right">Total Cost</th>
+                                                <th>Expiration Date</th>
                                                 <th>Notes</th>
                                                 <th class="text-center">Action</th>
                                             </tr>
                                         </thead>
                                         <tbody id="items_table_body">
                                             <tr id="no_items_row">
-                                                <td colspan="6" class="text-center text-muted">No items added yet</td>
+                                                <td colspan="9" class="text-center text-muted">No items added yet</td>
                                             </tr>
                                         </tbody>
                                     </table>
@@ -632,7 +655,10 @@ defined('BASEPATH') or exit('No direct script access allowed');
                         <i class="ace-icon fa fa-times"></i> Cancel
                     </button>
                     <button type="button" id="btn_save_batch" class="btn btn-sm btn-primary">
-                        <i class="ace-icon fa fa-check"></i> Create & Complete Transaction
+                        <i class="ace-icon fa fa-check"></i> Confirm
+                    </button>
+                    <button type="button" id="btn_save_and_print_batch" class="btn btn-sm btn-success">
+                        <i class="ace-icon fa fa-print"></i> Confirm & Print
                     </button>
                 </div>
             </div>
@@ -671,6 +697,8 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
     <script>
         const base_url = "<?= base_url() ?>";
+        const currency_symbol = "<?= $currency_symbol ?? '₱' ?>";
+        const currency_code = "<?= $currency_code ?? 'PHP' ?>";
         let oTable1;
         let currentBatchId = null;
 
@@ -754,10 +782,54 @@ defined('BASEPATH') or exit('No direct script access allowed');
             $('#btn_reset').on('click', resetFilters);
             $('#btn_new_batch, #mobile_btn_new_batch').on('click', showNewBatchModal);
             $('#btn_save_batch').on('click', saveBatch);
+            $('#btn_save_and_print_batch').on('click', saveAndPrintBatch);
             $('#btn_add_item').on('click', addItem);
 
             // Transaction type change handler
             $('#nb_transaction_type').on('change', handleTransactionTypeChange);
+
+            // Product selection change handler - display UOM
+            $('#nb_product_id').on('change', function() {
+                const selectedOption = $(this).find('option:selected');
+                const uom = selectedOption.data('uom') || '';
+                $('#nb_uom').val(uom);
+            });
+
+            // Keyboard navigation for item form fields
+            $('#nb_product_id').on('keydown', function(e) {
+                if (e.which === 13) { // Enter key
+                    e.preventDefault();
+                    $('#nb_qty').focus().select();
+                }
+            });
+
+            $('#nb_qty').on('keydown', function(e) {
+                if (e.which === 13) { // Enter key
+                    e.preventDefault();
+                    $('#nb_unit_cost').focus().select();
+                }
+            });
+
+            $('#nb_unit_cost').on('keydown', function(e) {
+                if (e.which === 13) { // Enter key
+                    e.preventDefault();
+                    $('#nb_expiration_date').focus();
+                }
+            });
+
+            $('#nb_expiration_date').on('keydown', function(e) {
+                if (e.which === 13) { // Enter key
+                    e.preventDefault();
+                    $('#nb_notes').focus().select();
+                }
+            });
+
+            $('#nb_notes').on('keydown', function(e) {
+                if (e.which === 13) { // Enter key
+                    e.preventDefault();
+                    addItem();
+                }
+            });
 
             // Form submission
             $('#form_new_batch').on('submit', function(e) {
@@ -765,8 +837,8 @@ defined('BASEPATH') or exit('No direct script access allowed');
                 saveBatch();
             });
 
-            // Allow adding item with Enter key
-            $('#nb_qty, #nb_notes').on('keypress', function(e) {
+            // Allow adding item with Enter key (kept for backward compatibility)
+            $('#nb_qty, #nb_unit_cost, #nb_expiration_date, #nb_notes').on('keypress', function(e) {
                 if (e.which === 13) { // Enter key
                     e.preventDefault();
                     addItem();
@@ -1106,6 +1178,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
                 dataType: 'json',
                 beforeSend: function() {
                     $('#btn_save_batch').prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Creating...');
+                    $('#btn_save_and_print_batch').prop('disabled', true);
                 },
                 success: function(response) {
                     if (response.success) {
@@ -1129,7 +1202,76 @@ defined('BASEPATH') or exit('No direct script access allowed');
                     toastr.error(errorMsg);
                 },
                 complete: function() {
-                    $('#btn_save_batch').prop('disabled', false).html('<i class="ace-icon fa fa-check"></i> Create & Complete Transaction');
+                    $('#btn_save_batch').prop('disabled', false).html('<i class="ace-icon fa fa-check"></i> Confirm');
+                    $('#btn_save_and_print_batch').prop('disabled', false).html('<i class="ace-icon fa fa-print"></i> Confirm & Print');
+                }
+            });
+        }
+
+        function saveAndPrintBatch() {
+            // Validate basic fields
+            if (!$('#nb_transaction_date').val() || !$('#nb_transaction_type').val()) {
+                toastr.warning('Please fill in all required fields');
+                return;
+            }
+
+            // Get items from table
+            const items = getItemsFromTable();
+            if (items.length === 0) {
+                toastr.warning('Please add at least one item to the transaction');
+                return;
+            }
+
+            const formData = {
+                transaction_date: $('#nb_transaction_date').val(),
+                transaction_type: $('#nb_transaction_type').val(),
+                from_location_id: $('#nb_from_location').val(),
+                to_location_id: $('#nb_to_location').val(),
+                remarks: $('#nb_remarks').val(),
+                items: items
+            };
+
+            $.ajax({
+                url: base_url + 'inventory_batch/create_batch_with_items',
+                type: 'POST',
+                data: JSON.stringify(formData),
+                contentType: 'application/json',
+                dataType: 'json',
+                beforeSend: function() {
+                    $('#btn_save_batch').prop('disabled', true);
+                    $('#btn_save_and_print_batch').prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Creating & Printing...');
+                },
+                success: function(response) {
+                    if (response.success) {
+                        toastr.success(response.message);
+                        $('#modal_new_batch').modal('hide');
+                        searchBatches();
+                        
+                        // Automatically print the batch
+                        if (response.batch_id) {
+                            setTimeout(function() {
+                                printBatch(response.batch_id);
+                            }, 500); // Small delay to ensure modal is hidden and data refreshed
+                        }
+                    } else {
+                        toastr.error(response.message || 'Failed to create batch transaction');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    let errorMsg = 'Failed to create batch transaction';
+                    try {
+                        const errorResponse = JSON.parse(xhr.responseText);
+                        errorMsg = errorResponse.message || errorMsg;
+                    } catch (e) {
+                        if (xhr.responseText) {
+                            errorMsg += ': ' + xhr.responseText.substring(0, 200);
+                        }
+                    }
+                    toastr.error(errorMsg);
+                },
+                complete: function() {
+                    $('#btn_save_batch').prop('disabled', false).html('<i class="ace-icon fa fa-check"></i> Confirm');
+                    $('#btn_save_and_print_batch').prop('disabled', false).html('<i class="ace-icon fa fa-print"></i> Confirm & Print');
                 }
             });
         }
@@ -1184,6 +1326,16 @@ defined('BASEPATH') or exit('No direct script access allowed');
                         no_results_text: "No products match",
                         width: "100%"
                     });
+                    
+                    // Add keyboard navigation for Chosen dropdown
+                    $('#nb_product_id').on('chosen:hiding_dropdown', function(evt, params) {
+                        // Small delay to allow Chosen to complete its hiding process
+                        setTimeout(function() {
+                            if ($('#nb_product_id').val()) {
+                                $('#nb_qty').focus().select();
+                            }
+                        }, 50);
+                    });
                 },
                 error: function(xhr, status, error) {
                     let errorMsg = 'Failed to load products';
@@ -1205,7 +1357,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
         }
 
         function clearItemsTable() {
-            $('#items_table_body').html('<tr id="no_items_row"><td colspan="6" class="text-center text-muted">No items added yet</td></tr>');
+            $('#items_table_body').html('<tr id="no_items_row"><td colspan="9" class="text-center text-muted">No items added yet</td></tr>');
             updateTotals();
             itemsCounter = 0;
         }
@@ -1213,6 +1365,8 @@ defined('BASEPATH') or exit('No direct script access allowed');
         function addItem() {
             const productId = $('#nb_product_id').val();
             const qty = parseFloat($('#nb_qty').val()) || 0;
+            const unitCost = parseFloat($('#nb_unit_cost').val()) || 0;
+            const expirationDate = $('#nb_expiration_date').val();
             const notes = $('#nb_notes').val();
 
             if (!productId || qty <= 0) {
@@ -1232,16 +1386,44 @@ defined('BASEPATH') or exit('No direct script access allowed');
                 return;
             }
 
+            // Calculate total cost
+            const totalCost = qty * unitCost;
+
+            // Format expiration date display
+            let expirationDisplay = '';
+            if (expirationDate) {
+                const expDate = new Date(expirationDate);
+                const today = new Date();
+                const diffTime = expDate - today;
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                
+                let expirationClass = '';
+                if (diffDays < 0) {
+                    expirationClass = 'text-danger';
+                    expirationDisplay = `<span class="${expirationClass}">${expirationDate} (EXPIRED)</span>`;
+                } else if (diffDays <= 30) {
+                    expirationClass = 'text-warning';
+                    expirationDisplay = `<span class="${expirationClass}">${expirationDate} (${diffDays} days)</span>`;
+                } else {
+                    expirationDisplay = expirationDate;
+                }
+            } else {
+                expirationDisplay = '<span class="text-muted">No expiry</span>';
+            }
+
             // Remove "no items" row
             $('#no_items_row').remove();
 
-            // Add new row
+            // Add new row with new columns
             const rowHtml = `
-                <tr id="item_row_${productId}" data-product-id="${productId}">
+                <tr id="item_row_${productId}" data-product-id="${productId}" data-unit-cost="${unitCost}" data-expiration="${expirationDate}">
                     <td>${productCode}</td>
                     <td>${productName}</td>
                     <td>${uom}</td>
                     <td class="text-right">${qty.toFixed(2)}</td>
+                    <td class="text-right">${currency_symbol}${unitCost.toFixed(2)}</td>
+                    <td class="text-right">${currency_symbol}${totalCost.toFixed(2)}</td>
+                    <td>${expirationDisplay}</td>
                     <td>${notes}</td>
                     <td class="text-center">
                         <button type="button" class="btn btn-xs btn-danger" onclick="removeItem(${productId})" title="Remove">
@@ -1255,11 +1437,19 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
             // Clear form
             $('#nb_product_id').val('').trigger('chosen:updated');
+            $('#nb_uom').val('');
             $('#nb_qty').val('');
+            $('#nb_unit_cost').val('');
+            $('#nb_expiration_date').val('');
             $('#nb_notes').val('');
 
             updateTotals();
             itemsCounter++;
+            
+            // Return focus to product field for continuous data entry
+            setTimeout(function() {
+                $('#nb_product_id').trigger('chosen:activate');
+            }, 100);
         }
 
         function removeItem(productId) {
@@ -1267,14 +1457,27 @@ defined('BASEPATH') or exit('No direct script access allowed');
             
             // If no items left, show "no items" row
             if ($('#items_table_body tr').length === 0) {
-                $('#items_table_body').html('<tr id="no_items_row"><td colspan="6" class="text-center text-muted">No items added yet</td></tr>');
+                $('#items_table_body').html('<tr id="no_items_row"><td colspan="9" class="text-center text-muted">No items added yet</td></tr>');
             }
             
             updateTotals();
         }
 
         function updateTotals() {
-            // Total row removed - function kept for compatibility but no longer updates display
+            // Calculate total cost and quantity from all items
+            let totalQty = 0;
+            let totalCost = 0;
+            
+            $('#items_table_body tr[data-product-id]').each(function() {
+                const qty = parseFloat($(this).find('td:eq(3)').text()) || 0;
+                const unitCost = parseFloat($(this).data('unit-cost')) || 0;
+                totalQty += qty;
+                totalCost += (qty * unitCost);
+            });
+            
+            // Update summary if needed (you can add a summary section if desired)
+            console.log('Total Quantity:', totalQty.toFixed(2));
+            console.log('Total Cost:', totalCost.toFixed(2));
         }
 
         function getItemsFromTable() {
@@ -1283,12 +1486,15 @@ defined('BASEPATH') or exit('No direct script access allowed');
             $('#items_table_body tr[data-product-id]').each(function() {
                 const productId = $(this).data('product-id');
                 const qty = parseFloat($(this).find('td:eq(3)').text()) || 0;
-                const notes = $(this).find('td:eq(4)').text();
+                const unitCost = parseFloat($(this).data('unit-cost')) || 0;
+                const expirationDate = $(this).data('expiration') || '';
+                const notes = $(this).find('td:eq(7)').text();
                 
                 items.push({
                     product_id: productId,
                     qty: qty,
-                    unit_cost: 0, // Default to 0 since we removed cost input
+                    unit_cost: unitCost,
+                    expiration_date: expirationDate,
                     notes: notes
                 });
             });
@@ -1378,6 +1584,9 @@ defined('BASEPATH') or exit('No direct script access allowed');
                                         <th>Category</th>
                                         <th>UOM</th>
                                         <th class="text-right">Quantity</th>
+                                        <th class="text-right">Unit Cost</th>
+                                        <th class="text-right">Total Cost</th>
+                                        <th>Expiration Date</th>
                                         <th>Notes</th>
                                     </tr>
                                 </thead>
@@ -1385,9 +1594,31 @@ defined('BASEPATH') or exit('No direct script access allowed');
             `;
 
             if (items.length === 0) {
-                html += '<tr><td colspan="6" class="text-center">No items in this batch</td></tr>';
+                html += '<tr><td colspan="9" class="text-center">No items in this batch</td></tr>';
             } else {
                 $.each(items, function(i, item) {
+                    // Format expiration date display
+                    let expirationDisplay = '';
+                    if (item.expiration_date) {
+                        const expDate = new Date(item.expiration_date);
+                        const today = new Date();
+                        const diffTime = expDate - today;
+                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                        
+                        if (item.expiration_status === 'expired') {
+                            expirationDisplay = `<span class="text-danger">${item.expiration_date_formatted} (EXPIRED)</span>`;
+                        } else if (item.expiration_status === 'expiring_soon') {
+                            expirationDisplay = `<span class="text-warning">${item.expiration_date_formatted} (EXPIRING)</span>`;
+                        } else {
+                            expirationDisplay = item.expiration_date_formatted;
+                        }
+                    } else {
+                        expirationDisplay = '<span class="text-muted">No expiry</span>';
+                    }
+
+                    const unitCost = parseFloat(item.unit_cost || 0);
+                    const totalCost = parseFloat(item.qty) * unitCost;
+
                     html += `
                         <tr>
                             <td>${item.product_code}</td>
@@ -1395,6 +1626,9 @@ defined('BASEPATH') or exit('No direct script access allowed');
                             <td>${item.category || '-'}</td>
                             <td>${item.uom || '-'}</td>
                             <td class="text-right">${parseFloat(item.qty).toFixed(2)}</td>
+                            <td class="text-right">${currency_symbol}${unitCost.toFixed(2)}</td>
+                            <td class="text-right">${currency_symbol}${totalCost.toFixed(2)}</td>
+                            <td>${expirationDisplay}</td>
                             <td>${item.notes || '-'}</td>
                         </tr>
                     `;

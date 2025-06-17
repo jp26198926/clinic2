@@ -83,6 +83,12 @@ class Batch_transaction_model extends CI_Model
     {
         $this->db->select(
             "bti.*,
+             DATE_FORMAT(bti.expiration_date, '%Y-%m-%d') as expiration_date_formatted,
+             CASE 
+                WHEN bti.expiration_date IS NOT NULL AND bti.expiration_date <= CURDATE() THEN 'expired'
+                WHEN bti.expiration_date IS NOT NULL AND bti.expiration_date <= DATE_ADD(CURDATE(), INTERVAL 30 DAY) THEN 'expiring_soon'
+                ELSE 'normal'
+             END as expiration_status,
              p.code as product_code,
              p.name as product_name,
              c.category,
@@ -143,6 +149,7 @@ class Batch_transaction_model extends CI_Model
             'product_id' => $item_data['product_id'],
             'qty' => $item_data['qty'],
             'unit_cost' => $item_data['unit_cost'] ?? 0,
+            'expiration_date' => !empty($item_data['expiration_date']) ? $item_data['expiration_date'] : null,
             'notes' => $item_data['notes'] ?? ''
         );
 
@@ -160,6 +167,7 @@ class Batch_transaction_model extends CI_Model
         $item_update = array(
             'qty' => $item_data['qty'],
             'unit_cost' => $item_data['unit_cost'] ?? 0,
+            'expiration_date' => !empty($item_data['expiration_date']) ? $item_data['expiration_date'] : null,
             'notes' => $item_data['notes'] ?? ''
         );
 
@@ -601,5 +609,29 @@ class Batch_transaction_model extends CI_Model
         }
 
         return true;
+    }
+
+    function get_currency_info()
+    {
+        $this->db->select("ac.code, ac.currency, ac.country");
+        $this->db->from("app_details ad");
+        $this->db->join("app_currency ac", "ac.id = ad.currency_id", "left");
+        $this->db->limit(1);
+
+        if ($query = $this->db->get()) {
+            if ($query->num_rows() > 0) {
+                return $query->row();
+            } else {
+                // Return default currency if no currency is set
+                return (object) array(
+                    'code' => 'USD',
+                    'currency' => 'Dollar',
+                    'country' => 'United States'
+                );
+            }
+        } else {
+            $error = $this->db->error();
+            throw new Exception("Error getting currency info: " . $error['message']);
+        }
     }
 }

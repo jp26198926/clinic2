@@ -277,9 +277,17 @@
                                                             <div class="col-sm-12">
                                                                 <button type="button" id="btn_search" class="btn btn-sm btn-primary">
                                                                     <i class="ace-icon fa fa-search"></i> Search
-                                                                </button>
-                                                                <button type="button" id="btn_low_stock" class="btn btn-sm btn-warning">
+                                                                </button>                                                                <button type="button" id="btn_low_stock" class="btn btn-sm btn-warning">
                                                                     <i class="ace-icon fa fa-exclamation-triangle"></i> Low Stock Report
+                                                                </button>
+                                                                <button type="button" id="btn_expiring_stock" class="btn btn-sm btn-orange">
+                                                                    <i class="ace-icon fa fa-clock-o"></i> Expiring Stock
+                                                                </button>
+                                                                <button type="button" id="btn_expired_stock" class="btn btn-sm btn-danger">
+                                                                    <i class="ace-icon fa fa-times-circle"></i> Expired Stock
+                                                                </button>
+                                                                <button type="button" id="btn_stock_valuation" class="btn btn-sm btn-purple">
+                                                                    <i class="ace-icon fa fa-calculator"></i> Stock Valuation
                                                                 </button>
                                                                 <?php if($this->cf->module_permission("add", $module_permission)): ?>
                                                                 <button type="button" id="btn_receive" class="btn btn-sm btn-success">
@@ -313,8 +321,7 @@
 
                                     <!-- Desktop Table View -->
                                     <div class="table-responsive">
-                                        <table id="dynamic-table" class="table table-striped table-bordered table-hover">
-                                            <thead>
+                                        <table id="dynamic-table" class="table table-striped table-bordered table-hover">                                            <thead>
                                                 <tr>
                                                     <th>Product Code</th>
                                                     <th>Product Name</th>
@@ -324,6 +331,9 @@
                                                     <th>On Hand</th>
                                                     <th>Reserved</th>
                                                     <th>Available</th>
+                                                    <th>Unit Cost</th>
+                                                    <th>Total Value</th>
+                                                    <th>Expiration</th>
                                                     <th>Last Updated</th>
                                                     <th>Actions</th>
                                                 </tr>
@@ -337,8 +347,7 @@
                                     <!-- Mobile Card View -->
                                     <div class="mobile-card-container" style="display: none;">
                                         <div class="mobile-action-buttons">
-                                            <?php if($this->cf->module_permission("add", $module_permission)): ?>
-                                            <button type="button" id="mobile_btn_receive" class="btn btn-sm btn-success">
+                                            <?php if($this->cf->module_permission("add", $module_permission)): ?>                                            <button type="button" id="mobile_btn_receive" class="btn btn-sm btn-success">
                                                 <i class="ace-icon fa fa-plus"></i> Receive
                                             </button>
                                             <button type="button" id="mobile_btn_release" class="btn btn-sm btn-danger">
@@ -349,6 +358,12 @@
                                             </button>
                                             <button type="button" id="mobile_btn_adjust" class="btn btn-sm btn-warning">
                                                 <i class="ace-icon fa fa-cog"></i> Adjust
+                                            </button>
+                                            <button type="button" id="mobile_btn_expiring" class="btn btn-sm btn-orange">
+                                                <i class="ace-icon fa fa-clock-o"></i> Expiring
+                                            </button>
+                                            <button type="button" id="mobile_btn_valuation" class="btn btn-sm btn-purple">
+                                                <i class="ace-icon fa fa-calculator"></i> Valuation
                                             </button>
                                             <?php endif; ?>
                                         </div>
@@ -399,10 +414,14 @@
                             <div class="form-group">
                                 <label>Quantity:</label>
                                 <input type="number" id="receive_qty" name="qty" class="form-control" min="1" required>
-                            </div>
-                            <div class="form-group">
+                            </div>                            <div class="form-group">
                                 <label>Unit Cost:</label>
                                 <input type="number" id="receive_unit_cost" name="unit_cost" class="form-control" step="0.01" min="0">
+                            </div>
+                            <div class="form-group">
+                                <label>Expiration Date:</label>
+                                <input type="date" id="receive_expiration_date" name="expiration_date" class="form-control">
+                                <small class="help-block">Leave empty if product doesn't expire</small>
                             </div>
                             <div class="form-group">
                                 <label>Reference Type:</label>
@@ -948,7 +967,28 @@
                         no_results_text: "No results match",
                         width: "100%"
                     });
-                }, 100);
+                }, 100);            });
+
+            // Report button handlers
+            $("#btn_expiring_stock").click(function() {
+                viewExpiringStock();
+            });
+
+            $("#btn_expired_stock").click(function() {
+                viewExpiredStock();
+            });
+
+            $("#btn_stock_valuation").click(function() {
+                viewStockValuation();
+            });
+
+            // Mobile report button handlers
+            $("#mobile_btn_expiring").click(function() {
+                viewExpiringStock();
+            });
+
+            $("#mobile_btn_valuation").click(function() {
+                viewStockValuation();
             });
 
             // Save handlers
@@ -1081,10 +1121,28 @@
         }
 
         function populateTable(data) {
-            oTable1.clear();
-
-            $.each(data, function(i, row) {
+            oTable1.clear();            $.each(data, function(i, row) {
                 var actions = '<button type="button" class="btn btn-xs btn-info" onclick="viewStockDetails(' + row.product_id + ',' + row.location_id + ')"><i class="ace-icon fa fa-eye"></i></button>';
+                
+                // Format expiration date and status
+                var expirationDisplay = '';
+                if (row.expiration_date) {
+                    var expirationClass = '';
+                    if (row.expiration_status === 'expired') {
+                        expirationClass = 'text-danger';
+                        expirationDisplay = '<span class="' + expirationClass + '">' + row.expiration_date_formatted + ' (EXPIRED)</span>';
+                    } else if (row.expiration_status === 'expiring_soon') {
+                        expirationClass = 'text-warning';
+                        expirationDisplay = '<span class="' + expirationClass + '">' + row.expiration_date_formatted + ' (EXPIRING)</span>';
+                    } else {
+                        expirationDisplay = row.expiration_date_formatted;
+                    }
+                } else {
+                    expirationDisplay = '<span class="text-muted">No expiry</span>';
+                }
+                
+                var unitCost = parseFloat(row.unit_cost || 0).toFixed(2);
+                var totalValue = (parseFloat(row.qty_on_hand) * parseFloat(row.unit_cost || 0)).toFixed(2);
                 
                 oTable1.row.add([
                     row.product_code,
@@ -1095,6 +1153,9 @@
                     parseFloat(row.qty_on_hand).toFixed(2),
                     parseFloat(row.qty_reserved).toFixed(2),
                     parseFloat(row.qty_available).toFixed(2),
+                    '₱' + unitCost,
+                    '₱' + totalValue,
+                    expirationDisplay,
                     formatDateTime(row.last_updated),
                     actions
                 ]);
@@ -1116,12 +1177,37 @@
             if (data.length === 0) {
                 container.html('<div class="text-center" style="padding: 20px; color: #666;">No stock data found</div>');
                 return;
-            }
-
-            $.each(data, function(i, row) {
+            }            $.each(data, function(i, row) {
                 var onHandQty = parseFloat(row.qty_on_hand).toFixed(2);
                 var reservedQty = parseFloat(row.qty_reserved).toFixed(2);
                 var availableQty = parseFloat(row.qty_available).toFixed(2);
+                var unitCost = parseFloat(row.unit_cost || 0).toFixed(2);
+                var totalValue = (parseFloat(row.qty_on_hand) * parseFloat(row.unit_cost || 0)).toFixed(2);
+                
+                // Format expiration info for mobile
+                var expirationInfo = '';
+                if (row.expiration_date) {
+                    var expirationClass = '';
+                    var statusText = '';
+                    if (row.expiration_status === 'expired') {
+                        expirationClass = 'text-danger';
+                        statusText = ' (EXPIRED)';
+                    } else if (row.expiration_status === 'expiring_soon') {
+                        expirationClass = 'text-warning';
+                        statusText = ' (EXPIRING SOON)';
+                    }
+                    expirationInfo = `
+                        <div class="stock-info-row">
+                            <span class="stock-info-label">Expiration:</span>
+                            <span class="stock-info-value ${expirationClass}">${row.expiration_date_formatted}${statusText}</span>
+                        </div>`;
+                } else {
+                    expirationInfo = `
+                        <div class="stock-info-row">
+                            <span class="stock-info-label">Expiration:</span>
+                            <span class="stock-info-value text-muted">No expiry</span>
+                        </div>`;
+                }
                 
                 var card = $(`
                     <div class="stock-card" data-search="${row.product_code.toLowerCase()} ${row.product_name.toLowerCase()} ${row.category.toLowerCase()} ${row.location.toLowerCase()}">
@@ -1152,6 +1238,15 @@
                                     <span class="qty-value available">${availableQty}</span>
                                 </div>
                             </div>
+                            <div class="stock-info-row">
+                                <span class="stock-info-label">Unit Cost:</span>
+                                <span class="stock-info-value">₱${unitCost}</span>
+                            </div>
+                            <div class="stock-info-row">
+                                <span class="stock-info-label">Total Value:</span>
+                                <span class="stock-info-value">₱${totalValue}</span>
+                            </div>
+                            ${expirationInfo}
                             <div class="stock-info-row">
                                 <span class="stock-info-label">Last Updated:</span>
                                 <span class="stock-info-value">${formatDateTime(row.last_updated)}</span>
@@ -1756,9 +1851,7 @@
                 case 'RESERVE': return 'default';
                 default: return 'default';
             }
-        }
-
-        function getMovementBadgeClass(type) {
+        }        function getMovementBadgeClass(type) {
             var classes = {
                 'RECEIVE': 'badge-receive',
                 'RELEASE': 'badge-release', 
@@ -1767,6 +1860,319 @@
                 'RESERVE': 'badge-reserve'
             };
             return classes[type] || 'badge-secondary';
+        }
+
+        // New report functions
+        function viewExpiringStock() {
+            var location_id = $("#filter_location").val() || 0;
+            var days_ahead = prompt("Show products expiring in how many days?", "30");
+            
+            if (days_ahead === null) return; // User cancelled
+            if (!days_ahead || isNaN(days_ahead) || days_ahead < 1) {
+                toastr.error("Please enter a valid number of days");
+                return;
+            }
+
+            $.get("<?= base_url(); ?>inventory_stock/get_expiring_stock", {
+                location_id: location_id,
+                days_ahead: days_ahead
+            }, function(data) {
+                if (data.indexOf("<!DOCTYPE html>") > -1) {
+                    alert("Error: Session Time-Out, You must login again to continue.");
+                    location.reload(true);
+                } else if (data.indexOf("Error: ") > -1) {
+                    toastr.error(data);
+                } else {
+                    try {
+                        var expiringData = JSON.parse(data);
+                        showExpiringStockModal(expiringData, days_ahead);
+                    } catch (e) {
+                        toastr.error("Error parsing response data");
+                    }
+                }
+            });
+        }
+
+        function viewExpiredStock() {
+            var location_id = $("#filter_location").val() || 0;
+
+            $.get("<?= base_url(); ?>inventory_stock/get_expired_stock", {
+                location_id: location_id
+            }, function(data) {
+                if (data.indexOf("<!DOCTYPE html>") > -1) {
+                    alert("Error: Session Time-Out, You must login again to continue.");
+                    location.reload(true);
+                } else if (data.indexOf("Error: ") > -1) {
+                    toastr.error(data);
+                } else {
+                    try {
+                        var expiredData = JSON.parse(data);
+                        showExpiredStockModal(expiredData);
+                    } catch (e) {
+                        toastr.error("Error parsing response data");
+                    }
+                }
+            });
+        }
+
+        function viewStockValuation() {
+            var location_id = $("#filter_location").val() || 0;
+
+            $.get("<?= base_url(); ?>inventory_stock/get_stock_valuation", {
+                location_id: location_id
+            }, function(data) {
+                if (data.indexOf("<!DOCTYPE html>") > -1) {
+                    alert("Error: Session Time-Out, You must login again to continue.");
+                    location.reload(true);
+                } else if (data.indexOf("Error: ") > -1) {
+                    toastr.error(data);
+                } else {
+                    try {
+                        var valuationData = JSON.parse(data);
+                        showStockValuationModal(valuationData);
+                    } catch (e) {
+                        toastr.error("Error parsing response data");
+                    }
+                }
+            });
+        }
+
+        function showExpiringStockModal(data, daysAhead) {
+            var modal = $(`
+                <div class="modal fade" id="modal_expiring_stock" tabindex="-1" role="dialog">
+                    <div class="modal-dialog modal-lg" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                                <h4 class="modal-title">Stock Expiring in ${daysAhead} Days</h4>
+                            </div>
+                            <div class="modal-body">
+                                <div style="max-height: 400px; overflow-y: auto;">
+                                    ${generateExpiringStockTable(data)}
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-success" onclick="exportExpiringStock(${daysAhead})">Export to Excel</button>
+                                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `);
+            
+            // Remove any existing modal
+            $("#modal_expiring_stock").remove();
+            $("body").append(modal);
+            $("#modal_expiring_stock").modal();
+        }
+
+        function showExpiredStockModal(data) {
+            var modal = $(`
+                <div class="modal fade" id="modal_expired_stock" tabindex="-1" role="dialog">
+                    <div class="modal-dialog modal-lg" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header bg-danger text-white">
+                                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                                <h4 class="modal-title">Expired Stock Items</h4>
+                            </div>
+                            <div class="modal-body">
+                                <div style="max-height: 400px; overflow-y: auto;">
+                                    ${generateExpiredStockTable(data)}
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `);
+            
+            // Remove any existing modal
+            $("#modal_expired_stock").remove();
+            $("body").append(modal);
+            $("#modal_expired_stock").modal();
+        }
+
+        function showStockValuationModal(data) {
+            var modal = $(`
+                <div class="modal fade" id="modal_stock_valuation" tabindex="-1" role="dialog">
+                    <div class="modal-dialog modal-lg" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                                <h4 class="modal-title">Stock Valuation Report</h4>
+                            </div>
+                            <div class="modal-body">
+                                <div class="alert alert-info">
+                                    <strong>Total Stock Value: ₱${parseFloat(data.total_value).toLocaleString('en-US', {minimumFractionDigits: 2})}</strong>
+                                </div>
+                                <div style="max-height: 400px; overflow-y: auto;">
+                                    ${generateValuationTable(data.items)}
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `);
+            
+            // Remove any existing modal
+            $("#modal_stock_valuation").remove();
+            $("body").append(modal);
+            $("#modal_stock_valuation").modal();
+        }
+
+        function generateExpiringStockTable(data) {
+            if (data.length === 0) {
+                return '<p class="text-center text-muted">No expiring stock found.</p>';
+            }
+
+            var html = `
+                <table class="table table-striped table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Location</th>
+                            <th>Qty</th>
+                            <th>Unit Cost</th>
+                            <th>Total Value</th>
+                            <th>Expiry Date</th>
+                            <th>Days Left</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            data.forEach(function(item) {
+                var statusClass = '';
+                var statusText = '';
+                if (item.days_until_expiry < 0) {
+                    statusClass = 'text-danger';
+                    statusText = 'EXPIRED';
+                } else if (item.days_until_expiry <= 7) {
+                    statusClass = 'text-danger';
+                    statusText = 'CRITICAL';
+                } else if (item.days_until_expiry <= 30) {
+                    statusClass = 'text-warning';
+                    statusText = 'WARNING';
+                } else {
+                    statusClass = 'text-info';
+                    statusText = 'NOTICE';
+                }
+
+                var totalValue = (parseFloat(item.qty_on_hand) * parseFloat(item.unit_cost || 0)).toFixed(2);
+
+                html += `
+                    <tr>
+                        <td><strong>${item.product_name}</strong><br><small>${item.product_code}</small></td>
+                        <td>${item.location}</td>
+                        <td>${parseFloat(item.qty_on_hand).toFixed(2)}</td>
+                        <td>₱${parseFloat(item.unit_cost || 0).toFixed(2)}</td>
+                        <td>₱${totalValue}</td>
+                        <td>${item.expiration_date_formatted}</td>
+                        <td class="${statusClass}">${item.days_until_expiry}</td>
+                        <td><span class="label label-${getStatusLabelClass(statusText)} ${statusClass}">${statusText}</span></td>
+                    </tr>
+                `;
+            });
+
+            html += '</tbody></table>';
+            return html;
+        }
+
+        function generateExpiredStockTable(data) {
+            if (data.length === 0) {
+                return '<p class="text-center text-success">No expired stock found.</p>';
+            }
+
+            var html = `
+                <table class="table table-striped table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Location</th>
+                            <th>Qty</th>
+                            <th>Unit Cost</th>
+                            <th>Total Value</th>
+                            <th>Expiry Date</th>
+                            <th>Days Expired</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            data.forEach(function(item) {
+                var totalValue = (parseFloat(item.qty_on_hand) * parseFloat(item.unit_cost || 0)).toFixed(2);
+
+                html += `
+                    <tr class="danger">
+                        <td><strong>${item.product_name}</strong><br><small>${item.product_code}</small></td>
+                        <td>${item.location}</td>
+                        <td>${parseFloat(item.qty_on_hand).toFixed(2)}</td>
+                        <td>₱${parseFloat(item.unit_cost || 0).toFixed(2)}</td>
+                        <td>₱${totalValue}</td>
+                        <td>${item.expiration_date_formatted}</td>
+                        <td class="text-danger">${item.days_expired}</td>
+                    </tr>
+                `;
+            });
+
+            html += '</tbody></table>';
+            return html;
+        }
+
+        function generateValuationTable(data) {
+            if (data.length === 0) {
+                return '<p class="text-center text-muted">No stock data found.</p>';
+            }
+
+            var html = `
+                <table class="table table-striped table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Location</th>
+                            <th>Qty On Hand</th>
+                            <th>Unit Cost</th>
+                            <th>Total Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            data.forEach(function(item) {
+                html += `
+                    <tr>
+                        <td><strong>${item.product_name}</strong><br><small>${item.product_code}</small></td>
+                        <td>${item.location}</td>
+                        <td>${parseFloat(item.qty_on_hand).toFixed(2)}</td>
+                        <td>₱${parseFloat(item.unit_cost || 0).toFixed(2)}</td>
+                        <td>₱${parseFloat(item.stock_value).toFixed(2)}</td>
+                    </tr>
+                `;
+            });
+
+            html += '</tbody></table>';
+            return html;
+        }
+
+        function getStatusLabelClass(status) {
+            switch(status) {
+                case 'EXPIRED': return 'danger';
+                case 'CRITICAL': return 'danger';
+                case 'WARNING': return 'warning';
+                case 'NOTICE': return 'info';
+                default: return 'default';
+            }
+        }
+
+        function exportExpiringStock(daysAhead) {
+            var location_id = $("#filter_location").val() || 0;
+            window.open("<?= base_url(); ?>inventory_stock/export_expiring_stock?location_id=" + location_id + "&days_ahead=" + daysAhead, '_blank');
         }
     </script>
 

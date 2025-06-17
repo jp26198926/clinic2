@@ -116,7 +116,7 @@ class Stock_movements_model extends CI_Model
         }
     }
 
-    function receive_stock($product_id, $location_id, $qty, $unit_cost, $reference_type, $reference_id, $created_by, $notes = '')
+    function receive_stock($product_id, $location_id, $qty, $unit_cost, $reference_type, $reference_id, $created_by, $notes = '', $expiration_date = null)
     {
         $this->db->trans_start();
 
@@ -136,9 +136,9 @@ class Stock_movements_model extends CI_Model
 
         $movement_id = $this->add_movement($movement_data);
 
-        // Update stock levels
+        // Update stock levels with cost and expiration
         $this->load->model('stock_model');
-        $this->stock_model->update_stock($product_id, $location_id, $qty, 'add');
+        $this->stock_model->update_stock_with_cost_expiration($product_id, $location_id, $qty, $unit_cost, $expiration_date, 'add');
 
         $this->db->trans_complete();
 
