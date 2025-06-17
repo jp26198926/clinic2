@@ -464,6 +464,9 @@
 	?>
 
     <script type="text/javascript">
+        const base_url = "<?= base_url() ?>";
+        const currency_symbol = "<?= $currency_symbol ?? '₱' ?>";
+        const currency_code = "<?= $currency_code ?? 'PHP' ?>";
         var oTable1;
 
         $(document).ready(function() {
@@ -497,7 +500,7 @@
                         orientation: 'landscape',
                         pageSize: 'A4',
                         exportOptions: {
-                            columns: [0, 1, 2, 3, 4, 5, 6, 7, 8] // Exclude Actions column
+                            columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] // Exclude Actions column (12)
                         },
                         customize: function(doc) {
                             // Enable auto width and word wrapping
@@ -599,7 +602,7 @@
                         titleAttr: 'Print Report',
                         title: 'Stock Levels Report',
                         exportOptions: {
-                            columns: [0, 1, 2, 3, 4, 5, 6, 7, 8] // Exclude Actions column
+                            columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] // Exclude Actions column (12)
                         },
                         customize: function(win) {
                             // Add custom CSS for proper printing
@@ -889,8 +892,8 @@
                     parseFloat(row.qty_on_hand).toFixed(2),
                     parseFloat(row.qty_reserved).toFixed(2),
                     parseFloat(row.qty_available).toFixed(2),
-                    '₱' + unitCost,
-                    '₱' + totalValue,
+                    currency_symbol + unitCost,
+                    currency_symbol + totalValue,
                     expirationDisplay,
                     formatDateTime(row.last_updated),
                     actions
@@ -976,11 +979,11 @@
                             </div>
                             <div class="stock-info-row">
                                 <span class="stock-info-label">Unit Cost:</span>
-                                <span class="stock-info-value">₱${unitCost}</span>
+                                <span class="stock-info-value">${currency_symbol}${unitCost}</span>
                             </div>
                             <div class="stock-info-row">
                                 <span class="stock-info-label">Total Value:</span>
-                                <span class="stock-info-value">₱${totalValue}</span>
+                                <span class="stock-info-value">${currency_symbol}${totalValue}</span>
                             </div>
                             ${expirationInfo}
                             <div class="stock-info-row">
@@ -1664,7 +1667,7 @@
                             </div>
                             <div class="modal-body">
                                 <div class="alert alert-info">
-                                    <strong>Total Stock Value: ₱${parseFloat(data.total_value).toLocaleString('en-US', {minimumFractionDigits: 2})}</strong>
+                                    <strong>Total Stock Value: ${currency_symbol}${parseFloat(data.total_value).toLocaleString('en-US', {minimumFractionDigits: 2})}</strong>
                                 </div>
                                 <div style="max-height: 400px; overflow-y: auto;">
                                     ${generateValuationTable(data.items)}
@@ -1730,8 +1733,8 @@
                         <td><strong>${item.product_name}</strong><br><small>${item.product_code}</small></td>
                         <td>${item.location}</td>
                         <td>${parseFloat(item.qty_on_hand).toFixed(2)}</td>
-                        <td>₱${parseFloat(item.unit_cost || 0).toFixed(2)}</td>
-                        <td>₱${totalValue}</td>
+                        <td>${currency_symbol}${parseFloat(item.unit_cost || 0).toFixed(2)}</td>
+                        <td>${currency_symbol}${totalValue}</td>
                         <td>${item.expiration_date_formatted}</td>
                         <td class="${statusClass}">${item.days_until_expiry}</td>
                         <td><span class="label label-${getStatusLabelClass(statusText)} ${statusClass}">${statusText}</span></td>
@@ -1772,8 +1775,8 @@
                         <td><strong>${item.product_name}</strong><br><small>${item.product_code}</small></td>
                         <td>${item.location}</td>
                         <td>${parseFloat(item.qty_on_hand).toFixed(2)}</td>
-                        <td>₱${parseFloat(item.unit_cost || 0).toFixed(2)}</td>
-                        <td>₱${totalValue}</td>
+                        <td>${currency_symbol}${parseFloat(item.unit_cost || 0).toFixed(2)}</td>
+                        <td>${currency_symbol}${totalValue}</td>
                         <td>${item.expiration_date_formatted}</td>
                         <td class="text-danger">${item.days_expired}</td>
                     </tr>
@@ -1809,8 +1812,8 @@
                         <td><strong>${item.product_name}</strong><br><small>${item.product_code}</small></td>
                         <td>${item.location}</td>
                         <td>${parseFloat(item.qty_on_hand).toFixed(2)}</td>
-                        <td>₱${parseFloat(item.unit_cost || 0).toFixed(2)}</td>
-                        <td>₱${parseFloat(item.stock_value).toFixed(2)}</td>
+                        <td>${currency_symbol}${parseFloat(item.unit_cost || 0).toFixed(2)}</td>
+                        <td>${currency_symbol}${parseFloat(item.stock_value).toFixed(2)}</td>
                     </tr>
                 `;
             });

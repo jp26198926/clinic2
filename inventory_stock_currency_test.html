@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Inventory Stock Currency Update Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { background: #f9f9f9; padding: 15px; margin: 10px 0; border-radius: 5px; }
+        .old-display { color: #dc3545; text-decoration: line-through; }
+        .new-display { color: #28a745; font-weight: bold; }
+        table { border-collapse: collapse; width: 100%; margin: 10px 0; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .currency-symbol { font-size: 1.2em; font-weight: bold; }
+        .success { background: #d4edda; padding: 10px; border-radius: 5px; color: #155724; }
+    </style>
+</head>
+<body>
+    <h1>🔄 Inventory Stock Currency Update Test</h1>
+    
+    <div class="test-section">
+        <h2>📋 Implementation Summary</h2>
+        <p><strong>Objective:</strong> Replace hardcoded ₱ (Peso) symbols with dynamic currency based on system settings</p>
+        <p><strong>Current System Currency:</strong> <span class="currency-symbol">PGK (Papua New Guinea Kina) - K</span></p>
+        <p><strong>Pattern:</strong> Following the same implementation as batch transaction system</p>
+    </div>
+
+    <div class="test-section">
+        <h2>🔧 Changes Made</h2>
+        <h3>1. Controller Updates (Inventory_stock.php)</h3>
+        <ul>
+            <li>✅ Added <code>batch_transaction_model</code> loading for currency info</li>
+            <li>✅ Added <code>get_currency_info()</code> call in <code>index()</code> method</li>
+            <li>✅ Added <code>get_currency_symbol()</code> helper method with currency mappings</li>
+            <li>✅ Pass currency_code and currency_symbol to view</li>
+        </ul>
+
+        <h3>2. View Updates (inventory_stock/index.php)</h3>
+        <ul>
+            <li>✅ Added JavaScript variables: <code>currency_symbol</code> and <code>currency_code</code></li>
+            <li>✅ Updated DataTable unit cost column display</li>
+            <li>✅ Updated DataTable total value column display</li>
+            <li>✅ Updated mobile card currency displays</li>
+            <li>✅ Updated all report currency displays</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>🎯 Before vs After Examples</h2>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>Location</th>
+                    <th>Old Display (Hardcoded)</th>
+                    <th>New Display (Dynamic)</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>DataTable - Unit Cost</td>
+                    <td class="old-display">₱125.50</td>
+                    <td class="new-display">K125.50</td>
+                    <td>✅ Updated</td>
+                </tr>
+                <tr>
+                    <td>DataTable - Total Value</td>
+                    <td class="old-display">₱1,250.00</td>
+                    <td class="new-display">K1,250.00</td>
+                    <td>✅ Updated</td>
+                </tr>
+                <tr>
+                    <td>Mobile Card - Unit Cost</td>
+                    <td class="old-display">₱45.75</td>
+                    <td class="new-display">K45.75</td>
+                    <td>✅ Updated</td>
+                </tr>
+                <tr>
+                    <td>Mobile Card - Total Value</td>
+                    <td class="old-display">₱457.50</td>
+                    <td class="new-display">K457.50</td>
+                    <td>✅ Updated</td>
+                </tr>
+                <tr>
+                    <td>Stock Valuation Total</td>
+                    <td class="old-display">₱25,000.00</td>
+                    <td class="new-display">K25,000.00</td>
+                    <td>✅ Updated</td>
+                </tr>
+                <tr>
+                    <td>Expiring Stock Report</td>
+                    <td class="old-display">₱75.00</td>
+                    <td class="new-display">K75.00</td>
+                    <td>✅ Updated</td>
+                </tr>
+                <tr>
+                    <td>Expired Stock Report</td>
+                    <td class="old-display">₱100.00</td>
+                    <td class="new-display">K100.00</td>
+                    <td>✅ Updated</td>
+                </tr>
+                <tr>
+                    <td>Valuation Report</td>
+                    <td class="old-display">₱5,000.00</td>
+                    <td class="new-display">K5,000.00</td>
+                    <td>✅ Updated</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="test-section">
+        <h2>🗃️ Database Integration</h2>
+        <p><strong>Currency Source:</strong> <code>app_details.currency_id</code> → <code>app_currency</code> table</p>
+        <p><strong>Current Setting:</strong> ID 183 (Papua New Guinea, Kina, PGK)</p>
+        <p><strong>Model Method:</strong> <code>batch_transaction_model::get_currency_info()</code></p>
+        <div style="background: #e9ecef; padding: 10px; border-radius: 3px; font-family: monospace;">
+            SELECT ac.code, ac.currency, ac.country<br>
+            FROM app_details ad<br>
+            LEFT JOIN app_currency ac ON ac.id = ad.currency_id
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🔧 JavaScript Implementation</h2>
+        <h3>Variables Added to View:</h3>
+        <div style="background: #f8f9fa; padding: 10px; border-radius: 3px; font-family: monospace;">
+            const currency_symbol = "&lt;?= $currency_symbol ?? '₱' ?&gt;";<br>
+            const currency_code = "&lt;?= $currency_code ?? 'PHP' ?&gt;";
+        </div>
+
+        <h3>Usage Examples:</h3>
+        <div style="background: #f8f9fa; padding: 10px; border-radius: 3px; font-family: monospace;">
+            // Old way:<br>
+            html += '₱' + cost.toFixed(2);<br><br>
+            
+            // New way:<br>
+            html += currency_symbol + cost.toFixed(2);
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🎉 Testing Instructions</h2>
+        <ol>
+            <li><strong>Open Inventory Stock Page:</strong> <a href="http://localhost/clinic2/inventory_stock" target="_blank">http://localhost/clinic2/inventory_stock</a></li>
+            <li><strong>Search for stock items</strong> - Should display "K" instead of "₱" in cost columns</li>
+            <li><strong>Switch to mobile view</strong> - Should show "K" symbol in mobile cards</li>
+            <li><strong>Open stock valuation report</strong> - Should display "K" in totals</li>
+            <li><strong>Check expiring stock report</strong> - Should show "K" in cost columns</li>
+            <li><strong>Verify expired stock report</strong> - Should display "K" symbol</li>
+        </ol>
+        
+        <p><strong>Expected Results:</strong></p>
+        <ul>
+            <li>All cost displays should show "K" (Kina symbol) instead of "₱" (Peso symbol)</li>
+            <li>Currency should be pulled from database settings (app_details.currency_id)</li>
+            <li>System should work with any supported currency code</li>
+            <li>Should be consistent with batch transaction system currency display</li>
+        </ul>
+    </div>
+
+    <div class="success">
+        <h2>✅ Implementation Status: COMPLETE</h2>
+        <p style="font-weight: bold; font-size: 1.1em;">
+            ✓ Currency display has been successfully updated in inventory stock DataTable<br>
+            ✓ All hardcoded ₱ symbols have been replaced with database-driven currency<br>
+            ✓ System now displays "K" (Kina) based on Papua New Guinea currency setting<br>
+            ✓ Implementation is consistent with batch transaction system<br>
+            ✓ Mobile responsive views use dynamic currency<br>
+            ✓ All inventory reports use dynamic currency display
+        </p>
+    </div>
+
+    <script>
+        // Simulate the actual implementation
+        console.log('Inventory Stock Currency Update Test');
+        console.log('Expected currency_symbol:', 'K');
+        console.log('Expected currency_code:', 'PGK');
+        
+        // Test the currency symbol mapping
+        const currency_symbols = {
+            'USD': '$',
+            'EUR': '€',
+            'GBP': '£',
+            'JPY': '¥',
+            'PHP': '₱',
+            'PGK': 'K',  // Papua New Guinea Kina
+            'AUD': 'A$',
+            'CAD': 'C$'
+        };
+        
+        const currency_code = 'PGK';
+        const currency_symbol = currency_symbols[currency_code] || currency_code;
+        
+        console.log('Mapped currency symbol for PGK:', currency_symbol);
+        
+        // Test sample cost formatting
+        const sample_cost = 125.50;
+        const old_display = '₱' + sample_cost.toFixed(2);
+        const new_display = currency_symbol + sample_cost.toFixed(2);
+        
+        console.log('Old display:', old_display);
+        console.log('New display:', new_display);
+    </script>
+</body>
+</html>

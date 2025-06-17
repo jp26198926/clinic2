@@ -91,6 +91,12 @@ class Inventory_stock extends CI_Controller
 
 			$data['locations'] = $this->data_location_model->search("", 1);
 			
+			// Get currency information from system settings
+			$this->load->model('batch_transaction_model', 'batch_model');
+			$currency_info = $this->batch_model->get_currency_info();
+			$data['currency_code'] = $currency_info->code ?? 'USD';
+			$data['currency_symbol'] = $this->get_currency_symbol($currency_info->code ?? 'USD');
+			
 			$this->load->view('inventory_stock/index', $data);
 		} else {
 			$this->load->view('errors/html/error_403');
@@ -496,5 +502,36 @@ class Inventory_stock extends CI_Controller
 		} else {
 			echo "Error: You don't have permission to perform this action!";
 		}
+	}
+	
+	/**
+	 * Get currency symbol based on currency code
+	 */
+	private function get_currency_symbol($currency_code)
+	{
+		$currency_symbols = array(
+			'USD' => '$',
+			'EUR' => '€',
+			'GBP' => '£',
+			'JPY' => '¥',
+			'PHP' => '₱',
+			'PGK' => 'K',  // Papua New Guinea Kina
+			'AUD' => 'A$',
+			'CAD' => 'C$',
+			'SGD' => 'S$',
+			'MYR' => 'RM',
+			'THB' => '฿',
+			'IDR' => 'Rp',
+			'VND' => '₫',
+			'KRW' => '₩',
+			'CNY' => '¥',
+			'INR' => '₹',
+			'CHF' => 'CHF',
+			'NZD' => 'NZ$',
+			'ZAR' => 'R',
+			'BRL' => 'R$'
+		);
+		
+		return $currency_symbols[$currency_code] ?? $currency_code;
 	}
 }
