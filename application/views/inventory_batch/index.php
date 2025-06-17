@@ -444,6 +444,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
                                                             <table id="dynamic-table" class="table table-striped table-bordered table-hover">
                                                                 <thead class="thin-border-bottom">
                                                                     <tr>
+                                                                        <th>#</th>
                                                                         <th>Transaction #</th>
                                                                         <th>Date</th>
                                                                         <th>Type</th>
@@ -868,10 +869,11 @@ defined('BASEPATH') or exit('No direct script access allowed');
                 info: true,
                 autoWidth: false,
                 pageLength: 25,
-                order: [[1, "desc"]], // Order by date descending
+                order: [[2, "desc"]], // Order by date descending (adjusted for new column)
                 columnDefs: [
-                    { targets: [5, 6], className: "text-right" },
-                    { targets: [8], orderable: false }
+                    { targets: [0], orderable: false }, // Row number column
+                    { targets: [6, 7], className: "text-right" }, // Adjusted for new column
+                    { targets: [9], orderable: false } // Actions column adjusted
                 ],
                 dom: 'Bfrtip',
                 buttons: [
@@ -882,7 +884,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
                         titleAttr: 'Export to Excel',
                         title: 'Batch Transactions Report',
                         exportOptions: {
-                            columns: [0, 1, 2, 3, 4, 5, 6, 7, 8]
+                            columns: [1, 2, 3, 4, 5, 6, 7, 8] // Exclude row count (0) and actions (9)
                         }
                     },
                     {
@@ -893,7 +895,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
                         title: 'Batch Transactions Report',
                         orientation: 'landscape',
                         exportOptions: {
-                            columns: [0, 1, 2, 3, 4, 5, 6, 7, 8]
+                            columns: [1, 2, 3, 4, 5, 6, 7, 8] // Exclude row count (0) and actions (9)
                         }
                     },
                     {
@@ -903,7 +905,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
                         titleAttr: 'Print Report',
                         title: 'Batch Transactions Report',
                         exportOptions: {
-                            columns: [0, 1, 2, 3, 4, 5, 6, 7, 8]
+                            columns: [1, 2, 3, 4, 5, 6, 7, 8] // Exclude row count (0) and actions (9)
                         }
                     }
                 ]
@@ -957,6 +959,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
             oTable1.clear();
 
             $.each(data, function(i, row) {
+                var rowNumber = i + 1; // Row count starting from 1
                 const statusBadge = getStatusBadge(row.status);
                 const typeBadge = getTypeBadge(row.transaction_type);
                 const actions = getActionButtons(row);
@@ -965,6 +968,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
                 const toLocation = row.to_location || '-';
 
                 oTable1.row.add([
+                    rowNumber, // Row count column
                     row.transaction_number,
                     formatDate(row.transaction_date),
                     typeBadge,
