@@ -113,8 +113,8 @@ class Batch_transaction_model extends CI_Model
     {
         $this->db->trans_start();
 
-        // Generate transaction number
-        $transaction_number = $this->generate_transaction_number();
+        // Generate transaction number with type-specific prefix
+        $transaction_number = $this->generate_transaction_number($data['transaction_type']);
 
         $batch_data = array(
             'transaction_number' => $transaction_number,
@@ -431,14 +431,21 @@ class Batch_transaction_model extends CI_Model
         }
     }
 
-    private function generate_transaction_number()
+    private function generate_transaction_number($transaction_type)
     {
-        $date_prefix = date('Ymd');
+        // Define type-specific prefixes
+        $prefixes = array(
+            'RECEIVE' => 'REC',
+            'RELEASE' => 'REL', 
+            'TRANSFER' => 'TRA'
+        );
         
-        // Get the next sequence number for today
+        $prefix = $prefixes[$transaction_type] ?? 'BTX'; // Default fallback
+        
+        // Get the next sequence number for this transaction type
         $this->db->select('transaction_number');
         $this->db->from($this->batch_table);
-        $this->db->like('transaction_number', $date_prefix, 'after');
+        $this->db->like('transaction_number', $prefix . '-', 'after');
         $this->db->order_by('transaction_number', 'DESC');
         $this->db->limit(1);
         
@@ -446,11 +453,16 @@ class Batch_transaction_model extends CI_Model
         
         $seq_num = 1;
         if ($last_record) {
-            $last_seq = intval(substr($last_record->transaction_number, 8));
-            $seq_num = $last_seq + 1;
+            // Extract number after prefix (e.g., "REC-0001" -> 1)
+            $parts = explode('-', $last_record->transaction_number);
+            if (count($parts) > 1) {
+                $last_seq = intval($parts[1]);
+                $seq_num = $last_seq + 1;
+            }
         }
         
-        return $date_prefix . str_pad($seq_num, 4, '0', STR_PAD_LEFT);
+        // Return formatted transaction number with zero-padded 4-digit ID
+        return $prefix . '-' . str_pad($seq_num, 4, '0', STR_PAD_LEFT);
     }
 
     function get_batch_print_data($batch_id)
@@ -472,8 +484,8 @@ class Batch_transaction_model extends CI_Model
     {
         $this->db->trans_start();
 
-        // Generate transaction number
-        $transaction_number = $this->generate_transaction_number();
+        // Generate transaction number with type-specific prefix
+        $transaction_number = $this->generate_transaction_number($batch_data['transaction_type']);
 
         // Prepare batch data
         $batch_insert = array(
