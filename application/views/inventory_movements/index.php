@@ -303,6 +303,7 @@
                                         <table id="dynamic-table" class="table table-striped table-bordered table-hover">
                                             <thead>
                                                 <tr>
+                                                    <th>#</th>
                                                     <th>Date</th>
                                                     <th>Product Code</th>
                                                     <th>Product Name</th>
@@ -391,10 +392,11 @@
             // Initialize DataTable with export buttons
             oTable1 = $('#dynamic-table').DataTable({
                 "aoColumns": [
+                    {"bSortable": false}, // Row number column
                     null, null, null, null, null, null, null, null, null, null, null, null, null,
-                    {"bSortable": false}
+                    {"bSortable": false} // Actions column
                 ],
-                "aaSorting": [[0, "desc"]], // Sort by date descending
+                "aaSorting": [[1, "desc"]], // Sort by date descending (adjusted for new column)
                 "select": {
                     "style": "single"
                 },
@@ -422,55 +424,15 @@
                             return 'Stock Movements Report - ' + currentDate + filterText;
                         },
                         exportOptions: {
-                            columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] // Exclude Actions column
+                            columns: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13] // Exclude row count (0) and Actions (14)
                         }
                     },
                     {
-                        extend: 'pdf',
                         text: '<i class="ace-icon fa fa-file-pdf-o bigger-110 red"></i> <span class="hidden">Export to PDF</span>',
                         className: 'btn btn-white btn-primary btn-bold',
                         titleAttr: 'Export to PDF',
-                        title: 'Stock Movements Report',
-                        orientation: 'landscape',
-                        pageSize: 'A4',
-                        exportOptions: {
-                            columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] // Exclude Actions column
-                        },
-                        customize: function(doc) {
-                            // Adjust column widths for landscape orientation - 13 exported columns
-                            doc.content[1].table.widths = ['7%', '8%', '12%', '8%', '8%', '8%', '7%', '7%', '7%', '7%', '8%', '8%', '7%'];
-                            doc.styles.tableHeader.fontSize = 6;
-                            doc.defaultStyle.fontSize = 5;
-                            doc.styles.tableHeader.alignment = 'left';
-                            
-                            // Add header with filter information
-                            var filters = [];
-                            var location = $("#filter_location option:selected").text();
-                            var movementType = $("#filter_movement_type").val();
-                            var dateFrom = $("#filter_date_from").val();
-                            var dateTo = $("#filter_date_to").val();
-                            
-                            if (location && location !== "All Locations") filters.push("Location: " + location);
-                            if (movementType) filters.push("Movement Type: " + movementType);
-                            if (dateFrom) filters.push("Date From: " + dateFrom);
-                            if (dateTo) filters.push("Date To: " + dateTo);
-                            
-                            var filterText = filters.length > 0 ? "Filters Applied: " + filters.join(", ") + "\n" : "";
-                            
-                            doc.content.splice(0, 0, {
-                                text: [
-                                    { text: 'Stock Movements Report\n', fontSize: 16, bold: true },
-                                    { text: 'Generated on: ' + new Date().toLocaleString() + '\n', fontSize: 10 },
-                                    { text: filterText + '\n', fontSize: 8, italics: true }
-                                ],
-                                alignment: 'center'
-                            });
-                            
-                            // Ensure proper table structure
-                            if (doc.content[1] && doc.content[1].table) {
-                                doc.content[1].table.headerRows = 1;
-                                doc.content[1].table.keepWithHeaderRows = 1;
-                            }
+                        action: function(e, dt, node, config) {
+                            exportToPdf();
                         }
                     },
                     {
@@ -480,7 +442,7 @@
                         titleAttr: 'Print Report',
                         title: 'Stock Movements Report',
                         exportOptions: {
-                            columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] // Exclude Actions column
+                            columns: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13] // Exclude row count (0) and Actions (14)
                         }
                     }
                 ]
@@ -597,6 +559,7 @@
             oTable1.clear();
 
             $.each(data, function(i, row) {
+                var rowNumber = i + 1; // Row count starting from 1
                 var actions = '<button type="button" class="btn btn-xs btn-info" onclick="viewMovementDetails(' + row.id + ')"><i class="ace-icon fa fa-eye"></i></button>';
                 
                 var transferDetails = '';
@@ -614,6 +577,7 @@
                 var movementDate = formatDate(row.date || row.created_at);
                 
                 oTable1.row.add([
+                    rowNumber, // Row count column
                     movementDate,
                     row.product_code,
                     row.product_name,
@@ -817,6 +781,34 @@
         function exportMovements() {
             // Trigger the built-in DataTables export
             $('.buttons-excel').trigger('click');
+        }
+
+        function exportToPdf() {
+            // Get current filter values
+            var search = $("#search_text").val();
+            var location_id = $("#filter_location").val();
+            var movement_type = $("#filter_movement_type").val();
+            var date_from = $("#filter_date_from").val();
+            var date_to = $("#filter_date_to").val();
+
+            // Create a form and submit it to the PDF export endpoint
+            var form = $('<form>', {
+                'method': 'POST',
+                'action': '<?= base_url(); ?>inventory_movements/export_pdf',
+                'target': '_blank'
+            });
+
+            // Add filter parameters as hidden inputs
+            form.append($('<input>', {'type': 'hidden', 'name': 'search', 'value': search}));
+            form.append($('<input>', {'type': 'hidden', 'name': 'location_id', 'value': location_id}));
+            form.append($('<input>', {'type': 'hidden', 'name': 'movement_type', 'value': movement_type}));
+            form.append($('<input>', {'type': 'hidden', 'name': 'date_from', 'value': date_from}));
+            form.append($('<input>', {'type': 'hidden', 'name': 'date_to', 'value': date_to}));
+
+            // Append form to body, submit, and remove
+            $('body').append(form);
+            form.submit();
+            form.remove();
         }
     </script>
 

@@ -148,4 +148,70 @@ class Inventory_movements extends CI_Controller
 			echo "Error: Product ID is required!";
 		}
 	}
+
+	/**
+	 * Export movements to PDF
+	 */
+	public function export_pdf()
+	{
+		// Check permission
+		if (!$this->cf->module_permission("view", $this->module_permission)) {
+			show_error('Access Denied', 403);
+			return;
+		}
+
+		try {
+			// Get filter parameters
+			$search = $this->input->post('search') ?? '';
+			$location_id = $this->input->post('location_id') ?? '';
+			$movement_type = $this->input->post('movement_type') ?? '';
+			$date_from = $this->input->post('date_from') ?? '';
+			$date_to = $this->input->post('date_to') ?? '';
+
+			// Get movements data using the same method as the main listing
+			$movement_data = $this->main_model->search($search, intval($location_id), $date_from, $date_to, $movement_type);
+
+			// Get location name for filter display
+			$location_name = '';
+			if ($location_id) {
+				$location = $this->data_location_model->search_by_id(intval($location_id));
+				$location_name = $location ? $location->location : '';
+			}
+
+			// Prepare filter information for the PDF
+			$filters = array(
+				'search_text' => $search,
+				'movement_type' => $movement_type,
+				'location_name' => $location_name,
+				'date_from' => $date_from,
+				'date_to' => $date_to
+			);
+
+			// Get company information
+			$prefix = $this->prefix;
+			$company_name = $this->session->userdata[$prefix . "_logged_in"][$prefix . "_company_name"];
+			$company_address = $this->session->userdata[$prefix . "_logged_in"][$prefix . "_company_address"];
+			$company_contact = $this->session->userdata[$prefix . "_logged_in"][$prefix . "_company_contact"];
+			$page_name = $this->page_name;
+
+			// Load PDF library
+			$this->load->library('pdf');
+
+			// Set data for the PDF view
+			$data = array(
+				'movement_data' => $movement_data,
+				'filters' => $filters,
+				'company_name' => $company_name,
+				'company_address' => $company_address,
+				'company_contact' => $company_contact,
+				'page_name' => $page_name
+			);
+
+			// Load the PDF view
+			$this->load->view('pdf/inventory_movements_list', $data);
+
+		} catch (Exception $ex) {
+			show_error('Error generating PDF: ' . $ex->getMessage());
+		}
+	}
 }
