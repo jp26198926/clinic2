@@ -364,6 +364,7 @@ class Inventory_batch extends CI_Controller
     function print_batch()
     {
         $batch_id = intval($this->input->get('batch_id'));
+        $format = $this->input->get('format') ?: 'html'; // Default to HTML format
 
         if ($this->cf->module_permission("print", $this->module_permission)) {
             if (!$batch_id) {
@@ -379,13 +380,32 @@ class Inventory_batch extends CI_Controller
                 $data['company_contact'] = $this->company_contact;
                 $data['page_name'] = $this->page_name;
 
-                $this->load->view('inventory_batch/print', $data);
+                if ($format === 'pdf') {
+					$this->load->library('Pdf');
+                    $this->print_batch_pdf($data);
+                } else {
+                    $this->load->view('inventory_batch/print', $data);
+                }
             } catch (Exception $ex) {
                 echo "Error: " . $ex->getMessage();
             }
         } else {
             echo "Error: You don't have permission to print!";
         }
+    }
+
+    function print_batch_pdf($data)
+    {
+        // Set required variables for PDF template
+        $batch = $data['batch'];
+        $items = $data['items'];
+        $company_name = $data['company_name'];
+        $company_address = $data['company_address'];
+        $company_contact = $data['company_contact'];
+        $page_name = $data['page_name'];
+
+        // Load the PDF template - this will generate and output the PDF
+        require_once(APPPATH . 'views/pdf/batch_transaction.php');
     }
 
     function manage()

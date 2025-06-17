@@ -785,7 +785,33 @@ defined('BASEPATH') or exit('No direct script access allowed');
         }
 
         function printBatch() {
-            window.open(base_url + 'inventory_batch/print_batch?batch_id=' + $('#current_batch_id').val(), '_blank');
+            const batchId = $('#current_batch_id').val();
+            
+            // Show format selection dialog
+            bootbox.dialog({
+                title: 'Print Batch Transaction',
+                message: '<p>Choose the print format for this batch transaction:</p>',
+                buttons: {
+                    html: {
+                        label: '<i class="fa fa-file-text"></i> HTML Print',
+                        className: 'btn-primary',
+                        callback: function() {
+                            window.open(base_url + 'inventory_batch/print_batch?batch_id=' + batchId + '&format=html', '_blank');
+                        }
+                    },
+                    pdf: {
+                        label: '<i class="fa fa-file-pdf-o"></i> PDF Format',
+                        className: 'btn-success',
+                        callback: function() {
+                            window.open(base_url + 'inventory_batch/print_batch?batch_id=' + batchId + '&format=pdf', '_blank');
+                        }
+                    },
+                    cancel: {
+                        label: '<i class="fa fa-times"></i> Cancel',
+                        className: 'btn-default'
+                    }
+                }
+            });
         }
 
         function calculateTotalCost() {
