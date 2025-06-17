@@ -290,15 +290,6 @@
                                                                     <i class="ace-icon fa fa-calculator"></i> Stock Valuation
                                                                 </button>
                                                                 <?php if($this->cf->module_permission("add", $module_permission)): ?>
-                                                                <button type="button" id="btn_receive" class="btn btn-sm btn-success">
-                                                                    <i class="ace-icon fa fa-plus"></i> Receive Stock
-                                                                </button>
-                                                                <button type="button" id="btn_release" class="btn btn-sm btn-danger">
-                                                                    <i class="ace-icon fa fa-minus"></i> Release Stock
-                                                                </button>
-                                                                <button type="button" id="btn_transfer" class="btn btn-sm btn-info">
-                                                                    <i class="ace-icon fa fa-exchange"></i> Transfer Stock
-                                                                </button>
                                                                 <button type="button" id="btn_adjust" class="btn btn-sm btn-warning">
                                                                     <i class="ace-icon fa fa-cog"></i> Adjust Stock
                                                                 </button>
@@ -347,16 +338,7 @@
                                     <!-- Mobile Card View -->
                                     <div class="mobile-card-container" style="display: none;">
                                         <div class="mobile-action-buttons">
-                                            <?php if($this->cf->module_permission("add", $module_permission)): ?>                                            <button type="button" id="mobile_btn_receive" class="btn btn-sm btn-success">
-                                                <i class="ace-icon fa fa-plus"></i> Receive
-                                            </button>
-                                            <button type="button" id="mobile_btn_release" class="btn btn-sm btn-danger">
-                                                <i class="ace-icon fa fa-minus"></i> Release
-                                            </button>
-                                            <button type="button" id="mobile_btn_transfer" class="btn btn-sm btn-info">
-                                                <i class="ace-icon fa fa-exchange"></i> Transfer
-                                            </button>
-                                            <button type="button" id="mobile_btn_adjust" class="btn btn-sm btn-warning">
+                                            <?php if($this->cf->module_permission("add", $module_permission)): ?>                                            <button type="button" id="mobile_btn_adjust" class="btn btn-sm btn-warning">
                                                 <i class="ace-icon fa fa-cog"></i> Adjust
                                             </button>
                                             <button type="button" id="mobile_btn_expiring" class="btn btn-sm btn-orange">
@@ -386,178 +368,6 @@
         </div><!-- /.main-content -->
 
         <!-- Modals -->
-        <!-- Receive Stock Modal -->
-        <div class="modal fade" id="modal_receive" tabindex="-1" role="dialog">
-            <div class="modal-dialog" role="document">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <button type="button" class="close" data-dismiss="modal">&times;</button>
-                        <h4 class="modal-title">Receive Stock</h4>
-                    </div>
-                    <div class="modal-body">
-                        <form id="form_receive">
-                            <div class="form-group">
-                                <label>Product:</label>
-                                <select id="receive_product_id" name="product_id" class="form-control chosen-select" required>
-                                    <option value="">Select Product</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>Location:</label>
-                                <select id="receive_location_id" name="location_id" class="form-control chosen-select" required>
-                                    <option value="">Select Location</option>
-                                    <?php foreach($locations as $location): ?>
-                                    <option value="<?= $location->id; ?>"><?= $location->location; ?></option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>Quantity:</label>
-                                <input type="number" id="receive_qty" name="qty" class="form-control" min="1" required>
-                            </div>                            <div class="form-group">
-                                <label>Unit Cost:</label>
-                                <input type="number" id="receive_unit_cost" name="unit_cost" class="form-control" step="0.01" min="0">
-                            </div>
-                            <div class="form-group">
-                                <label>Expiration Date:</label>
-                                <input type="date" id="receive_expiration_date" name="expiration_date" class="form-control">
-                                <small class="help-block">Leave empty if product doesn't expire</small>
-                            </div>
-                            <div class="form-group">
-                                <label>Reference Type:</label>
-                                <select id="receive_reference_type" name="reference_type" class="form-control" required>
-                                    <option value="PURCHASE">Purchase</option>
-                                    <option value="RETURN">Return</option>
-                                    <option value="ADJUSTMENT">Adjustment</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>Reference ID:</label>
-                                <input type="text" id="receive_reference_id" name="reference_id" class="form-control">
-                            </div>
-                            <div class="form-group">
-                                <label>Notes:</label>
-                                <textarea id="receive_notes" name="notes" class="form-control" rows="3"></textarea>
-                            </div>
-                        </form>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-                        <button type="button" id="btn_save_receive" class="btn btn-success">Receive Stock</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Release Stock Modal -->
-        <div class="modal fade" id="modal_release" tabindex="-1" role="dialog">
-            <div class="modal-dialog" role="document">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <button type="button" class="close" data-dismiss="modal">&times;</button>
-                        <h4 class="modal-title">Release Stock</h4>
-                    </div>
-                    <div class="modal-body">
-                        <form id="form_release">
-                            <div class="form-group">
-                                <label>Product:</label>
-                                <select id="release_product_id" name="product_id" class="form-control chosen-select" required>
-                                    <option value="">Select Product</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>Location:</label>
-                                <select id="release_location_id" name="location_id" class="form-control chosen-select" required>
-                                    <option value="">Select Location</option>
-                                    <?php foreach($locations as $location): ?>
-                                    <option value="<?= $location->id; ?>"><?= $location->location; ?></option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>Available Stock: <span id="available_stock" class="text-info"></span></label>
-                                <label>Quantity to Release:</label>
-                                <input type="number" id="release_qty" name="qty" class="form-control" min="1" required>
-                            </div>
-                            <div class="form-group">
-                                <label>Reference Type:</label>
-                                <select id="release_reference_type" name="reference_type" class="form-control" required>
-                                    <option value="SALE">Sale</option>
-                                    <option value="RETURN">Return</option>
-                                    <option value="ADJUSTMENT">Adjustment</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>Reference ID:</label>
-                                <input type="text" id="release_reference_id" name="reference_id" class="form-control">
-                            </div>
-                            <div class="form-group">
-                                <label>Notes:</label>
-                                <textarea id="release_notes" name="notes" class="form-control" rows="3"></textarea>
-                            </div>
-                        </form>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-                        <button type="button" id="btn_save_release" class="btn btn-danger">Release Stock</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Transfer Stock Modal -->
-        <div class="modal fade" id="modal_transfer" tabindex="-1" role="dialog">
-            <div class="modal-dialog" role="document">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <button type="button" class="close" data-dismiss="modal">&times;</button>
-                        <h4 class="modal-title">Transfer Stock</h4>
-                    </div>
-                    <div class="modal-body">
-                        <form id="form_transfer">
-                            <div class="form-group">
-                                <label>Product:</label>
-                                <select id="transfer_product_id" name="product_id" class="form-control chosen-select" required>
-                                    <option value="">Select Product</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>From Location:</label>
-                                <select id="transfer_from_location_id" name="from_location_id" class="form-control chosen-select" required>
-                                    <option value="">Select Source Location</option>
-                                    <?php foreach($locations as $location): ?>
-                                    <option value="<?= $location->id; ?>"><?= $location->location; ?></option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>To Location:</label>
-                                <select id="transfer_to_location_id" name="to_location_id" class="form-control chosen-select" required>
-                                    <option value="">Select Destination Location</option>
-                                    <?php foreach($locations as $location): ?>
-                                    <option value="<?= $location->id; ?>"><?= $location->location; ?></option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>Available Stock: <span id="transfer_available_stock" class="text-info"></span></label>
-                                <label>Quantity to Transfer:</label>
-                                <input type="number" id="transfer_qty" name="qty" class="form-control" min="1" required>
-                            </div>
-                            <div class="form-group">
-                                <label>Notes:</label>
-                                <textarea id="transfer_notes" name="notes" class="form-control" rows="3"></textarea>
-                            </div>
-                        </form>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-                        <button type="button" id="btn_save_transfer" class="btn btn-info">Transfer Stock</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <!-- Adjust Stock Modal -->
         <div class="modal fade" id="modal_adjust" tabindex="-1" role="dialog">
             <div class="modal-dialog" role="document">
@@ -917,40 +727,6 @@
             });
 
             // Modal event handlers
-            $("#btn_receive").click(function() {
-                $("#modal_receive").modal();
-                // Reinitialize chosen dropdowns when modal is shown
-                setTimeout(function() {
-                    $("#modal_receive .chosen-select").chosen("destroy").chosen({
-                        allow_single_deselect: true,
-                        no_results_text: "No results match",
-                        width: "100%"
-                    });
-                }, 100);
-            });
-
-            $("#btn_release").click(function() {
-                $("#modal_release").modal();
-                setTimeout(function() {
-                    $("#modal_release .chosen-select").chosen("destroy").chosen({
-                        allow_single_deselect: true,
-                        no_results_text: "No results match",
-                        width: "100%"
-                    });
-                }, 100);
-            });
-
-            $("#btn_transfer").click(function() {
-                $("#modal_transfer").modal();
-                setTimeout(function() {
-                    $("#modal_transfer .chosen-select").chosen("destroy").chosen({
-                        allow_single_deselect: true,
-                        no_results_text: "No results match",
-                        width: "100%"
-                    });
-                }, 100);
-            });
-
             $("#btn_adjust").click(function() {
                 // Reset form before opening modal
                 $("#form_adjust")[0].reset();
@@ -992,44 +768,16 @@
             });
 
             // Save handlers
-            $("#btn_save_receive").click(function() {
-                saveReceiveStock();
-            });
-
-            $("#btn_save_release").click(function() {
-                saveReleaseStock();
-            });
-
-            $("#btn_save_transfer").click(function() {
-                saveTransferStock();
-            });
-
             $("#btn_save_adjust").click(function() {
                 saveAdjustStock();
             });
 
             // Product/location change handlers for stock checking
-            $("#release_product_id, #release_location_id").change(function() {
-                checkAvailableStock('release');
-            });
-
-            $("#transfer_product_id, #transfer_from_location_id").change(function() {
-                checkAvailableStock('transfer');
-            });
-
             $("#adjust_product_id, #adjust_location_id").change(function() {
                 checkCurrentStock();
             });
 
             // Handle chosen dropdown changes for stock checking
-            $("#release_product_id, #release_location_id").chosen().change(function() {
-                checkAvailableStock('release');
-            });
-
-            $("#transfer_product_id, #transfer_from_location_id").chosen().change(function() {
-                checkAvailableStock('transfer');
-            });
-
             $("#adjust_product_id, #adjust_location_id").chosen().change(function() {
                 checkCurrentStock();
             });
@@ -1058,18 +806,6 @@
             });
 
             // Mobile action button handlers (same functionality as desktop buttons)
-            $("#mobile_btn_receive").click(function() {
-                $("#btn_receive").click();
-            });
-
-            $("#mobile_btn_release").click(function() {
-                $("#btn_release").click();
-            });
-
-            $("#mobile_btn_transfer").click(function() {
-                $("#btn_transfer").click();
-            });
-
             $("#mobile_btn_adjust").click(function() {
                 $("#btn_adjust").click();
             });
@@ -1299,64 +1035,10 @@
                         options += '<option value="' + product.id + '">' + product.code + ' - ' + product.name + '</option>';
                     });
                     
-                    $("#receive_product_id, #release_product_id, #transfer_product_id, #adjust_product_id").html(options);
+                    $("#adjust_product_id").html(options);
                     
                     // Update chosen dropdowns
-                    $("#receive_product_id, #release_product_id, #transfer_product_id, #adjust_product_id").trigger("chosen:updated");
-                }
-            });
-        }
-
-        function saveReceiveStock() {
-            var formData = $("#form_receive").serialize();
-            
-            $.post("<?= base_url(); ?>inventory_stock/receive_stock", formData, function(data) {
-                if (data.indexOf("<!DOCTYPE html>") > -1) {
-                    alert("Error: Session Time-Out, You must login again to continue.");
-                    location.reload(true);
-                } else if (data.indexOf("Error: ") > -1) {
-                    toastr.error(data);
-                } else {
-                    toastr.success(data);
-                    $("#modal_receive").modal('hide');
-                    $("#form_receive")[0].reset();
-                    searchStock();
-                }
-            });
-        }
-
-        function saveReleaseStock() {
-            var formData = $("#form_release").serialize();
-            
-            $.post("<?= base_url(); ?>inventory_stock/release_stock", formData, function(data) {
-                if (data.indexOf("<!DOCTYPE html>") > -1) {
-                    alert("Error: Session Time-Out, You must login again to continue.");
-                    location.reload(true);
-                } else if (data.indexOf("Error: ") > -1) {
-                    toastr.error(data);
-                } else {
-                    toastr.success(data);
-                    $("#modal_release").modal('hide');
-                    $("#form_release")[0].reset();
-                    searchStock();
-                }
-            });
-        }
-
-        function saveTransferStock() {
-            var formData = $("#form_transfer").serialize();
-            
-            $.post("<?= base_url(); ?>inventory_stock/transfer_stock", formData, function(data) {
-                if (data.indexOf("<!DOCTYPE html>") > -1) {
-                    alert("Error: Session Time-Out, You must login again to continue.");
-                    location.reload(true);
-                } else if (data.indexOf("Error: ") > -1) {
-                    toastr.error(data);
-                } else {
-                    toastr.success(data);
-                    $("#modal_transfer").modal('hide');
-                    $("#form_transfer")[0].reset();
-                    searchStock();
+                    $("#adjust_product_id").trigger("chosen:updated");
                 }
             });
         }
@@ -1442,29 +1124,6 @@
                     $("#btn_save_adjust").prop('disabled', false).html('<i class="ace-icon fa fa-cog"></i> Apply Adjustment');
                 }
             });
-        }
-
-        function checkAvailableStock(type) {
-            var product_id = $("#" + type + "_product_id").val();
-            var location_id = type === 'transfer' ? $("#transfer_from_location_id").val() : $("#" + type + "_location_id").val();
-            
-            if (product_id && location_id) {
-                $.get("<?= base_url(); ?>inventory_stock/get_product_stock_details", {
-                    product_id: product_id,
-                    location_id: location_id
-                }, function(data) {
-                    if (data.indexOf("Error: ") === -1) {
-                        var result = JSON.parse(data);
-                        var available = result.stock ? result.stock.qty_available : 0;
-                        
-                        if (type === 'transfer') {
-                            $("#transfer_available_stock").text(available);
-                        } else {
-                            $("#available_stock").text(available);
-                        }
-                    }
-                });
-            }
         }
 
         function checkCurrentStock() {
