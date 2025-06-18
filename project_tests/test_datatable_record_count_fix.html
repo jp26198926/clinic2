@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test: DataTable Record Count Fix</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            line-height: 1.6;
+        }
+        .test-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #007bff;
+        }
+        .success {
+            border-left-color: #28a745;
+            background: #d4edda;
+        }
+        .issue {
+            border-left-color: #dc3545;
+            background: #f8d7da;
+        }
+        .fix {
+            border-left-color: #ffc107;
+            background: #fff3cd;
+        }
+        .code-block {
+            background: #f4f4f4;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            font-family: monospace;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+        .test-steps {
+            counter-reset: step-counter;
+        }
+        .test-step {
+            counter-increment: step-counter;
+            margin: 10px 0;
+            padding: 10px;
+            background: #e9ecef;
+            border-radius: 4px;
+        }
+        .test-step::before {
+            content: "Step " counter(step-counter) ": ";
+            font-weight: bold;
+            color: #495057;
+        }
+        h1 { color: #333; }
+        h2 { color: #666; }
+        h3 { color: #888; }
+    </style>
+</head>
+<body>
+    <h1>📊 DataTable Record Count Fix Verification</h1>
+    <p><strong>Date:</strong> June 18, 2025</p>
+    <p><strong>Purpose:</strong> Test the fix for datatable showing incorrect record counts when no results are found</p>
+
+    <div class="test-section issue">
+        <h2>🔍 Issue Identified</h2>
+        <p><strong>Problem:</strong> DataTable was showing "Showing 1 to 1 of 1 entries" when there was actually no data, displaying only a "No data found" message.</p>
+        
+        <h3>Root Cause:</h3>
+        <ul>
+            <li>Controller was creating a table row with "No data found" message</li>
+            <li>JavaScript <code>generateReportStats()</code> was counting ALL tbody rows, including the "No data found" row</li>
+            <li>DataTable was treating the "No data found" row as actual data</li>
+        </ul>
+    </div>
+
+    <div class="test-section fix">
+        <h2>🔧 Fixes Implemented</h2>
+        
+        <h3>1. Controller Changes (Inventory_reports.php)</h3>
+        <div class="code-block">
+// OLD - Created "No data found" row
+} else {
+    $html .= '&lt;tr&gt;&lt;td colspan="100%" class="text-center"&gt;No data found for this report&lt;/td&gt;&lt;/tr&gt;';
+}
+
+// NEW - Creates empty table structure and passes record count
+} else {
+    // Create basic table structure for empty data
+    $html .= '&lt;thead&gt;&lt;tr&gt;';
+    $html .= '&lt;th&gt;#&lt;/th&gt;';
+    $html .= '&lt;th&gt;No Data&lt;/th&gt;';
+    $html .= '&lt;/tr&gt;&lt;/thead&gt;';
+    $html .= '&lt;tbody&gt;';
+    // Don't add any rows - let DataTable handle the empty table
+    $html .= '&lt;/tbody&gt;';
+}
+
+echo json_encode(array('success' => true, 'html' => $html, 'title' => $title, 'record_count' => count($data)));
+        </div>
+
+        <h3>2. JavaScript Changes (index.php)</h3>
+        <div class="code-block">
+// OLD - Counted table rows manually (unreliable)
+function generateReportStats(reportType, $table) {
+    var totalRows = $table.find('tbody tr').length;
+
+// NEW - Uses server-provided record count (reliable)
+function generateReportStats(reportType, recordCount) {
+    // Uses recordCount parameter from server response
+
+// Updated AJAX success handler
+success: function(response) {
+    var data = JSON.parse(response);
+    if (data.success) {
+        displayReportData(data.html, reportType, data.record_count || 0);
+    }
+}
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🧪 Testing Instructions</h2>
+        <div class="test-steps">
+            <div class="test-step">
+                Access the Inventory Reports module at: <code>http://localhost/clinic2/inventory_reports</code>
+            </div>
+            <div class="test-step">
+                Select a report template that might return no data (e.g., "Expired Stock Report" if no items are expired)
+            </div>
+            <div class="test-step">
+                Optionally set filters that will ensure no data is returned (e.g., specific location with no stock)
+            </div>
+            <div class="test-step">
+                Click "Generate Report" and wait for the results
+            </div>
+            <div class="test-step">
+                <strong>Verify the following when no data is found:</strong>
+                <ul>
+                    <li>Report stats show "0" in the "Total Records" field</li>
+                    <li>DataTable info shows "No entries available" (not "Showing 1 to 1 of 1 entries")</li>
+                    <li>DataTable displays the standard "No data available in table" message</li>
+                    <li>No manual "No data found" row appears in the table</li>
+                </ul>
+            </div>
+            <div class="test-step">
+                Test with a report that DOES return data to ensure normal functionality still works
+            </div>
+            <div class="test-step">
+                Verify record counts are accurate for reports with data
+            </div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>📋 Expected Results</h2>
+        
+        <h3>When No Data Found:</h3>
+        <ul>
+            <li>✅ Report stats: "0 Total Records"</li>
+            <li>✅ DataTable info: "No entries available"</li>
+            <li>✅ Table displays DataTable's standard empty message</li>
+            <li>✅ No custom "No data found" rows in table body</li>
+        </ul>
+
+        <h3>When Data Found:</h3>
+        <ul>
+            <li>✅ Report stats: Correct count (e.g., "15 Total Records")</li>
+            <li>✅ DataTable info: Accurate pagination info (e.g., "Showing 1 to 15 of 15 entries")</li>
+            <li>✅ All data rows displayed properly</li>
+            <li>✅ DataTable functionality working normally</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>🔍 Additional Verification Points</h2>
+        <ul>
+            <li><strong>Browser Console:</strong> Check for any JavaScript errors</li>
+            <li><strong>Network Tab:</strong> Verify AJAX response includes <code>record_count</code> field</li>
+            <li><strong>PDF Export:</strong> Ensure PDF generation still works correctly for empty reports</li>
+            <li><strong>Excel Export:</strong> Verify Excel export handles empty data properly</li>
+            <li><strong>Different Report Types:</strong> Test multiple report templates to ensure consistency</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>🎯 Key Files Modified</h2>
+        <ul>
+            <li><code>application/controllers/Inventory_reports.php</code> - Updated generate_report() method</li>
+            <li><code>application/views/inventory_reports/index.php</code> - Updated JavaScript functions</li>
+        </ul>
+    </div>
+
+    <div class="test-section success">
+        <h2>✅ Benefits of This Fix</h2>
+        <ul>
+            <li><strong>Accurate Record Counts:</strong> Stats and DataTable info now show correct numbers</li>
+            <li><strong>Better User Experience:</strong> Clear indication when no data is available</li>
+            <li><strong>Consistent Behavior:</strong> DataTable handles empty states properly</li>
+            <li><strong>Maintainable Code:</strong> Server-side record counting is more reliable than client-side</li>
+            <li><strong>Standards Compliance:</strong> Follows DataTable best practices for empty data</li>
+        </ul>
+    </div>
+
+    <p><em>This fix completes the PDF export functionality improvements by ensuring the HTML datatable display is fully synchronized and accurate.</em></p>
+</body>
+</html>

@@ -368,7 +368,7 @@
                     try {
                         var data = JSON.parse(response);
                         if (data.success) {
-                            displayReportData(data.html, reportType);
+                            displayReportData(data.html, reportType, data.record_count || 0);
                             toastr.success('Report generated successfully!');
                         } else {
                             showError('Error: ' + (data.message || 'Failed to generate report'));
@@ -384,7 +384,7 @@
             });
         }
 
-        function displayReportData(htmlContent, reportType) {
+        function displayReportData(htmlContent, reportType, recordCount) {
             // Parse the HTML content and create a proper DataTable
             var $tempDiv = $('<div>').html(htmlContent);
             var $table = $tempDiv.find('table').first();
@@ -398,8 +398,8 @@
             $table.addClass('table table-striped table-bordered table-hover');
             $table.attr('id', 'reportDataTable');
             
-            // Create stats if available
-            var stats = generateReportStats(reportType, $table);
+            // Create stats using the record count from server
+            var stats = generateReportStats(reportType, recordCount);
             
             // Display the content
             $('#report_content').html(stats + '<div class="table-responsive">' + $table[0].outerHTML + '</div>');
@@ -408,8 +408,7 @@
             initializeDataTable();
         }
 
-        function generateReportStats(reportType, $table) {
-            var totalRows = $table.find('tbody tr').length;
+        function generateReportStats(reportType, recordCount) {
             var currentDate = new Date().toLocaleDateString();
             var filters = getGlobalFilters();
             
@@ -418,7 +417,7 @@
             return '<div class="report-stats">' +
                 '<div class="row">' +
                 '<div class="col-md-3">' +
-                '<div class="stat-value">' + totalRows + '</div>' +
+                '<div class="stat-value">' + recordCount + '</div>' +
                 '<div class="stat-label">Total Records</div>' +
                 '</div>' +
                 '<div class="col-md-3">' +

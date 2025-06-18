@@ -340,13 +340,20 @@ class Inventory_reports extends CI_Controller
 				}
 				$html .= '</tbody>';
 			} else {
-				$html .= '<tr><td colspan="100%" class="text-center">No data found for this report</td></tr>';
+				// Create basic table structure for empty data
+				$html .= '<thead><tr>';
+				$html .= '<th>#</th>';
+				$html .= '<th>No Data</th>';
+				$html .= '</tr></thead>';
+				$html .= '<tbody>';
+				// Don't add any rows - let DataTable handle the empty table
+				$html .= '</tbody>';
 			}
 			
 			$html .= '</table>';
 			$html .= '</div>';
 			
-			echo json_encode(array('success' => true, 'html' => $html, 'title' => $title));
+			echo json_encode(array('success' => true, 'html' => $html, 'title' => $title, 'record_count' => count($data)));
 			
 		} catch (Exception $ex) {
 			echo json_encode(array('success' => false, 'message' => $ex->getMessage()));
