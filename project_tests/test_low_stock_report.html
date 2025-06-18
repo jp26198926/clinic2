@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Low Stock Report</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <h2>Low Stock Report Test</h2>
+    <button onclick="testViewReport()">Test View Report</button>
+    <button onclick="testPDFExport()">Test PDF Export</button>
+    
+    <div id="result" style="margin-top: 20px; padding: 10px; border: 1px solid #ccc;">
+        <!-- Results will appear here -->
+    </div>
+
+    <script>
+        function testViewReport() {
+            $('#result').html('<p>Testing View Report...</p>');
+            
+            $.ajax({
+                url: 'http://localhost:3308/clinic2/inventory_reports/generate_report',
+                type: 'POST',
+                data: {
+                    report_type: 'low_stock',
+                    location_id: 0,
+                    date_from: '',
+                    date_to: ''
+                },
+                success: function(response) {
+                    try {
+                        var data = JSON.parse(response);
+                        if (data.success) {
+                            $('#result').html('<h3>Success!</h3>' + data.html);
+                        } else {
+                            $('#result').html('<h3>Error:</h3><p>' + data.message + '</p>');
+                        }
+                    } catch (e) {
+                        $('#result').html('<h3>Response:</h3><pre>' + response + '</pre>');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    $('#result').html('<h3>AJAX Error:</h3><p>' + error + '</p><p>Status: ' + status + '</p>');
+                }
+            });
+        }
+        
+        function testPDFExport() {
+            $('#result').html('<p>Testing PDF Export...</p>');
+            
+            // Create form and submit to test PDF export
+            var form = $('<form>', {
+                'method': 'POST',
+                'action': 'http://localhost:3308/clinic2/inventory_reports/export_report',
+                'target': '_blank'
+            });
+            
+            form.append($('<input>', {
+                'type': 'hidden',
+                'name': 'report_type',
+                'value': 'low_stock'
+            }));
+            
+            form.append($('<input>', {
+                'type': 'hidden',
+                'name': 'format',
+                'value': 'pdf'
+            }));
+            
+            form.append($('<input>', {
+                'type': 'hidden',
+                'name': 'location_id',
+                'value': '0'
+            }));
+            
+            form.append($('<input>', {
+                'type': 'hidden',
+                'name': 'date_from',
+                'value': ''
+            }));
+            
+            form.append($('<input>', {
+                'type': 'hidden',
+                'name': 'date_to',
+                'value': ''
+            }));
+            
+            $('body').append(form);
+            form.submit();
+            form.remove();
+            
+            $('#result').html('<p>PDF export form submitted. Check for new window/tab.</p>');
+        }
+    </script>
+</body>
+</html>

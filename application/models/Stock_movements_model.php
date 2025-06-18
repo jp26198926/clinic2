@@ -327,4 +327,83 @@ class Stock_movements_model extends CI_Model
             throw new Exception("Error: " . $error['message']);
         }
     }
+
+    function get_movement_summary($location_id = 0, $movement_type = "", $date_from = "", $date_to = "")
+    {
+        $this->db->select(
+            "sm.movement_type,
+             l.location,
+             COUNT(*) as transaction_count,
+             SUM(ABS(sm.qty)) as total_quantity,
+             SUM(ABS(sm.qty) * COALESCE(s.unit_cost, 0)) as total_value,
+             p.name as product_name,
+             p.code as product_code,
+             c.category,
+             u.name as uom"
+        );
+
+        $this->db->from("stock_movements sm");
+        $this->db->join("products p", "p.id=sm.product_id", "left");
+        $this->db->join("categories c", "c.id=p.category_id", "left");
+        $this->db->join("uoms u", "u.id=p.uom_id", "left");
+        $this->db->join("locations l", "l.id=sm.location_id", "left");
+        $this->db->join("stock s", "s.product_id=sm.product_id AND s.location_id=sm.location_id", "left");
+
+        if (intval($location_id) > 0) {
+            $this->db->where("sm.location_id", $location_id);
+        }
+
+        if ($movement_type) {
+            $this->db->where("sm.movement_type", $movement_type);
+        }
+
+        if ($date_from && $date_to) {
+            $this->db->where("DATE(sm.created_at) >=", $date_from);
+            $this->db->where("DATE(sm.created_at) <=", $date_to);
+        } elseif ($date_from) {
+            $this->db->where("DATE(sm.created_at) >=", $date_from);
+        } elseif ($date_to) {
+            $this->db->where("DATE(sm.created_at) <=", $date_to);
+        }
+
+        $this->db->group_by('sm.movement_type, sm.location_id, sm.product_id');
+        $this->db->order_by('total_value DESC, total_quantity DESC');
+
+        if ($query = $this->db->get()) {
+            return $query->result();
+        } else {
+            $error = $this->db->error();
+            throw new Exception("Error: " . $error['message']);
+        }
+    }
+
+    function get_movement_trends($location_id = 0, $period_months = 12)
+    {
+        $this->db->select(
+            "DATE_FORMAT(sm.created_at, '%Y-%m') as month_year,
+             sm.movement_type,
+             COUNT(*) as transaction_count,
+             SUM(ABS(sm.qty)) as total_quantity,
+             SUM(ABS(sm.qty) * COALESCE(s.unit_cost, 0)) as total_value"
+        );
+
+        $this->db->from("stock_movements sm");
+        $this->db->join("stock s", "s.product_id=sm.product_id AND s.location_id=sm.location_id", "left");
+        
+        $this->db->where("sm.created_at >= DATE_SUB(CURDATE(), INTERVAL {$period_months} MONTH)");
+
+        if (intval($location_id) > 0) {
+            $this->db->where("sm.location_id", $location_id);
+        }
+
+        $this->db->group_by('month_year, sm.movement_type');
+        $this->db->order_by('month_year DESC, sm.movement_type');
+
+        if ($query = $this->db->get()) {
+            return $query->result();
+        } else {
+            $error = $this->db->error();
+            throw new Exception("Error: " . $error['message']);
+        }
+    }
 }

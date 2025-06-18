@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory Reports - Test Links</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .test-link {
+            display: block;
+            padding: 15px 20px;
+            margin: 10px 0;
+            background: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        .test-link:hover {
+            background: #0056b3;
+            color: white;
+            text-decoration: none;
+        }
+        .section {
+            margin: 30px 0;
+        }
+        .section h3 {
+            color: #444;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+        .report-description {
+            color: #666;
+            font-size: 14px;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🏥 Inventory Reports - Test Suite</h1>
+        
+        <div class="section">
+            <h3>📊 Main Reports Page</h3>
+            <a href="http://localhost/clinic2/inventory_reports" class="test-link">
+                🏠 Inventory Reports Dashboard
+            </a>
+            <p class="report-description">Main reports page with all available inventory reports and global filters</p>
+        </div>
+
+        <div class="section">
+            <h3>📈 Individual Report Tests</h3>
+            
+            <a href="http://localhost/clinic2/inventory_reports/stock_levels" class="test-link">
+                📦 Stock Levels Report
+            </a>
+            <p class="report-description">Current stock levels with low stock indicators</p>
+            
+            <a href="http://localhost/clinic2/inventory_reports/movement_summary" class="test-link">
+                🔄 Movement Summary Report
+            </a>
+            <p class="report-description">Summary of stock movements by type and period</p>
+            
+            <a href="http://localhost/clinic2/inventory_reports/stock_valuation" class="test-link">
+                💰 Stock Valuation Report
+            </a>
+            <p class="report-description">Total value of current stock holdings</p>
+            
+            <a href="http://localhost/clinic2/inventory_reports/abc_analysis" class="test-link">
+                📊 ABC Analysis Report
+            </a>
+            <p class="report-description">Product categorization based on value contribution</p>
+            
+            <a href="http://localhost/clinic2/inventory_reports/turnover_analysis" class="test-link">
+                🔄 Turnover Analysis Report
+            </a>
+            <p class="report-description">Inventory turnover rates and efficiency metrics</p>
+            
+            <a href="http://localhost/clinic2/inventory_reports/top_products" class="test-link">
+                ⭐ Top Products Report
+            </a>
+            <p class="report-description">Most moved products by quantity or value</p>
+            
+            <a href="http://localhost/clinic2/inventory_reports/zero_stock" class="test-link">
+                ❌ Zero Stock Report
+            </a>
+            <p class="report-description">Products with zero stock levels</p>
+            
+            <a href="http://localhost/clinic2/inventory_reports/negative_stock" class="test-link">
+                ⚠️ Negative Stock Report
+            </a>
+            <p class="report-description">Products with negative stock levels (requires attention)</p>
+        </div>
+
+        <div class="section">
+            <h3>📄 PDF Export Tests</h3>
+            <a href="http://localhost/clinic2/inventory_reports/export_pdf?report_type=stock_levels" class="test-link">
+                📄 Test PDF Export - Stock Levels
+            </a>
+            <p class="report-description">Generate PDF version of stock levels report</p>
+        </div>
+
+        <div class="section">
+            <h3>📊 Excel Export Tests</h3>
+            <a href="http://localhost/clinic2/inventory_reports/export_excel?report_type=stock_levels" class="test-link">
+                📊 Test Excel Export - Stock Levels
+            </a>
+            <p class="report-description">Generate Excel version of stock levels report</p>
+        </div>
+
+        <div class="section">
+            <h3>🔙 Back to Main System</h3>
+            <a href="http://localhost/clinic2/dashboard" class="test-link">
+                🏠 Return to Dashboard
+            </a>
+            <p class="report-description">Go back to the main clinic system dashboard</p>
+        </div>
+    </div>
+</body>
+</html>

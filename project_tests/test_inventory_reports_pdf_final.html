@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory Reports PDF Export Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; color: #155724; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; color: #0c5460; }
+        .warning { background-color: #fff3cd; border-color: #ffeaa7; color: #856404; }
+        .test-button { display: inline-block; margin: 5px; padding: 8px 15px; background: #007bff; color: white; text-decoration: none; border-radius: 3px; }
+        .test-button:hover { background: #0056b3; }
+        .pdf-button { background: #dc3545; }
+        .pdf-button:hover { background: #c82333; }
+        h1 { color: #333; }
+        h2 { color: #666; border-bottom: 2px solid #eee; padding-bottom: 5px; }
+        ul { line-height: 1.6; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Inventory Reports PDF Export - Pattern Compliance Test</h1>
+    
+    <div class="test-section info">
+        <h2>📋 Test Overview</h2>
+        <p><strong>Objective:</strong> Verify that all inventory reports PDF exports follow the established pattern and open in new tabs.</p>
+        <p><strong>Pattern Compliance:</strong> Function-based approach matching other PDF files in <code>./application/views/pdf/</code></p>
+        <p><strong>New Tab Opening:</strong> All PDF exports should open in new browser tabs like inventory_stock and inventory_movements</p>
+    </div>
+    
+    <div class="test-section success">
+        <h2>✅ Pattern Compliance Features</h2>
+        <ul>
+            <li><strong>Function-based structure</strong> with 3 main functions:
+                <ul>
+                    <li><code>inventory_report_summary($filters, $report_type)</code></li>
+                    <li><code>inventory_report_list($report_data, $report_type, $currency_symbol)</code></li>
+                    <li><code>inventory_report_summary_statistics($report_data, $report_type, $currency_symbol)</code></li>
+                </ul>
+            </li>
+            <li><strong>Sequential row numbering</strong> (1, 2, 3...) in all report types</li>
+            <li><strong>Dynamic column configurations</strong> for 8 different report types</li>
+            <li><strong>Currency integration</strong> with proper formatting</li>
+            <li><strong>Professional PDF layout</strong> with landscape orientation</li>
+            <li><strong>New tab opening</strong> for PDF exports using <code>window.open(url, '_blank')</code></li>
+        </ul>
+    </div>
+    
+    <div class="test-section warning">
+        <h2>📝 Test Instructions</h2>
+        <p><strong>Prerequisites:</strong> Navigate to the Clinic System → Inventory → Reports</p>
+        
+        <h3>🔍 Test All Report Types:</h3>
+        <ol>
+            <li><strong>Low Stock Report</strong> - Should have 10 columns with stock percentage calculations</li>
+            <li><strong>Stock Valuation Report</strong> - Should have 9 columns with cost and value calculations</li>
+            <li><strong>Expiring Stock Report</strong> - Should have 10 columns with expiration tracking</li>
+            <li><strong>Expired Stock Report</strong> - Should have 10 columns with days expired calculations</li>
+            <li><strong>Zero Stock Report</strong> - Should have 8 columns focused on stock levels</li>
+            <li><strong>Movement Summary Report</strong> - Should have 9 columns with movement analysis</li>
+            <li><strong>ABC Analysis Report</strong> - Should have 9 columns with ABC classification</li>
+            <li><strong>Turnover Analysis Report</strong> - Should have 10 columns with turnover metrics</li>
+        </ol>
+        
+        <h3>✅ For Each Report Type, Verify:</h3>
+        <ul>
+            <li><strong>PDF Export Button:</strong> Click the red PDF button</li>
+            <li><strong>New Tab Opening:</strong> PDF should open in new browser tab/window</li>
+            <li><strong>Professional Layout:</strong> Company header, proper formatting</li>
+            <li><strong>Row Numbers:</strong> Sequential numbering (1, 2, 3...) in the data table</li>
+            <li><strong>Filter Information:</strong> Applied filters documented in PDF header</li>
+            <li><strong>Summary Statistics:</strong> Relevant statistics for each report type</li>
+            <li><strong>Currency Formatting:</strong> Proper currency symbols and number formatting</li>
+            <li><strong>Column Layout:</strong> Report-specific column headers and data</li>
+        </ul>
+    </div>
+    
+    <div class="test-section">
+        <h2>🎯 Expected Report Columns</h2>
+        
+        <h3>Low Stock Report (10 columns):</h3>
+        <p><code># | Product Code | Product Name | Category | Location | Current Stock | Min Level | Shortage Qty | Stock % | UOM</code></p>
+        
+        <h3>Stock Valuation Report (9 columns):</h3>
+        <p><code># | Product Code | Product Name | Category | Location | Stock Qty | Unit Cost | Total Value | UOM</code></p>
+        
+        <h3>Expiring Stock Report (10 columns):</h3>
+        <p><code># | Product Code | Product Name | Category | Location | Stock Qty | Expiry Date | Days To Expire | Total Value | UOM</code></p>
+        
+        <h3>Expired Stock Report (10 columns):</h3>
+        <p><code># | Product Code | Product Name | Category | Location | Stock Qty | Expiry Date | Days Expired | Total Value | UOM</code></p>
+        
+        <h3>Zero Stock Report (8 columns):</h3>
+        <p><code># | Product Code | Product Name | Category | Location | Stock Qty | Min Level | UOM</code></p>
+        
+        <h3>Movement Summary Report (9 columns):</h3>
+        <p><code># | Product Code | Product Name | Category | Location | Movement Type | Total Qty | Total Value | Last Movement</code></p>
+        
+        <h3>ABC Analysis Report (9 columns):</h3>
+        <p><code># | Product Code | Product Name | Category | Location | Annual Usage | Unit Value | Annual Value | ABC Class</code></p>
+        
+        <h3>Turnover Analysis Report (10 columns):</h3>
+        <p><code># | Product Code | Product Name | Category | Location | Stock Qty | Turnover Rate | Days Supply | Status | Total Value</code></p>
+    </div>
+    
+    <div class="test-section">
+        <h2>📊 Summary Statistics by Report Type</h2>
+        
+        <h3>Low Stock Report:</h3>
+        <ul>
+            <li>Total Records, Critical Items (&lt;25%), Low Stock Items (&lt;50%)</li>
+        </ul>
+        
+        <h3>Stock Valuation Report:</h3>
+        <ul>
+            <li>Total Records, Total Value, Average Value per Item</li>
+        </ul>
+        
+        <h3>ABC Analysis Report:</h3>
+        <ul>
+            <li>Total Records, Class A Items, Class B Items, Class C Items</li>
+        </ul>
+        
+        <h3>Turnover Analysis Report:</h3>
+        <ul>
+            <li>Total Records, Fast Moving Items, Slow Moving Items, Total Value</li>
+        </ul>
+        
+        <h3>Movement Summary Report:</h3>
+        <ul>
+            <li>Total Records, Total Quantity, Total Value</li>
+        </ul>
+        
+        <h3>Other Reports:</h3>
+        <ul>
+            <li>Total Records, Report Type, Generation Date</li>
+        </ul>
+    </div>
+    
+    <div class="test-section info">
+        <h2>🚀 Quick Test Links</h2>
+        <p><strong>Note:</strong> These links assume you're already logged into the clinic system.</p>
+        
+        <div style="margin: 10px 0;">
+            <a href="http://localhost/clinic2/inventory_reports" class="test-button" target="_blank">
+                📊 Open Inventory Reports
+            </a>
+        </div>
+        
+        <div style="margin: 10px 0;">
+            <strong>Direct PDF Export Tests (if data exists):</strong><br>
+            <a href="http://localhost/clinic2/inventory_reports/export_pdf?report_type=low_stock" class="test-button pdf-button" target="_blank">
+                📄 Low Stock PDF
+            </a>
+            <a href="http://localhost/clinic2/inventory_reports/export_pdf?report_type=stock_valuation" class="test-button pdf-button" target="_blank">
+                📄 Stock Valuation PDF
+            </a>
+            <a href="http://localhost/clinic2/inventory_reports/export_pdf?report_type=expiring_stock" class="test-button pdf-button" target="_blank">
+                📄 Expiring Stock PDF
+            </a>
+            <a href="http://localhost/clinic2/inventory_reports/export_pdf?report_type=expired_stock" class="test-button pdf-button" target="_blank">
+                📄 Expired Stock PDF
+            </a>
+        </div>
+        
+        <div style="margin: 10px 0;">
+            <a href="http://localhost/clinic2/inventory_reports/export_pdf?report_type=zero_stock" class="test-button pdf-button" target="_blank">
+                📄 Zero Stock PDF
+            </a>
+            <a href="http://localhost/clinic2/inventory_reports/export_pdf?report_type=movement_summary" class="test-button pdf-button" target="_blank">
+                📄 Movement Summary PDF
+            </a>
+            <a href="http://localhost/clinic2/inventory_reports/export_pdf?report_type=abc_analysis" class="test-button pdf-button" target="_blank">
+                📄 ABC Analysis PDF
+            </a>
+            <a href="http://localhost/clinic2/inventory_reports/export_pdf?report_type=turnover_analysis" class="test-button pdf-button" target="_blank">
+                📄 Turnover Analysis PDF
+            </a>
+        </div>
+    </div>
+    
+    <div class="test-section success">
+        <h2>✅ Success Criteria</h2>
+        <ul>
+            <li><strong>Pattern Compliance:</strong> All PDFs use function-based structure like other system PDFs</li>
+            <li><strong>New Tab Opening:</strong> All PDF exports open in new browser tabs</li>
+            <li><strong>Row Numbering:</strong> Sequential numbers (1, 2, 3...) appear in all PDF tables</li>
+            <li><strong>Dynamic Columns:</strong> Each report type shows appropriate columns for its data</li>
+            <li><strong>Professional Layout:</strong> Company branding, proper formatting, landscape orientation</li>
+            <li><strong>Filter Documentation:</strong> Applied filters appear in PDF headers</li>
+            <li><strong>Summary Statistics:</strong> Relevant statistics for each report type</li>
+            <li><strong>Currency Integration:</strong> Proper currency symbols throughout (e.g., "K" for PGK)</li>
+            <li><strong>Error Handling:</strong> Graceful handling of empty results or missing data</li>
+        </ul>
+    </div>
+    
+    <div class="test-section warning">
+        <h2>🐛 Common Issues to Check</h2>
+        <ul>
+            <li><strong>PDF not opening in new tab:</strong> Should use <code>window.open(url, '_blank')</code></li>
+            <li><strong>Missing row numbers:</strong> Each row should start with sequential number</li>
+            <li><strong>Wrong column layout:</strong> Each report type should have its specific columns</li>
+            <li><strong>Missing currency formatting:</strong> Values should show proper currency symbols</li>
+            <li><strong>No filter information:</strong> PDF header should document applied filters</li>
+            <li><strong>Poor summary statistics:</strong> Should show relevant metrics for each report type</li>
+            <li><strong>Layout issues:</strong> Should use landscape orientation with proper table fit</li>
+        </ul>
+    </div>
+    
+    <footer style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; color: #666; text-align: center;">
+        <p><strong>Inventory Reports PDF Pattern Compliance Test</strong></p>
+        <p>Last Updated: <code>June 17, 2025</code> | Status: <span style="color: #28a745;"><strong>IMPLEMENTATION COMPLETE</strong></span></p>
+    </footer>
+</body>
+</html>

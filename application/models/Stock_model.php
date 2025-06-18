@@ -356,7 +356,160 @@ class Stock_model extends CI_Model
     {
         $this->db->select(
             "s.*,
-             s.qty_on_hand * s.unit_cost as stock_value,
+             p.code as product_code,
+             p.name as product_name,
+             c.category,
+             u.name as uom,
+             l.location,
+             ROUND(s.qty_on_hand * s.unit_cost, 2) as total_value,
+             s.unit_cost as cost_per_unit"
+        );
+
+        $this->db->from("stock s");
+        $this->db->join("products p", "p.id=s.product_id", "left");
+        $this->db->join("categories c", "c.id=p.category_id", "left");
+        $this->db->join("uoms u", "u.id=p.uom_id", "left");
+        $this->db->join("locations l", "l.id=s.location_id", "left");
+        
+        $this->db->where("p.status_id", 2); // Active products only
+        $this->db->where("s.qty_on_hand > 0"); // Only products with stock
+
+        if (intval($location_id) > 0) {
+            $this->db->where("s.location_id", $location_id);
+        }
+
+        $this->db->order_by('total_value DESC');
+
+        if ($query = $this->db->get()) {
+            return $query->result();
+        } else {
+            $error = $this->db->error();
+            throw new Exception("Error: " . $error['message']);
+        }
+    }
+
+    function get_low_stock($location_id = 0)
+    {
+        $this->db->select(
+            "s.*,
+             p.code as product_code,
+             p.name as product_name,
+             p.reorder_level,
+             c.category,
+             u.name as uom,
+             l.location,
+             (p.reorder_level - s.qty_on_hand) as shortage_qty,
+             ROUND((s.qty_on_hand / NULLIF(p.reorder_level, 0)) * 100, 2) as stock_percentage"
+        );
+
+        $this->db->from("stock s");
+        $this->db->join("products p", "p.id=s.product_id", "left");
+        $this->db->join("categories c", "c.id=p.category_id", "left");
+        $this->db->join("uoms u", "u.id=p.uom_id", "left");
+        $this->db->join("locations l", "l.id=s.location_id", "left");
+        
+        // Only products below reorder level
+        $this->db->where("s.qty_on_hand < p.reorder_level");
+        $this->db->where("p.reorder_level > 0"); // Only products with defined reorder levels
+        $this->db->where("p.status_id", 2); // Active products only
+
+        if (intval($location_id) > 0) {
+            $this->db->where("s.location_id", $location_id);
+        }
+
+        $this->db->order_by('stock_percentage ASC, shortage_qty DESC');
+
+        if ($query = $this->db->get()) {
+            return $query->result();
+        } else {
+            $error = $this->db->error();
+            throw new Exception("Error: " . $error['message']);
+        }
+    }
+
+    function get_expiring_stock($location_id = 0, $days = 30)
+    {
+        $this->db->select(
+            "s.*,
+             p.code as product_code,
+             p.name as product_name,
+             c.category,
+             u.name as uom,
+             l.location,
+             DATE_FORMAT(s.expiration_date, '%Y-%m-%d') as expiration_date_formatted,
+             DATEDIFF(s.expiration_date, CURDATE()) as days_to_expiry,
+             ROUND(s.qty_on_hand * s.unit_cost, 2) as total_value"
+        );
+
+        $this->db->from("stock s");
+        $this->db->join("products p", "p.id=s.product_id", "left");
+        $this->db->join("categories c", "c.id=p.category_id", "left");
+        $this->db->join("uoms u", "u.id=p.uom_id", "left");
+        $this->db->join("locations l", "l.id=s.location_id", "left");
+        
+        $this->db->where("s.expiration_date IS NOT NULL");
+        $this->db->where("s.expiration_date > CURDATE()"); // Not yet expired
+        $this->db->where("s.expiration_date <= DATE_ADD(CURDATE(), INTERVAL {$days} DAY)"); // Expiring within specified days
+        $this->db->where("p.status_id", 2); // Active products only
+        $this->db->where("s.qty_on_hand > 0"); // Only products with stock
+
+        if (intval($location_id) > 0) {
+            $this->db->where("s.location_id", $location_id);
+        }
+
+        $this->db->order_by('s.expiration_date ASC');
+
+        if ($query = $this->db->get()) {
+            return $query->result();
+        } else {
+            $error = $this->db->error();
+            throw new Exception("Error: " . $error['message']);
+        }
+    }
+
+    function get_expired_stock($location_id = 0)
+    {
+        $this->db->select(
+            "s.*,
+             p.code as product_code,
+             p.name as product_name,
+             c.category,
+             u.name as uom,
+             l.location,
+             DATE_FORMAT(s.expiration_date, '%Y-%m-%d') as expiration_date_formatted,
+             DATEDIFF(CURDATE(), s.expiration_date) as days_expired,
+             ROUND(s.qty_on_hand * s.unit_cost, 2) as total_value"
+        );
+
+        $this->db->from("stock s");
+        $this->db->join("products p", "p.id=s.product_id", "left");
+        $this->db->join("categories c", "c.id=p.category_id", "left");
+        $this->db->join("uoms u", "u.id=p.uom_id", "left");
+        $this->db->join("locations l", "l.id=s.location_id", "left");
+        
+        $this->db->where("s.expiration_date IS NOT NULL");
+        $this->db->where("s.expiration_date <= CURDATE()"); // Already expired
+        $this->db->where("p.status_id", 2); // Active products only
+        $this->db->where("s.qty_on_hand > 0"); // Only products with stock
+
+        if (intval($location_id) > 0) {
+            $this->db->where("s.location_id", $location_id);
+        }
+
+        $this->db->order_by('s.expiration_date DESC'); // Most recently expired first
+
+        if ($query = $this->db->get()) {
+            return $query->result();
+        } else {
+            $error = $this->db->error();
+            throw new Exception("Error: " . $error['message']);
+        }
+    }
+
+    function get_zero_stock($location_id = 0)
+    {
+        $this->db->select(
+            "s.*,
              p.code as product_code,
              p.name as product_name,
              c.category,
@@ -369,14 +522,119 @@ class Stock_model extends CI_Model
         $this->db->join("categories c", "c.id=p.category_id", "left");
         $this->db->join("uoms u", "u.id=p.uom_id", "left");
         $this->db->join("locations l", "l.id=s.location_id", "left");
-        $this->db->where("s.qty_on_hand >", 0);
-        $this->db->where("p.status_id", 2);
+        
+        $this->db->where("s.qty_on_hand", 0);
+        $this->db->where("p.status_id", 2); // Active products only
 
         if (intval($location_id) > 0) {
             $this->db->where("s.location_id", $location_id);
         }
 
-        $this->db->order_by('stock_value DESC');
+        $this->db->order_by('p.name, l.location');
+
+        if ($query = $this->db->get()) {
+            return $query->result();
+        } else {
+            $error = $this->db->error();
+            throw new Exception("Error: " . $error['message']);
+        }
+    }
+
+    function get_negative_stock($location_id = 0)
+    {
+        $this->db->select(
+            "s.*,
+             p.code as product_code,
+             p.name as product_name,
+             c.category,
+             u.name as uom,
+             l.location"
+        );
+
+        $this->db->from("stock s");
+        $this->db->join("products p", "p.id=s.product_id", "left");
+        $this->db->join("categories c", "c.id=p.category_id", "left");
+        $this->db->join("uoms u", "u.id=p.uom_id", "left");
+        $this->db->join("locations l", "l.id=s.location_id", "left");
+        
+        $this->db->where("s.qty_on_hand <", 0);
+        $this->db->where("p.status_id", 2); // Active products only
+
+        if (intval($location_id) > 0) {
+            $this->db->where("s.location_id", $location_id);
+        }
+
+        $this->db->order_by('s.qty_on_hand ASC, p.name');
+
+        if ($query = $this->db->get()) {
+            return $query->result();
+        } else {
+            $error = $this->db->error();
+            throw new Exception("Error: " . $error['message']);
+        }
+    }
+
+    function get_abc_analysis($location_id = 0)
+    {
+        $this->db->select(
+            "s.*,
+             p.code as product_code,
+             p.name as product_name,
+             c.category,
+             u.name as uom,
+             l.location,
+             ROUND(s.qty_on_hand * s.unit_cost, 2) as total_value"
+        );
+
+        $this->db->from("stock s");
+        $this->db->join("products p", "p.id=s.product_id", "left");
+        $this->db->join("categories c", "c.id=p.category_id", "left");
+        $this->db->join("uoms u", "u.id=p.uom_id", "left");
+        $this->db->join("locations l", "l.id=s.location_id", "left");
+        
+        $this->db->where("p.status_id", 2); // Active products only
+        $this->db->where("s.qty_on_hand > 0"); // Only products with stock
+
+        if (intval($location_id) > 0) {
+            $this->db->where("s.location_id", $location_id);
+        }
+
+        $this->db->order_by('total_value DESC');
+
+        if ($query = $this->db->get()) {
+            return $query->result();
+        } else {
+            $error = $this->db->error();
+            throw new Exception("Error: " . $error['message']);
+        }
+    }
+
+    function get_turnover_analysis($location_id = 0, $period_months = 12)
+    {
+        $this->db->select(
+            "s.*,
+             p.code as product_code,
+             p.name as product_name,
+             c.category,
+             u.name as uom,
+             l.location,
+             ROUND(s.qty_on_hand * s.unit_cost, 2) as total_value"
+        );
+
+        $this->db->from("stock s");
+        $this->db->join("products p", "p.id=s.product_id", "left");
+        $this->db->join("categories c", "c.id=p.category_id", "left");
+        $this->db->join("uoms u", "u.id=p.uom_id", "left");
+        $this->db->join("locations l", "l.id=s.location_id", "left");
+        
+        $this->db->where("p.status_id", 2); // Active products only
+        $this->db->where("s.qty_on_hand > 0"); // Only products with stock
+
+        if (intval($location_id) > 0) {
+            $this->db->where("s.location_id", $location_id);
+        }
+
+        $this->db->order_by('p.name, l.location');
 
         if ($query = $this->db->get()) {
             return $query->result();
