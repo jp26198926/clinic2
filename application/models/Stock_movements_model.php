@@ -377,10 +377,10 @@ class Stock_movements_model extends CI_Model
         }
     }
 
-    function get_movement_trends($location_id = 0, $period_months = 12)
+    function get_movement_trends($location_id = 0, $date_from = null, $date_to = null)
     {
         $this->db->select(
-            "DATE_FORMAT(sm.created_at, '%Y-%m') as month_year,
+            "DATE_FORMAT(sm.created_at, '%Y-%m-%d') as movement_date,
              sm.movement_type,
              COUNT(*) as transaction_count,
              SUM(ABS(sm.qty)) as total_quantity,
@@ -390,14 +390,25 @@ class Stock_movements_model extends CI_Model
         $this->db->from("stock_movements sm");
         $this->db->join("stock s", "s.product_id=sm.product_id AND s.location_id=sm.location_id", "left");
         
-        $this->db->where("sm.created_at >= DATE_SUB(CURDATE(), INTERVAL {$period_months} MONTH)");
+        // Support both date range and period parameters for backward compatibility
+        if ($date_from && $date_to) {
+            $this->db->where("DATE(sm.created_at) >=", $date_from);
+            $this->db->where("DATE(sm.created_at) <=", $date_to);
+        } elseif (is_numeric($date_from)) {
+            // If date_from is numeric, treat it as period_months for backward compatibility
+            $period_months = $date_from;
+            $this->db->where("sm.created_at >= DATE_SUB(CURDATE(), INTERVAL {$period_months} MONTH)");
+        } else {
+            // Default to last 30 days
+            $this->db->where("sm.created_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)");
+        }
 
         if (intval($location_id) > 0) {
             $this->db->where("sm.location_id", $location_id);
         }
 
-        $this->db->group_by('month_year, sm.movement_type');
-        $this->db->order_by('month_year DESC, sm.movement_type');
+        $this->db->group_by('movement_date, sm.movement_type');
+        $this->db->order_by('movement_date ASC, sm.movement_type');
 
         if ($query = $this->db->get()) {
             return $query->result();

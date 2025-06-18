@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics Local Assets Browser Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { color: green; }
+        .error { color: red; }
+        .warning { color: orange; }
+        .info { color: blue; }
+        button { margin: 5px; padding: 8px 15px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Analytics Local Assets Browser Test</h1>
+    
+    <div class="test-section">
+        <h3>Test 1: Chart.js Library Loading</h3>
+        <div id="chartjs-test">
+            <p>Testing if Chart.js loads from local assets...</p>
+            <button onclick="testChartJS()">Test Chart.js</button>
+            <div id="chartjs-result"></div>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h3>Test 2: Simple Chart Creation</h3>
+        <div id="chart-test">
+            <p>Testing chart creation with local Chart.js...</p>
+            <button onclick="createTestChart()">Create Test Chart</button>
+            <canvas id="test-chart" width="400" height="200" style="border: 1px solid #ccc; margin: 10px 0;"></canvas>
+            <div id="chart-result"></div>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h3>Test 3: Analytics Page Link</h3>
+        <p>Test the actual analytics page:</p>
+        <a href="inventory_analytics" target="_blank" style="display: inline-block; padding: 10px 15px; background: #007bff; color: white; text-decoration: none; border-radius: 5px;">
+            Open Analytics Dashboard
+        </a>
+    </div>
+
+    <div class="test-section">
+        <h3>Test Results Summary</h3>
+        <div id="test-summary">
+            <p>Run the tests above to see results...</p>
+        </div>
+    </div>
+
+    <!-- Load Chart.js from local assets -->
+    <script src="assets/js/chart.min.js"></script>
+    
+    <script>
+        let testResults = {
+            chartjs: false,
+            chartCreation: false
+        };
+
+        function testChartJS() {
+            const resultDiv = document.getElementById('chartjs-result');
+            
+            if (typeof Chart !== 'undefined') {
+                resultDiv.innerHTML = '<p class="success">✅ Chart.js loaded successfully from local assets!</p><p class="info">Version: ' + Chart.version + '</p>';
+                testResults.chartjs = true;
+            } else {
+                resultDiv.innerHTML = '<p class="error">❌ Chart.js failed to load from local assets!</p>';
+                testResults.chartjs = false;
+            }
+            
+            updateSummary();
+        }
+
+        function createTestChart() {
+            const canvas = document.getElementById('test-chart');
+            const resultDiv = document.getElementById('chart-result');
+            
+            try {
+                const ctx = canvas.getContext('2d');
+                
+                const chart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Product A', 'Product B', 'Product C', 'Product D'],
+                        datasets: [{
+                            label: 'Stock Level',
+                            data: [12, 19, 3, 17],
+                            backgroundColor: [
+                                '#007bff',
+                                '#28a745',
+                                '#ffc107',
+                                '#dc3545'
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+                
+                resultDiv.innerHTML = '<p class="success">✅ Test chart created successfully!</p>';
+                testResults.chartCreation = true;
+                
+            } catch (error) {
+                resultDiv.innerHTML = '<p class="error">❌ Failed to create test chart: ' + error.message + '</p>';
+                testResults.chartCreation = false;
+            }
+            
+            updateSummary();
+        }
+
+        function updateSummary() {
+            const summaryDiv = document.getElementById('test-summary');
+            let html = '<h4>Test Results:</h4>';
+            
+            html += '<p class="' + (testResults.chartjs ? 'success' : 'error') + '">Chart.js Loading: ' + (testResults.chartjs ? 'PASS' : 'FAIL') + '</p>';
+            html += '<p class="' + (testResults.chartCreation ? 'success' : 'error') + '">Chart Creation: ' + (testResults.chartCreation ? 'PASS' : 'FAIL') + '</p>';
+            
+            const allPassed = testResults.chartjs && testResults.chartCreation;
+            html += '<p class="' + (allPassed ? 'success' : 'warning') + '"><strong>Overall Status: ' + (allPassed ? 'ALL TESTS PASSED' : 'SOME TESTS FAILED') + '</strong></p>';
+            
+            if (allPassed) {
+                html += '<p class="info">✨ Local Chart.js assets are working perfectly! The analytics dashboard should work without any CDN dependencies.</p>';
+            }
+            
+            summaryDiv.innerHTML = html;
+        }
+
+        // Auto-run tests on page load
+        window.onload = function() {
+            setTimeout(() => {
+                testChartJS();
+                setTimeout(() => {
+                    createTestChart();
+                }, 500);
+            }, 100);
+        };
+    </script>
+</body>
+</html>
