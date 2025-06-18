@@ -481,28 +481,202 @@ class Inventory_reports extends CI_Controller
 	
 	function export_report()
 	{
+		// Check permission
+		if (!$this->cf->module_permission("view", $this->module_permission)) {
+			show_error('Access Denied', 403);
+			return;
+		}
+
 		$report_type = trim($this->input->post('report_type'));
 		$format = trim($this->input->post('format'));
 		$location_id = intval($this->input->post('location_id'));
 		$date_from = trim($this->input->post('date_from'));
 		$date_to = trim($this->input->post('date_to'));
 		
-		// For now, redirect to PDF export (Excel can be implemented later)
-		if ($format === 'excel') {
-			$format = 'pdf'; // Fallback to PDF for now
+		// Validate inputs
+		if (!$report_type || !$format) {
+			show_error('Missing required parameters', 400);
+			return;
 		}
 		
-		// Redirect to existing export_pdf method with parameters
-		$params = array(
-			'report_type' => $report_type,
-			'location_id' => $location_id,
-			'date_from' => $date_from,
-			'date_to' => $date_to
-		);
-		
-		$query_string = http_build_query($params);
-		
-		redirect("inventory_reports/export_pdf?{$query_string}");
+		if ($format === 'excel') {
+			$this->export_excel($report_type, $location_id, $date_from, $date_to);
+		} else {
+			// Redirect to PDF export
+			$params = array(
+				'report_type' => $report_type,
+				'location_id' => $location_id,
+				'date_from' => $date_from,
+				'date_to' => $date_to
+			);
+			
+			$query_string = http_build_query($params);
+			redirect("inventory_reports/export_pdf?{$query_string}");
+		}
+	}
+	
+	private function export_excel($report_type, $location_id, $date_from, $date_to)
+	{
+		try {
+			// Load PhpSpreadsheet via Composer autoloader
+			require_once FCPATH . 'vendor/autoload.php';
+			
+			// Get data based on report type
+			$report_data = array();
+			$report_title = '';
+			
+			switch($report_type) {
+				case 'low_stock':
+					$report_data = $this->stock_model->get_low_stock($location_id);
+					$report_title = 'Low Stock Report';
+					break;
+					
+				case 'stock_valuation':
+					$report_data = $this->stock_model->get_stock_valuation($location_id);
+					$report_title = 'Stock Valuation Report';
+					break;
+					
+				case 'expiring_stock':
+					$report_data = $this->stock_model->get_expiring_stock($location_id, 30);
+					$report_title = 'Expiring Stock Report (30 days)';
+					break;
+					
+				case 'expired_stock':
+					$report_data = $this->stock_model->get_expired_stock($location_id);
+					$report_title = 'Expired Stock Report';
+					break;
+					
+				case 'zero_stock':
+					$report_data = $this->stock_model->get_zero_stock($location_id);
+					$report_title = 'Zero Stock Report';
+					break;
+					
+				case 'movement_summary':
+					$report_data = $this->stock_movements_model->get_movement_summary($location_id, '', $date_from, $date_to);
+					$report_title = 'Movement Summary Report';
+					break;
+					
+				case 'abc_analysis':
+					$report_data = $this->stock_model->get_abc_analysis($location_id);
+					$report_title = 'ABC Analysis Report';
+					break;
+					
+				case 'turnover_analysis':
+					$report_data = $this->stock_model->get_turnover_analysis($location_id);
+					$report_title = 'Turnover Analysis Report';
+					break;
+					
+				default:
+					show_error('Invalid report type: ' . $report_type, 400);
+					return;
+			}
+
+			// Get location name for filter display
+			$location_name = 'All Locations';
+			if ($location_id) {
+				$location = $this->data_location_model->search_by_row($location_id);
+				$location_name = $location ? $location->location : 'Unknown Location';
+			}
+
+			// Create new PhpSpreadsheet object
+			$spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+			$worksheet = $spreadsheet->getActiveSheet();
+			$worksheet->setTitle($report_title);
+
+			// Set report header information
+			$row = 1;
+			$worksheet->setCellValue('A' . $row, $report_title);
+			$worksheet->mergeCells('A' . $row . ':E' . $row);
+			$worksheet->getStyle('A' . $row)->getFont()->setSize(16)->setBold(true);
+			$row++;
+
+			// Add filter information
+			$worksheet->setCellValue('A' . $row, 'Generated: ' . date('Y-m-d H:i:s'));
+			$row++;
+			$worksheet->setCellValue('A' . $row, 'Location: ' . $location_name);
+			$row++;
+			if ($date_from) {
+				$worksheet->setCellValue('A' . $row, 'Date From: ' . $date_from);
+				$row++;
+			}
+			if ($date_to) {
+				$worksheet->setCellValue('A' . $row, 'Date To: ' . $date_to);
+				$row++;
+			}
+			$row++; // Empty row
+
+			// Generate Excel content
+			if (!empty($report_data)) {
+				// Get headers from first row
+				$first_row = (array) $report_data[0];
+				$headers = array();
+				$col = 'A';
+				
+				// Row number header
+				$worksheet->setCellValue($col . $row, '#');
+				$worksheet->getStyle($col . $row)->getFont()->setBold(true);
+				$col++;
+				
+				foreach ($first_row as $key => $value) {
+					if (in_array($key, ['id', 'product_id', 'location_id', 'created_by', 'updated_by', 'status_id'])) {
+						continue; // Skip internal fields
+					}
+					$header = ucwords(str_replace('_', ' ', $key));
+					$worksheet->setCellValue($col . $row, $header);
+					$worksheet->getStyle($col . $row)->getFont()->setBold(true);
+					$headers[] = $key;
+					$col++;
+				}
+				$row++;
+
+				// Data rows
+				$record_num = 1;
+				foreach ($report_data as $data_row) {
+					$col = 'A';
+					
+					// Row number
+					$worksheet->setCellValue($col . $row, $record_num);
+					$col++;
+					
+					foreach ($headers as $header) {
+						$value = isset($data_row->$header) ? $data_row->$header : '';
+						
+						// Format values
+						if (strpos($header, 'date') !== false && $value) {
+							$value = date('Y-m-d', strtotime($value));
+						} elseif (strpos($header, 'qty') !== false || strpos($header, 'cost') !== false || strpos($header, 'value') !== false) {
+							$value = (float)$value;
+						}
+						
+						$worksheet->setCellValue($col . $row, $value);
+						$col++;
+					}
+					$row++;
+					$record_num++;
+				}
+				
+				// Auto-size columns
+				$lastCol = chr(65 + count($headers)); // Convert to letter
+				for ($c = 'A'; $c <= $lastCol; $c++) {
+					$worksheet->getColumnDimension($c)->setAutoSize(true);
+				}
+			} else {
+				$worksheet->setCellValue('A' . $row, 'No data found for this report');
+			}
+
+			// Set filename and headers for download
+			$filename = str_replace(' ', '_', $report_title) . '_' . date('Y-m-d_H-i-s') . '.xlsx';
+			
+			header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+			header('Content-Disposition: attachment;filename="' . $filename . '"');
+			header('Cache-Control: max-age=0');
+			
+			$writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+			$writer->save('php://output');
+			
+		} catch (Exception $ex) {
+			show_error('Error generating Excel file: ' . $ex->getMessage());
+		}
 	}
 	
 	// Utility Methods
