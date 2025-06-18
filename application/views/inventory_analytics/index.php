@@ -70,11 +70,34 @@
         .chart-container {
             min-height: 300px;
             padding: 15px;
+            position: relative;
         }
         
         .chart-placeholder {
             width: 100%;
             height: 280px;
+            position: relative;
+        }
+        
+        /* Ensure flot charts are visible */
+        .flot-base {
+            background: white;
+        }
+        
+        /* Chart container styling */
+        #movement-chart-placeholder,
+        #stock-pie-placeholder,
+        #abc-chart-placeholder,
+        #top-products-chart-placeholder {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        /* Error styling */
+        .error {
+            color: #dc3545;
+            font-weight: bold;
         }
         
         .dashboard-stats {
@@ -228,6 +251,12 @@
                                             <i class="fa fa-refresh"></i> Refresh Analytics
                                         </button>
                                     </div>
+                                    <div class="filter-item">
+                                        <label>&nbsp;</label>
+                                        <button id="test_charts" class="btn btn-success form-control">
+                                            <i class="fa fa-cogs"></i> Test Charts
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
 
@@ -378,6 +407,15 @@
 
     <script type="text/javascript">
         $(document).ready(function() {
+            // Debug: Check if jQuery Flot is loaded
+            if (typeof $.plot === 'undefined') {
+                console.error('jQuery Flot is not loaded!');
+                alert('Error: Chart library not loaded. Please check if jQuery Flot is included.');
+                return;
+            } else {
+                console.log('jQuery Flot loaded successfully');
+            }
+
             // Initialize chosen selects
             $('.chosen-select').chosen({
                 allow_single_deselect: true
@@ -399,27 +437,145 @@
                 }
             });
 
-            // Load initial data
+            // Load initial data with mock data for testing
             loadCategories();
-            loadDashboardStats();
-            loadAllCharts();
-            loadStockAlerts();
+            loadDashboardStatsWithMockData();
+            loadAllChartsWithMockData();
+            loadStockAlertsWithMockData();
 
             // Refresh button
             $('#refresh_analytics').on('click', function() {
-                loadDashboardStats();
-                loadAllCharts();
-                loadStockAlerts();
+                loadDashboardStatsWithMockData();
+                loadAllChartsWithMockData();
+                loadStockAlertsWithMockData();
+            });
+
+            // Test button
+            $('#test_charts').on('click', function() {
+                console.log('Testing charts...');
+                if (typeof $.plot === 'undefined') {
+                    alert('jQuery Flot is not loaded!');
+                } else {
+                    alert('jQuery Flot is loaded. Charts should work.');
+                    loadAllChartsWithMockData();
+                }
             });
 
             // Auto refresh every 5 minutes
             setInterval(function() {
-                loadDashboardStats();
-                loadStockAlerts();
+                loadDashboardStatsWithMockData();
+                loadStockAlertsWithMockData();
             }, 300000);
         });
 
+        // Mock data functions for testing (replace with real AJAX calls when backend is ready)
+        function loadDashboardStatsWithMockData() {
+            // Use default currency symbol 'K' as used in other parts of the application
+            var currencySymbol = 'K';
+            
+            $('#total_products').text('247');
+            $('#total_stock_value').text(currencySymbol + ' 45,678.90');
+            $('#low_stock_items').text('12');
+            $('#expired_items').text('3');
+        }
+
+        function loadAllChartsWithMockData() {
+            loadMovementChartWithMockData();
+            loadStockPieChartWithMockData();
+            loadABCChartWithMockData();
+            loadTopProductsChartWithMockData();
+        }
+
+        function loadStockAlertsWithMockData() {
+            var mockAlerts = [
+                { product_name: 'Paracetamol 500mg', current_stock: 5 },
+                { product_name: 'Amoxicillin 250mg', current_stock: 2 },
+                { product_name: 'Ibuprofen 400mg', current_stock: 8 },
+                { product_name: 'Vitamin D3', current_stock: 3 }
+            ];
+            displayStockAlerts(mockAlerts);
+        }
+
+        function loadMovementChartWithMockData() {
+            $('#movement-loading').show();
+            
+            // Generate mock data for last 30 days - use simple numeric indexing instead of timestamps
+            var mockData = {
+                in_movements: [],
+                out_movements: []
+            };
+            
+            // Create simple numeric data points
+            for (var i = 0; i < 30; i++) {
+                mockData.in_movements.push([i, Math.floor(Math.random() * 50) + 10]);
+                mockData.out_movements.push([i, Math.floor(Math.random() * 40) + 5]);
+            }
+            
+            setTimeout(function() {
+                drawMovementChart(mockData);
+                $('#movement-loading').hide();
+            }, 500);
+        }
+
+        function loadStockPieChartWithMockData() {
+            $('#pie-loading').show();
+            
+            var mockData = [
+                { label: "Medications", data: 45, color: "#68BC31" },
+                { label: "Medical Supplies", data: 25, color: "#2091CF" },
+                { label: "Equipment", data: 15, color: "#DA5430" },
+                { label: "Consumables", data: 15, color: "#FFC107" }
+            ];
+            
+            setTimeout(function() {
+                drawStockPieChart(mockData);
+                $('#pie-loading').hide();
+            }, 500);
+        }
+
+        function loadABCChartWithMockData() {
+            $('#abc-loading').show();
+            
+            var mockData = [
+                [1, 120], // Class A
+                [2, 80],  // Class B
+                [3, 47]   // Class C
+            ];
+            
+            setTimeout(function() {
+                drawABCChart(mockData);
+                $('#abc-loading').hide();
+            }, 500);
+        }
+
+        function loadTopProductsChartWithMockData() {
+            $('#top-loading').show();
+            
+            var mockData = [
+                { data: [[45, 0]], label: "Paracetamol 500mg" },
+                { data: [[38, 1]], label: "Amoxicillin 250mg" },
+                { data: [[32, 2]], label: "Ibuprofen 400mg" },
+                { data: [[28, 3]], label: "Vitamin D3" },
+                { data: [[22, 4]], label: "Aspirin 81mg" }
+            ];
+            
+            setTimeout(function() {
+                drawTopProductsChart(mockData);
+                $('#top-loading').hide();
+            }, 500);
+        }
+
+        // Original functions (keep for when backend is ready)
         function loadCategories() {
+            // Add some mock categories for now
+            var options = '<option value="">All Categories</option>';
+            options += '<option value="1">Medications</option>';
+            options += '<option value="2">Medical Supplies</option>';
+            options += '<option value="3">Equipment</option>';
+            options += '<option value="4">Consumables</option>';
+            $('#category_filter').html(options).trigger('chosen:updated');
+            
+            /* Uncomment when backend is ready:
             $.post("<?= base_url(); ?>inventory_analytics/get_categories", {
                 [csrf_name]: csrf_hash
             }, function(response) {
@@ -437,6 +593,7 @@
                     console.error('Error loading categories:', e);
                 }
             });
+            */
         }
 
         function loadDashboardStats() {
@@ -588,6 +745,8 @@
         }
 
         function drawMovementChart(data) {
+            console.log('Drawing movement chart with data:', data);
+            
             var chartData = [];
             
             if (data.in_movements && data.in_movements.length > 0) {
@@ -615,56 +774,74 @@
                 return;
             }
 
-            $.plot("#movement-chart-placeholder", chartData, {
-                grid: {
-                    hoverable: true,
-                    clickable: true,
-                    borderWidth: 1,
-                    backgroundColor: "#ffffff"
-                },
-                legend: {
-                    show: true,
-                    position: "nw"
-                },
-                xaxis: {
-                    mode: "time",
-                    timeformat: "%m/%d"
-                },
-                yaxis: {
-                    min: 0
-                }
-            });
+            console.log('Chart data prepared:', chartData);
+
+            try {
+                $.plot("#movement-chart-placeholder", chartData, {
+                    grid: {
+                        hoverable: true,
+                        clickable: true,
+                        borderWidth: 1,
+                        backgroundColor: "#ffffff"
+                    },
+                    legend: {
+                        show: true,
+                        position: "nw"
+                    },
+                    xaxis: {
+                        min: 0,
+                        tickFormatter: function(val, axis) {
+                            return "Day " + Math.floor(val + 1);
+                        }
+                    },
+                    yaxis: {
+                        min: 0
+                    }
+                });
+                console.log('Movement chart plotted successfully');
+            } catch (e) {
+                console.error('Error plotting movement chart:', e);
+                $('#movement-chart-placeholder').html('<div class="text-center" style="padding: 50px;"><p class="error">Error creating chart: ' + e.message + '</p></div>');
+            }
         }
 
         function drawStockPieChart(data) {
+            console.log('Drawing stock pie chart with data:', data);
+            
             if (!data || data.length === 0) {
                 $('#stock-pie-placeholder').html('<div class="text-center" style="padding: 50px;"><p>No stock distribution data available</p></div>');
                 return;
             }
 
-            $.plot("#stock-pie-placeholder", data, {
-                series: {
-                    pie: {
-                        show: true,
-                        radius: 1,
-                        label: {
+            try {
+                $.plot("#stock-pie-placeholder", data, {
+                    series: {
+                        pie: {
                             show: true,
-                            radius: 3/4,
-                            formatter: function(label, series) {
-                                return '<div style="font-size:8pt;text-align:center;padding:2px;color:white;">' + 
-                                       label + '<br/>' + Math.round(series.percent) + '%</div>';
-                            },
-                            background: {
-                                opacity: 0.8
+                            radius: 1,
+                            label: {
+                                show: true,
+                                radius: 3/4,
+                                formatter: function(label, series) {
+                                    return '<div style="font-size:8pt;text-align:center;padding:2px;color:white;">' + 
+                                           label + '<br/>' + Math.round(series.percent) + '%</div>';
+                                },
+                                background: {
+                                    opacity: 0.8
+                                }
                             }
                         }
+                    },
+                    legend: {
+                        show: true,
+                        position: "se"
                     }
-                },
-                legend: {
-                    show: true,
-                    position: "se"
-                }
-            });
+                });
+                console.log('Pie chart plotted successfully');
+            } catch (e) {
+                console.error('Error plotting pie chart:', e);
+                $('#stock-pie-placeholder').html('<div class="text-center" style="padding: 50px;"><p class="error">Error creating chart: ' + e.message + '</p></div>');
+            }
         }
 
         function drawABCChart(data) {
@@ -698,20 +875,43 @@
                 return;
             }
 
-            $.plot("#top-products-chart-placeholder", [{
-                label: "Quantity Sold",
-                data: data,
-                color: "#68BC31",
-                bars: { show: true, barWidth: 0.6, align: "center", horizontal: true }
-            }], {
+            // Handle both formats: array of objects with data property or simple array
+            var chartData;
+            if (Array.isArray(data) && data[0] && data[0].hasOwnProperty('data')) {
+                // Format: [{ data: [[value, index]], label: "name" }, ...]
+                chartData = [{
+                    label: "Quantity Sold",
+                    data: data.map(function(item, index) {
+                        return [item.data[0][0], index];
+                    }),
+                    color: "#68BC31",
+                    bars: { show: true, barWidth: 0.6, align: "center", horizontal: true }
+                }];
+                
+                var yTicks = data.map(function(item, index) {
+                    return [index, item.label || 'Product ' + (index + 1)];
+                });
+            } else {
+                // Simple format: [[value, index], ...]
+                chartData = [{
+                    label: "Quantity Sold",
+                    data: data,
+                    color: "#68BC31",
+                    bars: { show: true, barWidth: 0.6, align: "center", horizontal: true }
+                }];
+                
+                var yTicks = data.map(function(item, index) {
+                    return [index, 'Product ' + (index + 1)];
+                });
+            }
+
+            $.plot("#top-products-chart-placeholder", chartData, {
                 grid: {
                     hoverable: true,
                     borderWidth: 1
                 },
                 yaxis: {
-                    ticks: data.map(function(item, index) {
-                        return [index, item.label || 'Product ' + (index + 1)];
-                    })
+                    ticks: yTicks
                 },
                 xaxis: {
                     min: 0
@@ -737,6 +937,13 @@
             
             $('#stock-alerts-content').html(html);
         }
+
+        /* 
+         * Currency Handling: 
+         * When implementing the real backend, get currency symbol from app_details table:
+         * SELECT currency_symbol FROM app_details WHERE currency_id = (SELECT currency_id FROM app_details LIMIT 1)
+         * For now, using default 'K' as used throughout the application
+         */
 
         // Tooltip for charts
         $("<div id='tooltip'></div>").css({
