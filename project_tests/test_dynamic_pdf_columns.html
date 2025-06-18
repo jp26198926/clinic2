@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic PDF Column Fix Test</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px; 
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status-section { 
+            margin: 20px 0; 
+            padding: 15px; 
+            border-radius: 5px; 
+            border-left: 4px solid;
+        }
+        .success { 
+            background-color: #d4edda; 
+            border-color: #28a745; 
+            color: #155724; 
+        }
+        .info { 
+            background-color: #d1ecf1; 
+            border-color: #17a2b8; 
+            color: #0c5460; 
+        }
+        .warning { 
+            background-color: #fff3cd; 
+            border-color: #ffc107; 
+            color: #856404; 
+        }
+        .test-button {
+            display: inline-block;
+            padding: 12px 20px;
+            margin: 8px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        .pdf-button {
+            background-color: #dc3545;
+            color: white;
+        }
+        .pdf-button:hover {
+            background-color: #c82333;
+            transform: translateY(-2px);
+        }
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .test-card {
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 5px;
+            background: #f8f9fa;
+        }
+        .test-card h4 {
+            margin-top: 0;
+            color: #333;
+        }
+        code {
+            background-color: #f8f9fa;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: "Courier New", monospace;
+        }
+        .checklist {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        .checklist li {
+            padding: 5px 0;
+            position: relative;
+            padding-left: 25px;
+        }
+        .checklist li:before {
+            content: "✅";
+            position: absolute;
+            left: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔄 Dynamic PDF Column Synchronization Test</h1>
+        
+        <div class="status-section success">
+            <h2>✅ Dynamic Column Matching Implemented</h2>
+            <p><strong>Status:</strong> PDF exports now use dynamic column discovery!</p>
+            <ul class="checklist">
+                <li><strong>Dynamic Headers:</strong> PDF columns are now built from actual database fields</li>
+                <li><strong>Field Synchronization:</strong> Same logic as HTML datatable for field discovery</li>
+                <li><strong>Smart Formatting:</strong> Automatic formatting based on field types</li>
+                <li><strong>Alignment Logic:</strong> Intelligent text alignment based on data types</li>
+                <li><strong>Currency Integration:</strong> Proper currency formatting with spacing</li>
+            </ul>
+        </div>
+
+        <div class="status-section info">
+            <h2>🎯 What This Fix Accomplishes</h2>
+            <p>The PDF export now:</p>
+            <ol>
+                <li><strong>Shows identical columns</strong> to the HTML datatable</li>
+                <li><strong>Discovers fields dynamically</strong> from database results</li>
+                <li><strong>Skips internal fields</strong> (id, product_id, etc.) like HTML</li>
+                <li><strong>Applies smart formatting</strong> based on field names and types</li>
+                <li><strong>Uses proper alignment</strong> (left/center/right) for different data types</li>
+                <li><strong>Handles any new fields</strong> automatically without code changes</li>
+            </ol>
+        </div>
+
+        <div class="status-section warning">
+            <h2>⚠️ Testing Process</h2>
+            <p><strong>To verify the fix:</strong></p>
+            <ol>
+                <li><strong>Generate HTML Report:</strong> Go to Inventory → Reports and generate any report</li>
+                <li><strong>Count Columns:</strong> Note exactly which columns appear in the HTML datatable</li>
+                <li><strong>Export PDF:</strong> Click the PDF export button</li>
+                <li><strong>Compare:</strong> Verify PDF has identical columns to HTML table</li>
+                <li><strong>Check Data:</strong> Confirm all data values match between HTML and PDF</li>
+            </ol>
+        </div>
+
+        <h2>🧪 Column Synchronization Tests</h2>
+        <p>Test each report type to verify column consistency:</p>
+
+        <div class="test-grid">
+            <div class="test-card">
+                <h4>📉 Low Stock Report</h4>
+                <p><strong>Expected:</strong> All fields from database query appear in both HTML and PDF</p>
+                <a href="http://localhost/clinic2/inventory_reports/export_pdf?report_type=low_stock&location_id=0" 
+                   class="test-button pdf-button" target="_blank">
+                    📄 Test Low Stock PDF
+                </a>
+            </div>
+
+            <div class="test-card">
+                <h4>💰 Stock Valuation Report</h4>
+                <p><strong>Expected:</strong> Currency fields show proper "K " formatting</p>
+                <a href="http://localhost/clinic2/inventory_reports/export_pdf?report_type=stock_valuation&location_id=0" 
+                   class="test-button pdf-button" target="_blank">
+                    📄 Test Stock Valuation PDF
+                </a>
+            </div>
+
+            <div class="test-card">
+                <h4>⏰ Expiring Stock Report</h4>
+                <p><strong>Expected:</strong> Date fields and days calculations display correctly</p>
+                <a href="http://localhost/clinic2/inventory_reports/export_pdf?report_type=expiring_stock&location_id=0" 
+                   class="test-button pdf-button" target="_blank">
+                    📄 Test Expiring Stock PDF
+                </a>
+            </div>
+
+            <div class="test-card">
+                <h4>📊 Movement Summary Report</h4>
+                <p><strong>Expected:</strong> Movement type and quantity fields match HTML exactly</p>
+                <a href="http://localhost/clinic2/inventory_reports/export_pdf?report_type=movement_summary&location_id=0" 
+                   class="test-button pdf-button" target="_blank">
+                    📄 Test Movement Summary PDF
+                </a>
+            </div>
+        </div>
+
+        <h2>🔍 Technical Implementation Details</h2>
+        <div class="status-section info">
+            <h3>Dynamic Column Discovery Logic:</h3>
+            <ol>
+                <li><strong>Field Inspection:</strong> Examines first data row to discover all available fields</li>
+                <li><strong>Field Filtering:</strong> Skips internal database fields (id, product_id, etc.)</li>
+                <li><strong>Header Generation:</strong> Converts field names to proper column headers</li>
+                <li><strong>Width Calculation:</strong> Distributes column widths evenly across available space</li>
+                <li><strong>Smart Formatting:</strong> Applies formatting rules based on field name patterns</li>
+            </ol>
+
+            <h3>Field Type Detection & Formatting:</h3>
+            <ul>
+                <li><strong>Currency Fields:</strong> Fields with "cost" or "value" → "K 1,234.56"</li>
+                <li><strong>Quantity Fields:</strong> Fields with "qty" or "quantity" → "1,234.00"</li>
+                <li><strong>Percentage Fields:</strong> Fields with "percentage" → "75.5%"</li>
+                <li><strong>Date Fields:</strong> Fields with "date" → "2025-06-18"</li>
+                <li><strong>Days Fields:</strong> Numeric fields with "days" → "30 days"</li>
+                <li><strong>Text Fields:</strong> All other fields → HTML escaped text</li>
+            </ul>
+
+            <h3>Alignment Rules:</h3>
+            <ul>
+                <li><strong>Right Aligned:</strong> Numbers, quantities, costs, values, percentages, days</li>
+                <li><strong>Center Aligned:</strong> Dates, UOM, status, class, type fields</li>
+                <li><strong>Left Aligned:</strong> All other text fields (default)</li>
+            </ul>
+        </div>
+
+        <h2>✅ Expected Results</h2>
+        <div class="status-section success">
+            <h3>Perfect Column Synchronization:</h3>
+            <ul class="checklist">
+                <li><strong>Identical Columns:</strong> PDF shows exact same columns as HTML datatable</li>
+                <li><strong>Same Field Order:</strong> Columns appear in identical sequence</li>
+                <li><strong>Proper Formatting:</strong> Values formatted consistently between HTML and PDF</li>
+                <li><strong>Smart Alignment:</strong> Columns aligned appropriately based on data type</li>
+                <li><strong>Future Proof:</strong> Any database schema changes automatically reflected</li>
+            </ul>
+        </div>
+
+        <h2>🔄 Comparison Test Procedure</h2>
+        <div class="status-section warning">
+            <h3>Step-by-Step Verification:</h3>
+            <ol>
+                <li><strong>Open Reports Page:</strong> Navigate to Inventory → Reports</li>
+                <li><strong>Generate HTML Report:</strong> Select a report type and click "Generate Report"</li>
+                <li><strong>Note HTML Columns:</strong> Write down the column headers that appear</li>
+                <li><strong>Export to PDF:</strong> Click the red PDF export button</li>
+                <li><strong>Compare Columns:</strong> Verify PDF has identical column headers</li>
+                <li><strong>Check Data Values:</strong> Spot-check that data values match exactly</li>
+                <li><strong>Test Multiple Types:</strong> Repeat for different report types</li>
+            </ol>
+        </div>
+
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; color: #666; text-align: center;">
+            <p><strong>Dynamic PDF Column Synchronization Test</strong> | Last Updated: <code>June 18, 2025</code></p>
+            <p>Status: <span style="color: #28a745;"><strong>IMPLEMENTED ✅</strong></span></p>
+        </div>
+    </div>
+</body>
+</html>

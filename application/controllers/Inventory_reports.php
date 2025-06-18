@@ -89,9 +89,10 @@ class Inventory_reports extends CI_Controller
 
 			$data['locations'] = $this->data_location_model->search("", 1);
 			
-			// Get currency information from system settings
-			$app_details = $this->ad->get_details();
-			$currency_code = $app_details->currency_code ?? 'USD';
+			// Get currency information from database using currency_id
+			$this->load->model('batch_transaction_model', 'batch_model');
+			$currency_info = $this->batch_model->get_currency_info();
+			$currency_code = $currency_info->code ?? 'USD';
 			$data['currency_code'] = $currency_code;
 			$data['currency_symbol'] = $this->get_currency_symbol($currency_code);
 			
@@ -431,7 +432,7 @@ class Inventory_reports extends CI_Controller
 			// Get location name for filter display
 			$location_name = 'All Locations';
 			if ($location_id) {
-				$location = $this->data_location_model->search_by_id($location_id);
+				$location = $this->data_location_model->search_by_row($location_id);
 				$location_name = $location ? $location->location : 'Unknown Location';
 			}
 
@@ -450,9 +451,10 @@ class Inventory_reports extends CI_Controller
 			$company_contact = $this->session->userdata[$prefix . "_logged_in"][$prefix . "_company_contact"];
 			$page_name = $this->page_name;
 
-			// Get currency information
-			$app_details = $this->ad->get_details();
-			$currency_code = $app_details->currency_code ?? 'USD';
+			// Get currency information from database using currency_id
+			$this->load->model('batch_transaction_model', 'batch_model');
+			$currency_info = $this->batch_model->get_currency_info();
+			$currency_code = $currency_info->code ?? 'USD';
 			$currency_symbol = $this->get_currency_symbol($currency_code);
 		// Load PDF library
 		$this->load->library('pdf');
@@ -692,7 +694,8 @@ class Inventory_reports extends CI_Controller
 			'CHF' => 'CHF', 'TRY' => '₺', 'THB' => '฿', 'MYR' => 'RM',
 			'PHP' => '₱', 'IDR' => 'Rp', 'VND' => '₫', 'CZK' => 'Kč',
 			'HUF' => 'Ft', 'ILS' => '₪', 'CLP' => '$', 'PEN' => 'S/',
-			'COP' => '$', 'ARS' => '$', 'UYU' => '$', 'TWD' => 'NT$'
+			'COP' => '$', 'ARS' => '$', 'UYU' => '$', 'TWD' => 'NT$',
+			'PGK' => 'K'  // Papua New Guinea Kina - Added for consistency
 		);
 		
 		return $symbols[$currency_code] ?? $currency_code;

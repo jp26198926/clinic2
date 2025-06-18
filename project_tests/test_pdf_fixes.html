@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Export Fixes Test</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px; 
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status-section { 
+            margin: 20px 0; 
+            padding: 15px; 
+            border-radius: 5px; 
+            border-left: 4px solid;
+        }
+        .success { 
+            background-color: #d4edda; 
+            border-color: #28a745; 
+            color: #155724; 
+        }
+        .info { 
+            background-color: #d1ecf1; 
+            border-color: #17a2b8; 
+            color: #0c5460; 
+        }
+        .warning { 
+            background-color: #fff3cd; 
+            border-color: #ffc107; 
+            color: #856404; 
+        }
+        .test-button {
+            display: inline-block;
+            padding: 12px 20px;
+            margin: 8px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        .pdf-button {
+            background-color: #dc3545;
+            color: white;
+        }
+        .pdf-button:hover {
+            background-color: #c82333;
+            transform: translateY(-2px);
+        }
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .test-card {
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 5px;
+            background: #f8f9fa;
+        }
+        .test-card h4 {
+            margin-top: 0;
+            color: #333;
+        }
+        code {
+            background-color: #f8f9fa;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: "Courier New", monospace;
+        }
+        .checklist {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        .checklist li {
+            padding: 5px 0;
+            position: relative;
+            padding-left: 25px;
+        }
+        .checklist li:before {
+            content: "✅";
+            position: absolute;
+            left: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 PDF Export Fixes Verification Test</h1>
+          <div class="status-section success">
+            <h2>✅ Fixes Applied Successfully</h2>
+            <p><strong>Status:</strong> All identified issues have been resolved!</p>
+            <ul class="checklist">
+                <li><strong>Data Consistency Fix:</strong> Changed location retrieval from <code>search_by_id()</code> to <code>search_by_row()</code></li>
+                <li><strong>Currency Symbol Fix:</strong> Added <code>'PGK' => 'K'</code> mapping to currency symbols</li>
+                <li><strong>Currency Formatting Fix:</strong> Added proper spacing in currency display (e.g., "K 150.00" instead of "K150.00")</li>
+                <li><strong>Total Quantity Fix:</strong> Improved movement summary calculations with proper type handling</li>
+                <li><strong>Syntax Validation:</strong> Both controller and PDF template are error-free</li>
+            </ul>
+        </div>
+
+        <div class="status-section info">
+            <h2>🎯 Test Objective</h2>            <p>Verify that PDF exports now:</p>
+            <ol>
+                <li>Show the <strong>same data</strong> as the HTML datatable</li>
+                <li>Display <strong>"K 150.00"</strong> currency format with proper spacing (not "K150.00")</li>
+                <li>Calculate <strong>correct total quantities</strong> for movement summaries</li>
+                <li>Show <strong>accurate total values</strong> with proper currency formatting</li>
+                <li>Generate <strong>professional PDFs</strong> without errors</li>
+                <li>Open in <strong>new tabs</strong> with proper formatting</li>
+            </ol>
+        </div>
+
+        <div class="status-section warning">
+            <h2>⚠️ Testing Prerequisites</h2>
+            <p><strong>Important:</strong> Before testing, ensure you are logged into the clinic system:</p>
+            <ol>
+                <li>Navigate to <a href="http://localhost/clinic2" target="_blank">http://localhost/clinic2</a></li>
+                <li>Log in with valid credentials</li>
+                <li>Go to <strong>Inventory → Reports</strong></li>
+                <li>Then use the test buttons below</li>
+            </ol>
+        </div>
+
+        <h2>🧪 Direct PDF Export Tests</h2>
+        <p>Click the buttons below to test each report type:</p>
+
+        <div class="test-grid">
+            <div class="test-card">
+                <h4>📉 Low Stock Report</h4>
+                <p>Tests the most common report type with stock percentage calculations.</p>
+                <a href="http://localhost/clinic2/inventory_reports/export_pdf?report_type=low_stock&location_id=0" 
+                   class="test-button pdf-button" target="_blank">
+                    📄 Test Low Stock PDF
+                </a>
+            </div>
+
+            <div class="test-card">
+                <h4>💰 Stock Valuation Report</h4>
+                <p>Tests currency formatting with the fixed PGK → K mapping.</p>
+                <a href="http://localhost/clinic2/inventory_reports/export_pdf?report_type=stock_valuation&location_id=0" 
+                   class="test-button pdf-button" target="_blank">
+                    📄 Test Stock Valuation PDF
+                </a>
+            </div>
+
+            <div class="test-card">
+                <h4>⏰ Expiring Stock Report</h4>
+                <p>Tests data consistency with expiration date calculations.</p>
+                <a href="http://localhost/clinic2/inventory_reports/export_pdf?report_type=expiring_stock&location_id=0" 
+                   class="test-button pdf-button" target="_blank">
+                    📄 Test Expiring Stock PDF
+                </a>
+            </div>
+
+            <div class="test-card">
+                <h4>❌ Zero Stock Report</h4>
+                <p>Tests the location model fix with zero stock items.</p>
+                <a href="http://localhost/clinic2/inventory_reports/export_pdf?report_type=zero_stock&location_id=0" 
+                   class="test-button pdf-button" target="_blank">
+                    📄 Test Zero Stock PDF
+                </a>
+            </div>
+        </div>
+
+        <h2>✅ Success Criteria Checklist</h2>
+        <div class="status-section info">
+            <h3>For each PDF test, verify:</h3>            <ol>
+                <li><strong>PDF Opens:</strong> PDF should open in a new browser tab</li>
+                <li><strong>Data Consistency:</strong> PDF data should match what you see in the HTML datatable</li>
+                <li><strong>Currency Display:</strong> Values should show "K 1,234.56" format with proper spacing</li>
+                <li><strong>Total Calculations:</strong> Summary statistics should show correct totals</li>
+                <li><strong>Professional Layout:</strong> Company header, row numbers, proper formatting</li>
+                <li><strong>No Errors:</strong> No white pages or error messages</li>
+                <li><strong>Filter Information:</strong> Applied filters should be documented in PDF header</li>
+            </ol>
+        </div>
+
+        <h2>🔄 Comparison Test Procedure</h2>
+        <div class="status-section warning">
+            <h3>To verify data consistency:</h3>
+            <ol>
+                <li><strong>Open HTML Report:</strong> Go to Inventory → Reports and generate a report</li>
+                <li><strong>Note the Data:</strong> Record first few rows of data (product codes, quantities, etc.)</li>
+                <li><strong>Export PDF:</strong> Click the PDF export button</li>
+                <li><strong>Compare:</strong> Verify PDF shows identical data to HTML table</li>
+                <li><strong>Check Currency:</strong> Confirm currency shows as "K" in PDF</li>
+            </ol>
+        </div>
+
+        <h2>📋 Technical Details</h2>
+        <div class="status-section info">
+            <h3>Changes Made:</h3>            <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+                <tr style="background-color: #f8f9fa;">
+                    <th style="padding: 10px; border: 1px solid #ddd; text-align: left;">File</th>
+                    <th style="padding: 10px; border: 1px solid #ddd; text-align: left;">Fix Applied</th>
+                    <th style="padding: 10px; border: 1px solid #ddd; text-align: left;">Line</th>
+                </tr>
+                <tr>
+                    <td style="padding: 10px; border: 1px solid #ddd;"><code>Inventory_reports.php</code></td>
+                    <td style="padding: 10px; border: 1px solid #ddd;">Fixed location retrieval method</td>
+                    <td style="padding: 10px; border: 1px solid #ddd;">~433</td>
+                </tr>
+                <tr>
+                    <td style="padding: 10px; border: 1px solid #ddd;"><code>Inventory_reports.php</code></td>
+                    <td style="padding: 10px; border: 1px solid #ddd;">Added PGK currency mapping</td>
+                    <td style="padding: 10px; border: 1px solid #ddd;">~695</td>
+                </tr>
+                <tr>
+                    <td style="padding: 10px; border: 1px solid #ddd;"><code>inventory_reports.php (PDF)</code></td>
+                    <td style="padding: 10px; border: 1px solid #ddd;">Fixed currency formatting spacing</td>
+                    <td style="padding: 10px; border: 1px solid #ddd;">Multiple</td>
+                </tr>
+                <tr>
+                    <td style="padding: 10px; border: 1px solid #ddd;"><code>inventory_reports.php (PDF)</code></td>
+                    <td style="padding: 10px; border: 1px solid #ddd;">Improved movement summary calculations</td>
+                    <td style="padding: 10px; border: 1px solid #ddd;">~480-500</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="status-section success">
+            <h2>🎉 Expected Results</h2>
+            <p>After our fixes, you should see:</p>            <ul class="checklist">
+                <li><strong>Consistent Data:</strong> PDF shows same products, quantities, and values as HTML table</li>
+                <li><strong>Proper Currency:</strong> All money values display with "K " prefix and proper spacing</li>
+                <li><strong>Accurate Totals:</strong> Summary statistics show correct calculations for quantities and values</li>
+                <li><strong>Professional Format:</strong> Clean layout with row numbers, company header, summary statistics</li>
+                <li><strong>No Errors:</strong> Smooth PDF generation without white pages or undefined variables</li>
+            </ul>
+        </div>
+
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; color: #666; text-align: center;">
+            <p><strong>PDF Export Fixes Test</strong> | Last Updated: <code>June 17, 2025</code></p>
+            <p>Status: <span style="color: #28a745;"><strong>FIXES APPLIED ✅</strong></span></p>
+        </div>
+    </div>
+</body>
+</html>

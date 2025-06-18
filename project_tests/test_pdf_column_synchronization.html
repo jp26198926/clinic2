@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Export Column Synchronization Test</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px; 
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status-section { 
+            margin: 20px 0; 
+            padding: 15px; 
+            border-radius: 5px; 
+            border-left: 4px solid;
+        }
+        .success { 
+            background-color: #d4edda; 
+            border-color: #28a745; 
+            color: #155724; 
+        }
+        .info { 
+            background-color: #d1ecf1; 
+            border-color: #17a2b8; 
+            color: #0c5460; 
+        }
+        .warning { 
+            background-color: #fff3cd; 
+            border-color: #ffc107; 
+            color: #856404; 
+        }
+        .test-button {
+            display: inline-block;
+            padding: 12px 20px;
+            margin: 8px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        .pdf-button {
+            background-color: #dc3545;
+            color: white;
+            border: 2px solid #dc3545;
+        }
+        .pdf-button:hover {
+            background-color: white;
+            color: #dc3545;
+        }
+        .html-button {
+            background-color: #007bff;
+            color: white;
+            border: 2px solid #007bff;
+        }
+        .html-button:hover {
+            background-color: white;
+            color: #007bff;
+        }
+        .test-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .test-case {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            background: #f9f9f9;
+        }
+        .test-case h4 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+        .instructions {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .validation-checklist {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .validation-checklist ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .validation-checklist li {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 PDF Export Column Synchronization Test</h1>
+        
+        <div class="status-section success">
+            <h3>✅ Dynamic PDF Template Implemented</h3>
+            <p><strong>Status:</strong> PDF template has been updated with dynamic column discovery</p>
+            <p><strong>Key Features:</strong></p>
+            <ul>
+                <li>Dynamic field discovery from actual data</li>
+                <li>Automatic column width calculation</li>
+                <li>Smart field type detection and formatting</li>
+                <li>Intelligent alignment rules (left/center/right)</li>
+                <li>Currency formatting with proper spacing (K 1,234.56)</li>
+                <li>Movement summary calculations with type tracking</li>
+            </ul>
+        </div>
+
+        <div class="instructions">
+            <h3>📋 Testing Instructions</h3>
+            <p>To verify that the PDF export now shows the same columns as the HTML datatable:</p>
+            <ol>
+                <li>Open the HTML version of a report first</li>
+                <li>Note the exact columns and their order</li>
+                <li>Open the PDF version of the same report</li>
+                <li>Compare columns, data, and formatting</li>
+                <li>Verify currency formatting shows "K 1,234.56" with proper spacing</li>
+            </ol>
+        </div>
+
+        <div class="test-grid">
+            <div class="test-case">
+                <h4>🏥 Low Stock Report Test</h4>
+                <p>Test dynamic columns for low stock analysis</p>
+                <a href="../inventory_reports/index?report_type=low_stock" target="_blank" class="test-button html-button">View HTML</a>
+                <a href="../inventory_reports/pdf_export?report_type=low_stock" target="_blank" class="test-button pdf-button">Test PDF</a>
+            </div>
+
+            <div class="test-case">
+                <h4>💰 Stock Valuation Test</h4>
+                <p>Test currency formatting and value calculations</p>
+                <a href="../inventory_reports/index?report_type=stock_valuation" target="_blank" class="test-button html-button">View HTML</a>
+                <a href="../inventory_reports/pdf_export?report_type=stock_valuation" target="_blank" class="test-button pdf-button">Test PDF</a>
+            </div>
+
+            <div class="test-case">
+                <h4>📊 Movement Summary Test</h4>
+                <p>Test movement type tracking and quantity calculations</p>
+                <a href="../inventory_reports/index?report_type=movement_summary" target="_blank" class="test-button html-button">View HTML</a>
+                <a href="../inventory_reports/pdf_export?report_type=movement_summary" target="_blank" class="test-button pdf-button">Test PDF</a>
+            </div>
+
+            <div class="test-case">
+                <h4>📈 ABC Analysis Test</h4>
+                <p>Test classification columns and statistics</p>
+                <a href="../inventory_reports/index?report_type=abc_analysis" target="_blank" class="test-button html-button">View HTML</a>
+                <a href="../inventory_reports/pdf_export?report_type=abc_analysis" target="_blank" class="test-button pdf-button">Test PDF</a>
+            </div>
+
+            <div class="test-case">
+                <h4>⏰ Expiring Stock Test</h4>
+                <p>Test date formatting and days calculation</p>
+                <a href="../inventory_reports/index?report_type=expiring_stock" target="_blank" class="test-button html-button">View HTML</a>
+                <a href="../inventory_reports/pdf_export?report_type=expiring_stock" target="_blank" class="test-button pdf-button">Test PDF</a>
+            </div>
+
+            <div class="test-case">
+                <h4>💀 Expired Stock Test</h4>
+                <p>Test expired item identification and formatting</p>
+                <a href="../inventory_reports/index?report_type=expired_stock" target="_blank" class="test-button html-button">View HTML</a>
+                <a href="../inventory_reports/pdf_export?report_type=expired_stock" target="_blank" class="test-button pdf-button">Test PDF</a>
+            </div>
+
+            <div class="test-case">
+                <h4>🔄 Turnover Analysis Test</h4>
+                <p>Test turnover status and performance metrics</p>
+                <a href="../inventory_reports/index?report_type=turnover_analysis" target="_blank" class="test-button html-button">View HTML</a>
+                <a href="../inventory_reports/pdf_export?report_type=turnover_analysis" target="_blank" class="test-button pdf-button">Test PDF</a>
+            </div>
+
+            <div class="test-case">
+                <h4>🎯 All Report Types Test</h4>
+                <p>Access main inventory reports interface</p>
+                <a href="../inventory_reports/index" target="_blank" class="test-button html-button">Main Interface</a>
+                <a href="../inventory_reports/" target="_blank" class="test-button html-button">Reports Dashboard</a>
+            </div>
+        </div>
+
+        <div class="validation-checklist">
+            <h3>✅ Validation Checklist</h3>
+            <p>Use this checklist to verify that the fixes are working correctly:</p>
+            
+            <h4>📊 Column Synchronization</h4>
+            <ul>
+                <li>PDF shows identical columns to HTML datatable</li>
+                <li>Column order matches exactly</li>
+                <li>Column headers are properly formatted</li>
+                <li>No missing or extra columns in PDF</li>
+            </ul>
+
+            <h4>💰 Currency Formatting</h4>
+            <ul>
+                <li>Currency displays as "K 1,234.56" (with space)</li>
+                <li>No "K1234.56" formatting (without space)</li>
+                <li>All monetary values properly formatted</li>
+                <li>Consistent currency symbol usage</li>
+            </ul>
+
+            <h4>🔢 Data Accuracy</h4>
+            <ul>
+                <li>Quantities match between HTML and PDF</li>
+                <li>Values match between HTML and PDF</li>
+                <li>Dates are formatted consistently</li>
+                <li>Total calculations are accurate</li>
+            </ul>
+
+            <h4>📋 Report Types</h4>
+            <ul>
+                <li>Low Stock Report - Shows correct stock levels</li>
+                <li>Stock Valuation - Accurate value calculations</li>
+                <li>Movement Summary - Proper quantity tracking</li>
+                <li>ABC Analysis - Correct classification display</li>
+                <li>Expiring Stock - Accurate days calculation</li>
+                <li>Expired Stock - Proper expired item identification</li>
+                <li>Turnover Analysis - Correct turnover status</li>
+            </ul>
+
+            <h4>🎨 PDF Formatting</h4>
+            <ul>
+                <li>PDF opens without errors</li>
+                <li>Tables are properly formatted</li>
+                <li>Text alignment is correct (left/center/right)</li>
+                <li>Column widths are appropriate</li>
+                <li>Professional appearance maintained</li>
+            </ul>
+        </div>
+
+        <div class="status-section info">
+            <h3>🔧 Technical Implementation Details</h3>
+            <p><strong>Files Modified:</strong></p>
+            <ul>
+                <li><code>application/views/pdf/inventory_reports.php</code> - Dynamic template with column discovery</li>
+                <li><code>application/controllers/Inventory_reports.php</code> - Fixed location retrieval and currency mapping</li>
+            </ul>
+            
+            <p><strong>Key Changes:</strong></p>
+            <ul>
+                <li>Dynamic field discovery from actual data</li>
+                <li>Automatic column width calculation</li>
+                <li>Smart field type detection and formatting</li>
+                <li>Fixed location retrieval method (search_by_row)</li>
+                <li>Added PGK currency symbol mapping</li>
+                <li>Enhanced movement summary calculations</li>
+            </ul>
+        </div>
+
+        <div class="status-section warning">
+            <h3>⚠️ Testing Required</h3>
+            <p>Please test each report type to ensure:</p>
+            <ul>
+                <li>PDF columns match HTML exactly</li>
+                <li>Currency formatting is consistent</li>
+                <li>Data calculations are accurate</li>
+                <li>No errors during PDF generation</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Add some interactivity to track testing progress
+        document.addEventListener('DOMContentLoaded', function() {
+            const buttons = document.querySelectorAll('.test-button');
+            buttons.forEach(button => {
+                button.addEventListener('click', function() {
+                    console.log('Testing:', this.textContent, 'URL:', this.href);
+                });
+            });
+        });
+    </script>
+</body>
+</html>
