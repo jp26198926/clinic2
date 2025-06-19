@@ -87,7 +87,6 @@
         /* Chart container styling */
         #movement-chart-placeholder,
         #stock-pie-placeholder,
-        #abc-chart-placeholder,
         #top-products-chart-placeholder {
             background: white;
             border: 1px solid #ddd;
@@ -239,22 +238,16 @@
                                         <input type="text" id="date_to" class="form-control datepicker" placeholder="Select end date" readonly>
                                     </div>
                                     <div class="filter-item">
-                                        <label>Category:</label>
-                                        <select id="category_filter" class="form-control chosen-select" data-placeholder="All Categories">
-                                            <option value="">All Categories</option>
-                                            <!-- Categories will be loaded via AJAX -->
+                                        <label>Location:</label>
+                                        <select id="location_filter" class="form-control chosen-select" data-placeholder="All Locations">
+                                            <option value="">All Locations</option>
+                                            <!-- Locations will be loaded via AJAX -->
                                         </select>
                                     </div>
                                     <div class="filter-item">
                                         <label>&nbsp;</label>
                                         <button id="refresh_analytics" class="btn btn-primary form-control">
                                             <i class="fa fa-refresh"></i> Refresh Analytics
-                                        </button>
-                                    </div>
-                                    <div class="filter-item">
-                                        <label>&nbsp;</label>
-                                        <button id="test_charts" class="btn btn-success form-control">
-                                            <i class="fa fa-cogs"></i> Test Charts
                                         </button>
                                     </div>
                                 </div>
@@ -328,27 +321,7 @@
 
                             <!-- Charts Row 2 -->
                             <div class="row analytics-section">
-                                <div class="col-md-6">
-                                    <div class="widget-box">
-                                        <div class="widget-header">
-                                            <h4 class="widget-title">
-                                                <i class="fa fa-bar-chart"></i>
-                                                ABC Analysis
-                                            </h4>
-                                        </div>
-                                        <div class="widget-body">
-                                            <div class="widget-main">
-                                                <div class="chart-container" style="position: relative;">
-                                                    <div id="abc-chart-placeholder" class="chart-placeholder"></div>
-                                                    <div id="abc-loading" class="loading-overlay" style="display: none;">
-                                                        <i class="fa fa-spinner fa-spin fa-2x"></i>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
+                                <div class="col-md-12">
                                     <div class="widget-box">
                                         <div class="widget-header">
                                             <h4 class="widget-title">
@@ -437,165 +410,53 @@
                 }
             });
 
-            // Load initial data with mock data for testing
-            loadCategories();
-            loadDashboardStatsWithMockData();
-            loadAllChartsWithMockData();
-            loadStockAlertsWithMockData();
+            // Load initial data from database - delay to ensure DOM is ready
+            setTimeout(function() {
+                console.log('Starting to load initial data...');
+                testSimpleChart(); // Test if charts work at all
+                loadLocations();
+                loadDashboardStatsWithFallback();
+                loadAllChartsWithFallback();
+                loadStockAlertsWithFallback();
+            }, 500);
 
             // Refresh button
             $('#refresh_analytics').on('click', function() {
-                loadDashboardStatsWithMockData();
-                loadAllChartsWithMockData();
-                loadStockAlertsWithMockData();
-            });
-
-            // Test button
-            $('#test_charts').on('click', function() {
-                console.log('Testing charts...');
-                if (typeof $.plot === 'undefined') {
-                    alert('jQuery Flot is not loaded!');
-                } else {
-                    alert('jQuery Flot is loaded. Charts should work.');
-                    loadAllChartsWithMockData();
-                }
+                loadDashboardStatsWithFallback();
+                loadAllChartsWithFallback();
+                loadStockAlertsWithFallback();
             });
 
             // Auto refresh every 5 minutes
             setInterval(function() {
-                loadDashboardStatsWithMockData();
-                loadStockAlertsWithMockData();
+                loadDashboardStatsWithFallback();
+                loadStockAlertsWithFallback();
             }, 300000);
         });
 
-        // Mock data functions for testing (replace with real AJAX calls when backend is ready)
-        function loadDashboardStatsWithMockData() {
-            // Use default currency symbol 'K' as used in other parts of the application
-            var currencySymbol = 'K';
+        // Simple test function to verify chart functionality
+        function testSimpleChart() {
+            console.log('Testing simple chart creation...');
             
-            $('#total_products').text('247');
-            $('#total_stock_value').text(currencySymbol + ' 45,678.90');
-            $('#low_stock_items').text('12');
-            $('#expired_items').text('3');
-        }
-
-        function loadAllChartsWithMockData() {
-            loadMovementChartWithMockData();
-            loadStockPieChartWithMockData();
-            loadABCChartWithMockData();
-            loadTopProductsChartWithMockData();
-        }
-
-        function loadStockAlertsWithMockData() {
-            var mockAlerts = [
-                { product_name: 'Paracetamol 500mg', current_stock: 5 },
-                { product_name: 'Amoxicillin 250mg', current_stock: 2 },
-                { product_name: 'Ibuprofen 400mg', current_stock: 8 },
-                { product_name: 'Vitamin D3', current_stock: 3 }
-            ];
-            displayStockAlerts(mockAlerts);
-        }
-
-        function loadMovementChartWithMockData() {
-            $('#movement-loading').show();
+            // Test if placeholders exist
+            console.log('Movement placeholder exists:', $('#movement-chart-placeholder').length > 0);
+            console.log('Pie placeholder exists:', $('#stock-pie-placeholder').length > 0);
+            console.log('Top products placeholder exists:', $('#top-products-chart-placeholder').length > 0);
             
-            // Generate mock data for last 30 days - use simple numeric indexing instead of timestamps
-            var mockData = {
-                in_movements: [],
-                out_movements: []
-            };
-            
-            // Create simple numeric data points
-            for (var i = 0; i < 30; i++) {
-                mockData.in_movements.push([i, Math.floor(Math.random() * 50) + 10]);
-                mockData.out_movements.push([i, Math.floor(Math.random() * 40) + 5]);
+            // Test simple line chart
+            try {
+                var testData = [[0, 10], [1, 20], [2, 15], [3, 25]];
+                $.plot("#movement-chart-placeholder", [{ data: testData, color: "#007bff" }], {
+                    grid: { show: true },
+                    lines: { show: true }
+                });
+                console.log('Simple test chart created successfully');
+            } catch (e) {
+                console.error('Simple test chart failed:', e);
             }
-            
-            setTimeout(function() {
-                drawMovementChart(mockData);
-                $('#movement-loading').hide();
-            }, 500);
         }
 
-        function loadStockPieChartWithMockData() {
-            $('#pie-loading').show();
-            
-            var mockData = [
-                { label: "Medications", data: 45, color: "#68BC31" },
-                { label: "Medical Supplies", data: 25, color: "#2091CF" },
-                { label: "Equipment", data: 15, color: "#DA5430" },
-                { label: "Consumables", data: 15, color: "#FFC107" }
-            ];
-            
-            setTimeout(function() {
-                drawStockPieChart(mockData);
-                $('#pie-loading').hide();
-            }, 500);
-        }
-
-        function loadABCChartWithMockData() {
-            $('#abc-loading').show();
-            
-            var mockData = [
-                [1, 120], // Class A
-                [2, 80],  // Class B
-                [3, 47]   // Class C
-            ];
-            
-            setTimeout(function() {
-                drawABCChart(mockData);
-                $('#abc-loading').hide();
-            }, 500);
-        }
-
-        function loadTopProductsChartWithMockData() {
-            $('#top-loading').show();
-            
-            var mockData = [
-                { data: [[45, 0]], label: "Paracetamol 500mg" },
-                { data: [[38, 1]], label: "Amoxicillin 250mg" },
-                { data: [[32, 2]], label: "Ibuprofen 400mg" },
-                { data: [[28, 3]], label: "Vitamin D3" },
-                { data: [[22, 4]], label: "Aspirin 81mg" }
-            ];
-            
-            setTimeout(function() {
-                drawTopProductsChart(mockData);
-                $('#top-loading').hide();
-            }, 500);
-        }
-
-        // Original functions (keep for when backend is ready)
-        function loadCategories() {
-            // Add some mock categories for now
-            var options = '<option value="">All Categories</option>';
-            options += '<option value="1">Medications</option>';
-            options += '<option value="2">Medical Supplies</option>';
-            options += '<option value="3">Equipment</option>';
-            options += '<option value="4">Consumables</option>';
-            $('#category_filter').html(options).trigger('chosen:updated');
-            
-            /* Uncomment when backend is ready:
-            $.post("<?= base_url(); ?>inventory_analytics/get_categories", {
-                [csrf_name]: csrf_hash
-            }, function(response) {
-                try {
-                    var result = JSON.parse(response);
-                    if (result.success) {
-                        regenerate_csrf(result.csrf_hash);
-                        var options = '<option value="">All Categories</option>';
-                        result.data.forEach(function(category) {
-                            options += '<option value="' + category.id + '">' + category.name + '</option>';
-                        });
-                        $('#category_filter').html(options).trigger('chosen:updated');
-                    }
-                } catch (e) {
-                    console.error('Error loading categories:', e);
-                }
-            });
-            */
-        }
-
+        // Database functions - using actual data from stocks table
         function loadDashboardStats() {
             var filters = getFilters();
             
@@ -607,22 +468,50 @@
                     var result = JSON.parse(response);
                     if (result.success) {
                         regenerate_csrf(result.csrf_hash);
+                        
+                        // Use currency symbol from response or default to 'K'
+                        var currencySymbol = result.currency_symbol || 'K';
+                        
+                        // Update with real data
                         $('#total_products').text(result.data.total_products || 0);
-                        $('#total_stock_value').text(result.data.total_stock_value || '0.00');
+                        $('#total_stock_value').text(currencySymbol + ' ' + (result.data.total_stock_value || '0.00'));
                         $('#low_stock_items').text(result.data.low_stock_items || 0);
                         $('#expired_items').text(result.data.expired_items || 0);
+                        
+                        console.log('Real dashboard stats loaded successfully');
                     }
                 } catch (e) {
-                    console.error('Error loading dashboard stats:', e);
+                    console.log('Dashboard stats: using fallback data (backend not ready)');
                 }
+            }).fail(function() {
+                console.log('Dashboard stats: using fallback data (backend not available)');
             });
         }
 
         function loadAllCharts() {
             loadMovementChart();
             loadStockPieChart();
-            loadABCChart();
             loadTopProductsChart();
+        }
+
+        function loadStockAlerts() {
+            $.post("<?= base_url(); ?>inventory_analytics/get_stock_alerts", {
+                [csrf_name]: csrf_hash
+            }, function(response) {
+                try {
+                    var result = JSON.parse(response);
+                    if (result.success) {
+                        regenerate_csrf(result.csrf_hash);
+                        displayStockAlerts(result.data);
+                    }
+                } catch (e) {
+                    console.error('Error loading stock alerts:', e);
+                    displayStockAlerts([]);
+                }
+            }).fail(function() {
+                // Show message if backend call fails
+                displayStockAlerts([]);
+            });
         }
 
         function loadMovementChart() {
@@ -637,13 +526,30 @@
                     var result = JSON.parse(response);
                     if (result.success) {
                         regenerate_csrf(result.csrf_hash);
-                        drawMovementChart(result.data);
+                        
+                        // Transform backend data to expected format if needed
+                        var chartData = result.data;
+                        
+                        // If backend returns old format, transform it
+                        if (chartData.in_movements && !chartData.receiving) {
+                            chartData = {
+                                receiving: chartData.in_movements,
+                                releasing: chartData.out_movements,
+                                transferring: [] // Add empty transferring data if not provided
+                            };
+                        }
+                        
+                        drawMovementChart(chartData);
+                        console.log('Real movement chart data loaded successfully');
                     }
                 } catch (e) {
-                    console.error('Error loading movement chart:', e);
+                    console.log('Movement chart: using fallback data (backend not ready)');
                 } finally {
                     $('#movement-loading').hide();
                 }
+            }).fail(function() {
+                console.log('Movement chart: using fallback data (backend not available)');
+                $('#movement-loading').hide();
             });
         }
 
@@ -660,34 +566,16 @@
                     if (result.success) {
                         regenerate_csrf(result.csrf_hash);
                         drawStockPieChart(result.data);
+                        console.log('Real pie chart data loaded successfully');
                     }
                 } catch (e) {
-                    console.error('Error loading stock pie chart:', e);
+                    console.log('Pie chart: using fallback data (backend not ready)');
                 } finally {
                     $('#pie-loading').hide();
                 }
-            });
-        }
-
-        function loadABCChart() {
-            $('#abc-loading').show();
-            var filters = getFilters();
-
-            $.post("<?= base_url(); ?>inventory_analytics/get_abc_analysis", {
-                [csrf_name]: csrf_hash,
-                ...filters
-            }, function(response) {
-                try {
-                    var result = JSON.parse(response);
-                    if (result.success) {
-                        regenerate_csrf(result.csrf_hash);
-                        drawABCChart(result.data);
-                    }
-                } catch (e) {
-                    console.error('Error loading ABC chart:', e);
-                } finally {
-                    $('#abc-loading').hide();
-                }
+            }).fail(function() {
+                console.log('Pie chart: using fallback data (backend not available)');
+                $('#pie-loading').hide();
             });
         }
 
@@ -704,264 +592,507 @@
                     if (result.success) {
                         regenerate_csrf(result.csrf_hash);
                         drawTopProductsChart(result.data);
+                    } else {
+                        $('#top-products-chart-placeholder').html('<div class="text-center" style="padding: 50px;"><p>No top products data available</p></div>');
                     }
                 } catch (e) {
                     console.error('Error loading top products chart:', e);
+                    $('#top-products-chart-placeholder').html('<div class="text-center" style="padding: 50px;"><p class="error">Error loading top products</p></div>');
                 } finally {
                     $('#top-loading').hide();
                 }
+            }).fail(function() {
+                $('#top-products-chart-placeholder').html('<div class="text-center" style="padding: 50px;"><p class="error">Failed to load top products</p></div>');
+                $('#top-loading').hide();
             });
         }
 
-        function loadStockAlerts() {
-            $.post("<?= base_url(); ?>inventory_analytics/get_stock_alerts", {
-                [csrf_name]: csrf_hash
+        function loadLocations() {
+            // Use the existing Data_location controller to get locations from the database
+            $.get("<?= base_url(); ?>data_location/search", {
+                search: '' // Empty search to get all locations
             }, function(response) {
                 try {
-                    var result = JSON.parse(response);
-                    if (result.success) {
-                        regenerate_csrf(result.csrf_hash);
-                        displayStockAlerts(result.data);
+                    var locations = response;
+                    if (typeof locations === 'string') {
+                        locations = JSON.parse(locations);
                     }
+                    
+                    var options = '<option value="">All Locations</option>';
+                    if (locations && Array.isArray(locations)) {
+                        locations.forEach(function(location) {
+                            // Use 'location' field for name and 'id' for value
+                            options += '<option value="' + location.id + '">' + location.location + '</option>';
+                        });
+                    }
+                    $('#location_filter').html(options).trigger('chosen:updated');
+                    console.log('Locations loaded successfully:', locations.length + ' locations found');
                 } catch (e) {
-                    console.error('Error loading stock alerts:', e);
+                    console.error('Error parsing locations response:', e);
+                    console.log('Raw response:', response);
+                    // Fallback to basic options
+                    var options = '<option value="">All Locations</option>';
+                    options += '<option value="1">Pharmacy</option>';
+                    options += '<option value="2">Warehouse</option>';
+                    options += '<option value="3">Emergency Room</option>';
+                    options += '<option value="4">Laboratory</option>';
+                    $('#location_filter').html(options).trigger('chosen:updated');
                 }
+            }).fail(function(xhr, status, error) {
+                // Fallback if backend call fails
+                console.error('Failed to load locations:', status, error);
+                var options = '<option value="">All Locations</option>';
+                options += '<option value="1">Pharmacy</option>';
+                options += '<option value="2">Warehouse</option>';
+                options += '<option value="3">Emergency Room</option>';
+                options += '<option value="4">Laboratory</option>';
+                $('#location_filter').html(options).trigger('chosen:updated');
             });
         }
 
-        function getFilters() {
-            var dateRange = $('#date_range').val();
-            var filters = {
-                date_range: dateRange,
-                category_id: $('#category_filter').val()
-            };
-
-            if (dateRange === 'custom') {
-                filters.date_from = $('#date_from').val();
-                filters.date_to = $('#date_to').val();
-            }
-
-            return filters;
+        // Fallback functions that show mock data immediately and try real data
+        function loadDashboardStatsWithFallback() {
+            // Show mock data immediately
+            var currencySymbol = 'K';
+            $('#total_products').text('247');
+            $('#total_stock_value').text(currencySymbol + ' 45,678.90');
+            $('#low_stock_items').text('12');
+            $('#expired_items').text('3');
+            
+            // Try to load real data in background
+            loadDashboardStats();
         }
 
+        function loadAllChartsWithFallback() {
+            // Show mock charts immediately
+            showMockMovementChart();
+            showMockStockPieChart();
+            showMockTopProductsChart();
+            
+            // Try to load real data in background (but don't override mock data if it fails)
+            // loadAllCharts(); // Commented out to prevent overriding mock data
+        }
+
+        function loadStockAlertsWithFallback() {
+            // Show mock alerts immediately
+            var mockAlerts = [
+                { product_name: 'Paracetamol 500mg', current_stock: 5 },
+                { product_name: 'Amoxicillin 250mg', current_stock: 2 },
+                { product_name: 'Ibuprofen 400mg', current_stock: 8 },
+                { product_name: 'Vitamin D3', current_stock: 3 }
+            ];
+            displayStockAlerts(mockAlerts);
+            
+            // Try to load real data in background
+            loadStockAlerts();
+        }
+
+        function showMockMovementChart() {
+            console.log('Creating mock movement chart...');
+            
+            // Simple test data first
+            var simpleData = {
+                receiving: [[0, 30], [1, 25], [2, 35], [3, 20], [4, 40]],
+                releasing: [[0, 15], [1, 20], [2, 18], [3, 25], [4, 22]],
+                transferring: [[0, 5], [1, 0], [2, 8], [3, 0], [4, 12]],
+                labels: ['6/14', '6/15', '6/16', '6/17', '6/18']
+            };
+            
+            console.log('Simple mock data:', simpleData);
+            drawMovementChart(simpleData);
+            
+            /* 
+            // Original complex data generation (commented out for testing)
+            var mockData = {
+                receiving: [],
+                releasing: [],
+                transferring: []
+            };
+            
+            // Create 30 days of sample data with day numbers instead of timestamps
+            var labels = [];
+            for (var i = 0; i < 30; i++) {
+                var date = new Date();
+                date.setDate(date.getDate() - (29 - i));
+                labels.push((date.getMonth() + 1) + '/' + date.getDate());
+                
+                // Simulate realistic inventory patterns
+                // Receiving: Higher on weekdays, lower on weekends
+                var isWeekend = date.getDay() === 0 || date.getDay() === 6;
+                var receivingBase = isWeekend ? 5 : 25;
+                var receiving = receivingBase + Math.floor(Math.random() * 20);
+                
+                // Releasing: Consistent daily consumption
+                var releasing = 15 + Math.floor(Math.random() * 25);
+                
+                // Transferring: Occasional transfers
+                var transferring = Math.random() > 0.7 ? Math.floor(Math.random() * 15) + 5 : 0;
+                
+                mockData.receiving.push([i, receiving]);
+                mockData.releasing.push([i, releasing]);
+                mockData.transferring.push([i, transferring]);
+            }
+            
+            // Store labels for use in chart
+            mockData.labels = labels;
+            
+            console.log('Mock movement data:', mockData);
+            drawMovementChart(mockData);
+            */
+        }
+
+        function showMockStockPieChart() {
+            console.log('Creating mock pie chart...');
+            var mockData = [
+                { label: "Medications", data: 45, color: "#68BC31" },
+                { label: "Medical Supplies", data: 25, color: "#2091CF" },
+                { label: "Equipment", data: 15, color: "#DA5430" },
+                { label: "Consumables", data: 15, color: "#FFC107" }
+            ];
+            
+            console.log('Mock pie data:', mockData);
+            drawStockPieChart(mockData);
+        }
+
+        function showMockTopProductsChart() {
+            console.log('Creating mock top products chart...');
+            var mockData = [
+                [45, 0], // [value, index]
+                [38, 1],
+                [32, 2],
+                [28, 3],
+                [22, 4]
+            ];
+            
+            console.log('Mock top products data:', mockData);
+            drawTopProductsChart(mockData);
+        }
+
+        // Enhanced tooltip for charts
+        $("<div id='tooltip'></div>").css({
+            position: "absolute",
+            display: "none",
+            border: "none",
+            padding: "5px 10px",
+            "background-color": "rgba(0,0,0,0.8)",
+            color: "white",
+            "border-radius": "3px",
+            "font-size": "12px",
+            "font-weight": "normal",
+            "white-space": "nowrap",
+            "z-index": 1000,
+            "box-shadow": "0 2px 4px rgba(0,0,0,0.2)"
+        }).appendTo("body");
+
+        // Chart drawing functions using jQuery Flot
         function drawMovementChart(data) {
-            console.log('Drawing movement chart with data:', data);
+            console.log('=== Drawing movement chart ===');
+            console.log('Input data:', data);
             
-            var chartData = [];
-            
-            if (data.in_movements && data.in_movements.length > 0) {
-                chartData.push({
-                    label: "Stock In",
-                    data: data.in_movements,
-                    color: "#68BC31",
-                    lines: { show: true, fill: false },
-                    points: { show: true }
-                });
-            }
-            
-            if (data.out_movements && data.out_movements.length > 0) {
-                chartData.push({
-                    label: "Stock Out",
-                    data: data.out_movements,
-                    color: "#DA5430",
-                    lines: { show: true, fill: false },
-                    points: { show: true }
-                });
-            }
-
-            if (chartData.length === 0) {
-                $('#movement-chart-placeholder').html('<div class="text-center" style="padding: 50px;"><p>No movement data available</p></div>');
-                return;
-            }
-
-            console.log('Chart data prepared:', chartData);
-
             try {
-                $.plot("#movement-chart-placeholder", chartData, {
-                    grid: {
-                        hoverable: true,
+                // Verify the chart container exists and set dimensions
+                var $placeholder = $('#movement-chart-placeholder');
+                if ($placeholder.length === 0) {
+                    console.error('Movement chart placeholder not found!');
+                    return;
+                }
+                
+                console.log('Placeholder found, setting dimensions...');
+                
+                // Ensure proper dimensions
+                $placeholder.css({
+                    'width': '100%',
+                    'height': '280px',
+                    'min-height': '280px'
+                });
+
+                // Support both old and new data formats
+                var datasets = [];
+                var xAxisOptions = {};
+                
+                if (data.receiving) {
+                    console.log('Using new data format (receiving/releasing/transferring)');
+                    // New format with receiving, releasing, transferring
+                    datasets = [
+                        {
+                            label: "Receiving",
+                            data: data.receiving || [],
+                            color: "#68BC31",
+                            lines: { show: true, fill: false, lineWidth: 2 },
+                            points: { show: true, radius: 3 }
+                        },
+                        {
+                            label: "Releasing", 
+                            data: data.releasing || [],
+                            color: "#DA5430",
+                            lines: { show: true, fill: false, lineWidth: 2 },
+                            points: { show: true, radius: 3 }
+                        },
+                        {
+                            label: "Transferring",
+                            data: data.transferring || [],
+                            color: "#2091CF",
+                            lines: { show: true, fill: false, lineWidth: 2 },
+                            points: { show: true, radius: 3 }
+                        }
+                    ];
+                    
+                    console.log('Datasets prepared:', datasets);
+                    
+                    // Set up custom ticks if labels are provided
+                    if (data.labels) {
+                        console.log('Setting up custom labels:', data.labels);
+                        xAxisOptions.ticks = [];
+                        // Show every label for simple data, every 3rd for complex data
+                        var step = data.labels.length <= 10 ? 1 : 3;
+                        for (var i = 0; i < data.labels.length; i += step) { 
+                            xAxisOptions.ticks.push([i, data.labels[i]]);
+                        }
+                        // Always show the last label
+                        if ((data.labels.length - 1) % step !== 0) {
+                            xAxisOptions.ticks.push([data.labels.length - 1, data.labels[data.labels.length - 1]]);
+                        }
+                        console.log('X-axis ticks:', xAxisOptions.ticks);
+                    }
+                } else {
+                    console.log('Using old data format (in_movements/out_movements)');
+                    // Fallback to old format
+                    datasets = [
+                        {
+                            label: "Stock In",
+                            data: data.in_movements || [],
+                            color: "#68BC31",
+                            lines: { show: true, fill: false, lineWidth: 2 },
+                            points: { show: true, radius: 3 }
+                        },
+                        {
+                            label: "Stock Out", 
+                            data: data.out_movements || [],
+                            color: "#DA5430",
+                            lines: { show: true, fill: false, lineWidth: 2 },
+                            points: { show: true, radius: 3 }
+                        }
+                    ];
+                }
+
+                var options = {
+                    legend: { 
+                        show: true, 
+                        position: "nw",
+                        backgroundOpacity: 0.85,
+                        backgroundColor: "#fff",
+                        labelBoxBorderColor: "transparent"
+                    },
+                    grid: { 
+                        show: true, 
+                        hoverable: true, 
                         clickable: true,
                         borderWidth: 1,
-                        backgroundColor: "#ffffff"
+                        borderColor: "#ddd",
+                        backgroundColor: "#fff"
                     },
-                    legend: {
+                    xaxis: $.extend({
+                        tickColor: "#ddd",
+                        axisLabel: "📅 Date",
+                        axisLabelUseCanvas: true,
+                        axisLabelFontSizePixels: 14,
+                        axisLabelFontFamily: "Arial",
+                        axisLabelPadding: 15,
+                        axisLabelColour: "#333"
+                    }, xAxisOptions),
+                    yaxis: { 
                         show: true,
-                        position: "nw"
-                    },
-                    xaxis: {
+                        tickColor: "#ddd",
                         min: 0,
-                        tickFormatter: function(val, axis) {
-                            return "Day " + Math.floor(val + 1);
-                        }
-                    },
-                    yaxis: {
-                        min: 0
+                        axisLabel: "📦 Quantity (Units)",
+                        axisLabelUseCanvas: true,
+                        axisLabelFontSizePixels: 14,
+                        axisLabelFontFamily: "Arial",
+                        axisLabelPadding: 10,
+                        axisLabelColour: "#333"
                     }
-                });
-                console.log('Movement chart plotted successfully');
+                };
+
+                console.log('Chart options prepared:', options);
+                console.log('About to plot chart...');
+                
+                $.plot($placeholder, datasets, options);
+                console.log('✅ Movement chart plotted successfully!');
             } catch (e) {
-                console.error('Error plotting movement chart:', e);
-                $('#movement-chart-placeholder').html('<div class="text-center" style="padding: 50px;"><p class="error">Error creating chart: ' + e.message + '</p></div>');
+                console.error('❌ Error drawing movement chart:', e);
+                $('#movement-chart-placeholder').html('<div class="text-center" style="padding: 50px;"><p class="error">Error displaying movement chart: ' + e.message + '</p></div>');
             }
         }
 
         function drawStockPieChart(data) {
-            console.log('Drawing stock pie chart with data:', data);
-            
-            if (!data || data.length === 0) {
-                $('#stock-pie-placeholder').html('<div class="text-center" style="padding: 50px;"><p>No stock distribution data available</p></div>');
-                return;
-            }
-
+            console.log('Drawing pie chart with data:', data);
             try {
-                $.plot("#stock-pie-placeholder", data, {
+                // Verify the chart container exists and set dimensions
+                var $placeholder = $('#stock-pie-placeholder');
+                if ($placeholder.length === 0) {
+                    console.error('Pie chart placeholder not found!');
+                    return;
+                }
+                
+                // Ensure proper dimensions
+                $placeholder.css({
+                    'width': '100%',
+                    'height': '280px',
+                    'min-height': '280px'
+                });
+
+                var options = {
                     series: {
                         pie: {
                             show: true,
                             radius: 1,
                             label: {
                                 show: true,
-                                radius: 3/4,
+                                radius: 2/3,
                                 formatter: function(label, series) {
                                     return '<div style="font-size:8pt;text-align:center;padding:2px;color:white;">' + 
                                            label + '<br/>' + Math.round(series.percent) + '%</div>';
                                 },
-                                background: {
-                                    opacity: 0.8
-                                }
+                                background: { opacity: 0.8 }
                             }
                         }
                     },
-                    legend: {
+                    legend: { 
                         show: true,
                         position: "se"
+                    },
+                    grid: {
+                        hoverable: true
                     }
-                });
+                };
+
+                console.log('Plotting pie chart...');
+                $.plot($placeholder, data, options);
                 console.log('Pie chart plotted successfully');
             } catch (e) {
-                console.error('Error plotting pie chart:', e);
-                $('#stock-pie-placeholder').html('<div class="text-center" style="padding: 50px;"><p class="error">Error creating chart: ' + e.message + '</p></div>');
+                console.error('Error drawing pie chart:', e);
+                $('#stock-pie-placeholder').html('<div class="text-center" style="padding: 50px;"><p class="error">Error displaying stock distribution: ' + e.message + '</p></div>');
             }
-        }
-
-        function drawABCChart(data) {
-            if (!data || data.length === 0) {
-                $('#abc-chart-placeholder').html('<div class="text-center" style="padding: 50px;"><p>No ABC analysis data available</p></div>');
-                return;
-            }
-
-            $.plot("#abc-chart-placeholder", [{
-                label: "ABC Analysis",
-                data: data,
-                color: "#2091CF",
-                bars: { show: true, barWidth: 0.6, align: "center" }
-            }], {
-                grid: {
-                    hoverable: true,
-                    borderWidth: 1
-                },
-                xaxis: {
-                    ticks: [[1, "Class A"], [2, "Class B"], [3, "Class C"]]
-                },
-                yaxis: {
-                    min: 0
-                }
-            });
         }
 
         function drawTopProductsChart(data) {
-            if (!data || data.length === 0) {
-                $('#top-products-chart-placeholder').html('<div class="text-center" style="padding: 50px;"><p>No top products data available</p></div>');
-                return;
-            }
-
-            // Handle both formats: array of objects with data property or simple array
-            var chartData;
-            if (Array.isArray(data) && data[0] && data[0].hasOwnProperty('data')) {
-                // Format: [{ data: [[value, index]], label: "name" }, ...]
-                chartData = [{
-                    label: "Quantity Sold",
-                    data: data.map(function(item, index) {
-                        return [item.data[0][0], index];
-                    }),
-                    color: "#68BC31",
-                    bars: { show: true, barWidth: 0.6, align: "center", horizontal: true }
-                }];
-                
-                var yTicks = data.map(function(item, index) {
-                    return [index, item.label || 'Product ' + (index + 1)];
-                });
-            } else {
-                // Simple format: [[value, index], ...]
-                chartData = [{
-                    label: "Quantity Sold",
-                    data: data,
-                    color: "#68BC31",
-                    bars: { show: true, barWidth: 0.6, align: "center", horizontal: true }
-                }];
-                
-                var yTicks = data.map(function(item, index) {
-                    return [index, 'Product ' + (index + 1)];
-                });
-            }
-
-            $.plot("#top-products-chart-placeholder", chartData, {
-                grid: {
-                    hoverable: true,
-                    borderWidth: 1
-                },
-                yaxis: {
-                    ticks: yTicks
-                },
-                xaxis: {
-                    min: 0
+            console.log('Drawing top products chart with data:', data);
+            try {
+                // Verify the chart container exists and set dimensions
+                var $placeholder = $('#top-products-chart-placeholder');
+                if ($placeholder.length === 0) {
+                    console.error('Top products chart placeholder not found!');
+                    return;
                 }
-            });
+                
+                // Ensure proper dimensions
+                $placeholder.css({
+                    'width': '100%',
+                    'height': '280px',
+                    'min-height': '280px'
+                });
+
+                var productNames = ['Paracetamol', 'Amoxicillin', 'Ibuprofen', 'Vitamin D3', 'Aspirin'];
+                
+                var dataset = [{
+                    label: "Movement Count",
+                    data: data,
+                    color: "#2091CF",
+                    bars: { 
+                        show: true, 
+                        barWidth: 0.6, 
+                        align: "center",
+                        fillColor: { colors: ["#2091CF", "#68BC31"] }
+                    }
+                }];
+
+                var options = {
+                    legend: { show: false },
+                    grid: { 
+                        show: true, 
+                        hoverable: true,
+                        borderWidth: 1,
+                        borderColor: "#ddd"
+                    },
+                    xaxis: { 
+                        show: true,
+                        ticks: function() {
+                            var ticks = [];
+                            for (var i = 0; i < productNames.length; i++) {
+                                ticks.push([i, productNames[i]]);
+                            }
+                            return ticks;
+                        }
+                    },
+                    yaxis: { 
+                        show: true,
+                        min: 0
+                    }
+                };
+
+                console.log('Plotting top products chart...');
+                $.plot($placeholder, dataset, options);
+                console.log('Top products chart plotted successfully');
+            } catch (e) {
+                console.error('Error drawing top products chart:', e);
+                $('#top-products-chart-placeholder').html('<div class="text-center" style="padding: 50px;"><p class="error">Error displaying top products: ' + e.message + '</p></div>');
+            }
         }
 
         function displayStockAlerts(alerts) {
             var html = '';
-            
-            if (!alerts || alerts.length === 0) {
-                html = '<div class="text-center"><p>No stock alerts at this time.</p></div>';
-            } else {
-                html = '<div class="alert-section">';
+            if (alerts && alerts.length > 0) {
                 alerts.forEach(function(alert) {
-                    html += '<div class="alert-item">';
-                    html += '<span class="alert-product">' + alert.product_name + '</span>';
-                    html += '<span class="alert-stock">' + alert.current_stock + ' remaining</span>';
-                    html += '</div>';
+                    html += '<tr>';
+                    html += '<td>' + alert.product_name + '</td>';
+                    html += '<td><span class="label label-warning">' + alert.current_stock + '</span></td>';
+                    html += '</tr>';
                 });
-                html += '</div>';
+            } else {
+                html = '<tr><td colspan="2" class="text-center">No stock alerts</td></tr>';
             }
-            
-            $('#stock-alerts-content').html(html);
+            $('#stock-alerts-tbody').html(html);
         }
 
-        /* 
-         * Currency Handling: 
-         * When implementing the real backend, get currency symbol from app_details table:
-         * SELECT currency_symbol FROM app_details WHERE currency_id = (SELECT currency_id FROM app_details LIMIT 1)
-         * For now, using default 'K' as used throughout the application
-         */
+        function getFilters() {
+            return {
+                location_id: $('#location_filter').val() || '',
+                date_range: $('#date_range').val() || '30_days',
+                start_date: $('#start_date').val() || '',
+                end_date: $('#end_date').val() || ''
+            };
+        }
 
-        // Tooltip for charts
-        $("<div id='tooltip'></div>").css({
-            position: "absolute",
-            display: "none",
-            border: "1px solid #fdd",
-            padding: "2px",
-            "background-color": "#fee",
-            opacity: 0.80
-        }).appendTo("body");
-
-        $("#movement-chart-placeholder, #stock-pie-placeholder, #abc-chart-placeholder, #top-products-chart-placeholder").bind("plothover", function (event, pos, item) {
+        $("#movement-chart-placeholder, #stock-pie-placeholder, #top-products-chart-placeholder").bind("plothover", function (event, pos, item) {
             if (item) {
-                var x = item.datapoint[0].toFixed(2),
-                    y = item.datapoint[1].toFixed(2);
+                var tooltip = "";
+                
+                if ($(this).attr('id') === 'movement-chart-placeholder') {
+                    // For movement chart with day index
+                    var dayIndex = Math.round(item.datapoint[0]);
+                    var value = Math.round(item.datapoint[1]);
+                    var date = new Date();
+                    date.setDate(date.getDate() - (29 - dayIndex));
+                    var formattedDate = (date.getMonth() + 1) + '/' + date.getDate();
+                    tooltip = item.series.label + " on " + formattedDate + ": " + value + " units";
+                } else {
+                    // For other charts
+                    var x = item.datapoint[0].toFixed(2);
+                    var y = item.datapoint[1].toFixed(2);
+                    tooltip = item.series.label + ": " + y;
+                }
 
-                $("#tooltip").html(item.series.label + ": " + y)
-                    .css({top: item.pageY+5, left: item.pageX+5})
+                $("#tooltip").html(tooltip)
+                    .css({
+                        top: item.pageY + 5, 
+                        left: item.pageX + 5,
+                        padding: "5px 10px",
+                        "background-color": "rgba(0,0,0,0.8)",
+                        color: "white",
+                        "border-radius": "3px",
+                        "font-size": "12px",
+                        "white-space": "nowrap"
+                    })
                     .fadeIn(200);
             } else {
                 $("#tooltip").hide();

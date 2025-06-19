@@ -1,10 +1,9 @@
 <!-- bootstrap modal -->
 <div id='modal_info' class="modal fade" tabindex="-1" users="dialog">
-    <div class="modal-dialog" users="document">
-        <div class="modal-content">
-            <div class="modal-header">
+    <div class="modal-dialog modal-lg" users="document">
+        <div class="modal-content">            <div class="modal-header">
                 <button type="button" class="close" data-dismiss="modal">&times;</button>
-                <h4 class="blue bigger"><i class="fa fa-info fa-fw"></i>Information</h4>
+                <h4 class="blue bigger"><i class="fa fa-info fa-fw"></i>Patient Information & History</h4>
             </div>
             <div class="modal-body">
                 <div class="row" style="margin-bottom: 0.5em;">
@@ -54,8 +53,7 @@
                         <label>Contact No.</label>
                         <input type="text" id="txt_contact_no_info" class="txt_field_info form-control" disabled />
                     </div>
-                </div>
-                <div class="row" style="margin-bottom: 0.5em;">
+                </div>                <div class="row" style="margin-bottom: 0.5em;">
                     <div class="col-md-4">
                         <label>Status</label>
                         <select id="txt_status_info" class="txt_field_info form-control" disabled>
@@ -73,6 +71,34 @@
                     <div class="col-md-8">
                         <label>Address</label>
                         <textarea id="txt_address_info" class="txt_field_info form-control" disabled></textarea>
+                    </div>
+                </div>                <!-- Patient Transaction History Section -->
+                <div class="row" style="margin-top: 1.5em; border-top: 2px solid #e0e0e0; padding-top: 1em;">
+                    <div class="col-md-12">
+                        <h5 class="blue">
+                            <i class="fa fa-history"></i> Transaction History
+                            <small class="text-muted">(Recent transactions)</small>
+                        </h5>
+                        <div style="max-height: 300px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px;">
+                            <table id="tbl_patient_history" class="table table-sm table-striped table-bordered" style="margin-bottom: 0;">
+                                <thead style="background-color: #f5f5f5;">
+                                    <tr>
+                                        <th class="text-center" style="width: 12%;">TRANS NO.</th>
+                                        <th class="text-center" style="width: 12%;">DATE</th>
+                                        <th class="text-center" style="width: 15%;">TYPE</th>
+                                        <th class="text-center" style="width: 15%;">DOCTOR</th>
+                                        <th class="text-center" style="width: 25%;">DIAGNOSIS</th>
+                                        <th class="text-center" style="width: 11%;">STATUS</th>
+                                        <th class="text-center" style="width: 10%;">ACTION</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td colspan="7" align="center">Loading transaction history...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
 

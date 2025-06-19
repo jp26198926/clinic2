@@ -688,6 +688,50 @@
         }
     });
 
+    // Function to load patient transaction history
+    function loadPatientHistory(patient_id) {
+        // Show loading message
+        $("#tbl_patient_history tbody").html('<tr><td colspan="7" align="center">Loading transaction history...</td></tr>');
+
+        $.post("<?= base_url(); ?>data_patient/patient_history", {
+            patient_id: patient_id
+        }, function(data) {
+            if (data.indexOf("<!DOCTYPE html>") > -1) {
+                alert("Error: Session Time-Out, You must login again to continue.");
+                location.reload(true);
+            } else {
+                let result = JSON.parse(data);
+                let tbl = "";
+
+                if (result.success === true) {
+                    if (result.records && result.records.length > 0) {
+                        $.each(result.records, function(i, record) {
+                            tbl += `<tr>
+                                        <td align='center'>${record.transaction_no}</td>
+                                        <td align='center'>${record.date}</td>
+                                        <td align='center'>${record.trans_type}</td>
+                                        <td align='center'>${record.doctor == null ? "" : record.doctor}</td>
+                                        <td>${record.diagnosis}</td>
+                                        <td align='center'>${record.status}</td>
+                                        <td align='center'>
+                                            <a href='<?= base_url(); ?>current_transaction/view/${record.transaction_id}' target='_blank' class='btn btn-xs btn-info fa fa-forward' title='Show Transaction'></a>
+                                        </td>
+                                    </tr>`;
+                        });
+                    } else {
+                        tbl = "<tr><td colspan='7' align='center'>No transaction history found</td></tr>";
+                    }
+                } else {
+                    tbl = "<tr><td colspan='7' align='center'>Error loading history: " + (result.error || "Unknown error") + "</td></tr>";
+                }
+
+                $("#tbl_patient_history tbody").html(tbl);
+            }
+        }).fail(function() {
+            $("#tbl_patient_history tbody").html('<tr><td colspan="7" align="center">Error loading transaction history</td></tr>');
+        });
+    }
+
     //info
     $(document).on("click", ".btn_info", function(e) {
         e.preventDefault();
@@ -719,6 +763,9 @@
                     $("#txt_contact_no_info").val(data.contact_no);
                     $("#txt_address_info").val(data.address);
                     $("#txt_status_info").val(data.status_id);
+
+                    // Load patient transaction history
+                    loadPatientHistory(id);
 
                     $("#modal_info").modal();
                 }

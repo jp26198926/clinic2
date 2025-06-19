@@ -251,5 +251,23 @@ class Data_patient extends CI_Controller
 		}
 	}
 
+	function patient_history()
+	{
+		$result["success"] = false;
+		$patient_id = intval($this->input->post("patient_id"));
 
+		if ($patient_id) {
+			try {
+				$result["success"] = true;
+				$result["records"] = $this->main_model->history($patient_id);
+			} catch (Exception $ex) {
+				$result["success"] = false;
+				$result["error"] = $ex->getMessage();
+			}
+		} else {
+			$result["error"] = "Error: Patient ID is required!";
+		}
+
+		echo json_encode($result);
+	}
 }
