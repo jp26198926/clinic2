@@ -722,18 +722,31 @@
                                     </tr>`;
                         });
                     } else {
+                        recordCount = 0;
                         tbl = "<tr><td colspan='7' align='center'>No transaction history found</td></tr>";
                     }
                 } else {
+                    recordCount = 0;
                     tbl = "<tr><td colspan='7' align='center'>Error loading history: " + (result.error || "Unknown error") + "</td></tr>";
                 }
 
                 $("#tbl_patient_history tbody").html(tbl);
                 $("#badge_history_count").text(recordCount);
+                
+                // Double-check count after DOM update
+                setTimeout(function() {
+                    var actualCount = getActualRowCount('#tbl_patient_history');
+                    if (actualCount !== recordCount) {
+                        $("#badge_history_count").text(actualCount);
+                    }
+                }, 100);
+                
+                // Update tab title if needed
+                updateTabTitle('#tab_history', 'Transaction History', recordCount);
             }
         }).fail(function() {
             $("#tbl_patient_history tbody").html('<tr><td colspan="7" align="center">Error loading transaction history</td></tr>');
-            $("#badge_history_count").text('!');
+            $("#badge_history_count").text('0');
         });
     }
 
@@ -770,19 +783,67 @@
                                     </tr>`;
                         });
                     } else {
+                        fileCount = 0;
                         tbl = "<tr><td colspan='4' align='center'>No documents found</td></tr>";
                     }
                 } else {
+                    fileCount = 0;
                     tbl = "<tr><td colspan='4' align='center'>Error loading documents: " + (result.error || "Unknown error") + "</td></tr>";
                 }
 
                 $("#tbl_patient_files tbody").html(tbl);
                 $("#badge_documents_count").text(fileCount);
+                
+                // Double-check count after DOM update
+                setTimeout(function() {
+                    var actualCount = getActualRowCount('#tbl_patient_files');
+                    if (actualCount !== fileCount) {
+                        $("#badge_documents_count").text(actualCount);
+                    }
+                }, 100);
+                
+                // Update tab title if needed
+                updateTabTitle('#tab_documents', 'Patient Documents', fileCount);
             }
         }).fail(function() {
             $("#tbl_patient_files tbody").html('<tr><td colspan="4" align="center">Error loading patient documents</td></tr>');
-            $("#badge_documents_count").text('!');
+            $("#badge_documents_count").text('0');
         });
+    }
+
+    // Helper function to update tab titles
+    function updateTabTitle(tabId, title, count) {
+        // Optional: You can use this function for additional tab title updates if needed
+        // Currently handled by badge updates
+    }
+
+    // Function to get actual row count from DOM (excluding header and "no data" rows)
+    function getActualRowCount(tableId) {
+        var rows = $(tableId + " tbody tr");
+        var actualCount = 0;
+        
+        rows.each(function() {
+            var text = $(this).text().toLowerCase();
+            // Don't count loading, error, or "no data" rows
+            if (!text.includes('loading') && 
+                !text.includes('no record') && 
+                !text.includes('no transaction') && 
+                !text.includes('no documents') && 
+                !text.includes('error')) {
+                actualCount++;
+            }
+        });
+        
+        return actualCount;
+    }
+
+    // Function to refresh badge counts based on actual DOM content
+    function refreshBadgeCounts() {
+        var historyCount = getActualRowCount('#tbl_patient_history');
+        var filesCount = getActualRowCount('#tbl_patient_files');
+        
+        $("#badge_history_count").text(historyCount);
+        $("#badge_documents_count").text(filesCount);
     }
 
     // Upload files function
@@ -1093,12 +1154,20 @@
                 if ($("#tbl_patient_history tbody tr").length === 1 && 
                     $("#tbl_patient_history tbody tr td").text().includes('Loading')) {
                     loadPatientHistory(patient_id);
+                } else {
+                    // Update badge count based on current DOM content
+                    var historyCount = getActualRowCount('#tbl_patient_history');
+                    $("#badge_history_count").text(historyCount);
                 }
             } else if (target === '#tab_documents') {
                 // Only reload if table is empty or showing loading message
                 if ($("#tbl_patient_files tbody tr").length === 1 && 
                     $("#tbl_patient_files tbody tr td").text().includes('Loading')) {
                     loadPatientFiles(patient_id);
+                } else {
+                    // Update badge count based on current DOM content
+                    var filesCount = getActualRowCount('#tbl_patient_files');
+                    $("#badge_documents_count").text(filesCount);
                 }
             }
         }
