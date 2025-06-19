@@ -6,6 +6,33 @@
                 <h4 class="blue bigger"><i class="fa fa-info fa-fw"></i>Patient Information & History</h4>
             </div>
             <div class="modal-body">
+                <style>
+                    /* Custom styles for patient info modal tabs */
+                    #modal_info .nav-tabs > li > a {
+                        border-radius: 4px 4px 0 0;
+                        padding: 8px 15px;
+                    }
+                    #modal_info .nav-tabs > li.active > a,
+                    #modal_info .nav-tabs > li.active > a:hover,
+                    #modal_info .nav-tabs > li.active > a:focus {
+                        background-color: #f5f5f5;
+                        border-bottom-color: transparent;
+                    }
+                    #modal_info .nav-tabs > li > a .badge {
+                        margin-left: 5px;
+                        font-size: 10px;
+                        padding: 2px 6px;
+                    }
+                    #modal_info .tab-content {
+                        background-color: #fafafa;
+                    }
+                    #modal_info .table thead th {
+                        background-color: #337ab7 !important;
+                        color: white;
+                        font-size: 11px;
+                        font-weight: bold;
+                    }
+                </style>
                 <div class="row" style="margin-bottom: 0.5em;">
                     <div class="col-md-4">
                         <label>Lastname <span class="text-danger">*</span></label>
@@ -72,78 +99,93 @@
                         <label>Address</label>
                         <textarea id="txt_address_info" class="txt_field_info form-control" disabled></textarea>
                     </div>
-                </div>                <!-- Patient Transaction History Section -->
-                <div class="row" style="margin-top: 1.5em; border-top: 2px solid #e0e0e0; padding-top: 1em;">
-                    <div class="col-md-12">
-                        <h5 class="blue">
-                            <i class="fa fa-history"></i> Transaction History
-                            <small class="text-muted">(Recent transactions)</small>
-                        </h5>
-                        <div style="max-height: 300px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px;">
-                            <table id="tbl_patient_history" class="table table-sm table-striped table-bordered" style="margin-bottom: 0;">
-                                <thead style="background-color: #f5f5f5;">
-                                    <tr>
-                                        <th class="text-center" style="width: 12%;">TRANS NO.</th>
-                                        <th class="text-center" style="width: 12%;">DATE</th>
-                                        <th class="text-center" style="width: 15%;">TYPE</th>
-                                        <th class="text-center" style="width: 15%;">DOCTOR</th>
-                                        <th class="text-center" style="width: 25%;">DIAGNOSIS</th>
-                                        <th class="text-center" style="width: 11%;">STATUS</th>
-                                        <th class="text-center" style="width: 10%;">ACTION</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td colspan="7" align="center">Loading transaction history...</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
                 </div>
 
-                <!-- Patient Documents Section -->
+                <!-- Tabs Section -->
                 <div class="row" style="margin-top: 1.5em; border-top: 2px solid #e0e0e0; padding-top: 1em;">
                     <div class="col-md-12">
-                        <h5 class="blue">
-                            <i class="fa fa-file-o"></i> Patient Documents
-                            <small class="text-muted">(Scanned files and documents)</small>
-                        </h5>
-                        
-                        <!-- File Upload Section -->
-                        <div class="row" style="margin-bottom: 1em;">
-                            <div class="col-md-8">
-                                <input type="file" id="patient_files" class="form-control" multiple accept=".pdf,.jpg,.jpeg,.png,.gif,.doc,.docx,.txt,.bmp,.tiff,.tif" style="height: auto; padding: 6px;">
-                                <small class="text-muted">Supported formats: PDF, JPG, JPEG, PNG, GIF, DOC, DOCX, TXT, BMP, TIFF (Max: 10MB per file)</small>
-                            </div>
-                            <div class="col-md-4">
-                                <button type="button" id="btn_upload_files" class="btn btn-sm btn-success">
-                                    <i class="fa fa-upload"></i> Upload Files
-                                </button>
-                                <button type="button" id="btn_refresh_files" class="btn btn-sm btn-info">
-                                    <i class="fa fa-refresh"></i> Refresh
-                                </button>
-                            </div>
-                        </div>
+                        <!-- Tab Navigation -->
+                        <ul class="nav nav-tabs" role="tablist">
+                            <li role="presentation" class="active">
+                                <a href="#tab_history" aria-controls="tab_history" role="tab" data-toggle="tab">
+                                    <i class="fa fa-history"></i> Transaction History
+                                    <span id="badge_history_count" class="badge badge-info">0</span>
+                                </a>
+                            </li>
+                            <li role="presentation">
+                                <a href="#tab_documents" aria-controls="tab_documents" role="tab" data-toggle="tab">
+                                    <i class="fa fa-file-o"></i> Patient Documents
+                                    <span id="badge_documents_count" class="badge badge-success">0</span>
+                                </a>
+                            </li>
+                        </ul>
 
-                        <!-- Uploaded Files List -->
-                        <div style="max-height: 250px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px;">
-                            <table id="tbl_patient_files" class="table table-sm table-striped table-bordered" style="margin-bottom: 0;">
-                                <thead style="background-color: #f5f5f5;">
-                                    <tr>
-                                        <th class="text-center" style="width: 40%;">FILE NAME</th>
-                                        <th class="text-center" style="width: 15%;">SIZE</th>
-                                        <th class="text-center" style="width: 20%;">UPLOADED DATE</th>
-                                        <th class="text-center" style="width: 25%;">ACTIONS</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td colspan="4" align="center">Loading patient documents...</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
+                        <!-- Tab Content -->
+                        <div class="tab-content" style="border: 1px solid #ddd; border-top: none; padding: 15px; min-height: 400px;">
+                            
+                            <!-- Transaction History Tab -->
+                            <div role="tabpanel" class="tab-pane active" id="tab_history">
+                                <div style="max-height: 350px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px;">
+                                    <table id="tbl_patient_history" class="table table-sm table-striped table-bordered" style="margin-bottom: 0;">
+                                        <thead style="background-color: #f5f5f5;">
+                                            <tr>
+                                                <th class="text-center" style="width: 12%;">TRANS NO.</th>
+                                                <th class="text-center" style="width: 12%;">DATE</th>
+                                                <th class="text-center" style="width: 15%;">TYPE</th>
+                                                <th class="text-center" style="width: 15%;">DOCTOR</th>
+                                                <th class="text-center" style="width: 25%;">DIAGNOSIS</th>
+                                                <th class="text-center" style="width: 11%;">STATUS</th>
+                                                <th class="text-center" style="width: 10%;">ACTION</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td colspan="7" align="center">Loading transaction history...</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Patient Documents Tab -->
+                            <div role="tabpanel" class="tab-pane" id="tab_documents">
+                                <!-- File Upload Section -->
+                                <div class="row" style="margin-bottom: 1em;">
+                                    <div class="col-md-8">
+                                        <input type="file" id="patient_files" class="form-control" multiple accept=".pdf,.jpg,.jpeg,.png,.gif,.doc,.docx,.txt,.bmp,.tiff,.tif" style="height: auto; padding: 6px;">
+                                        <small class="text-muted">Supported formats: PDF, JPG, JPEG, PNG, GIF, DOC, DOCX, TXT, BMP, TIFF (Max: 10MB per file)</small>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <button type="button" id="btn_upload_files" class="btn btn-sm btn-success">
+                                            <i class="fa fa-upload"></i> Upload Files
+                                        </button>
+                                        <button type="button" id="btn_refresh_files" class="btn btn-sm btn-info">
+                                            <i class="fa fa-refresh"></i> Refresh
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Uploaded Files List -->
+                                <div style="max-height: 280px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px;">
+                                    <table id="tbl_patient_files" class="table table-sm table-striped table-bordered" style="margin-bottom: 0;">
+                                        <thead style="background-color: #f5f5f5;">
+                                            <tr>
+                                                <th class="text-center" style="width: 40%;">FILE NAME</th>
+                                                <th class="text-center" style="width: 15%;">SIZE</th>
+                                                <th class="text-center" style="width: 20%;">UPLOADED DATE</th>
+                                                <th class="text-center" style="width: 25%;">ACTIONS</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td colspan="4" align="center">Loading patient documents...</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                        </div> <!-- /.tab-content -->
                     </div>
                 </div>
 

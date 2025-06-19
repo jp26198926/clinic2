@@ -692,6 +692,7 @@
     function loadPatientHistory(patient_id) {
         // Show loading message
         $("#tbl_patient_history tbody").html('<tr><td colspan="7" align="center">Loading transaction history...</td></tr>');
+        $("#badge_history_count").text('...');
 
         $.post("<?= base_url(); ?>data_patient/patient_history", {
             patient_id: patient_id
@@ -702,9 +703,11 @@
             } else {
                 let result = JSON.parse(data);
                 let tbl = "";
+                let recordCount = 0;
 
                 if (result.success === true) {
                     if (result.records && result.records.length > 0) {
+                        recordCount = result.records.length;
                         $.each(result.records, function(i, record) {
                             tbl += `<tr>
                                         <td align='center'>${record.transaction_no}</td>
@@ -726,15 +729,18 @@
                 }
 
                 $("#tbl_patient_history tbody").html(tbl);
+                $("#badge_history_count").text(recordCount);
             }
         }).fail(function() {
             $("#tbl_patient_history tbody").html('<tr><td colspan="7" align="center">Error loading transaction history</td></tr>');
+            $("#badge_history_count").text('!');
         });
     }
 
     // Function to load patient files
     function loadPatientFiles(patient_id) {
         $("#tbl_patient_files tbody").html('<tr><td colspan="4" align="center">Loading patient documents...</td></tr>');
+        $("#badge_documents_count").text('...');
 
         $.post("<?= base_url(); ?>data_patient/get_patient_files", {
             patient_id: patient_id
@@ -745,9 +751,11 @@
             } else {
                 let result = JSON.parse(data);
                 let tbl = "";
+                let fileCount = 0;
 
                 if (result.success === true) {
                     if (result.files && result.files.length > 0) {
+                        fileCount = result.files.length;
                         $.each(result.files, function(i, file) {
                             tbl += `<tr>
                                         <td>${file.name}</td>
@@ -769,9 +777,11 @@
                 }
 
                 $("#tbl_patient_files tbody").html(tbl);
+                $("#badge_documents_count").text(fileCount);
             }
         }).fail(function() {
             $("#tbl_patient_files tbody").html('<tr><td colspan="4" align="center">Error loading patient documents</td></tr>');
+            $("#badge_documents_count").text('!');
         });
     }
 
@@ -1059,6 +1069,38 @@
             });
         } else {
             alert("Error: Critical Error Encountered!");
+        }
+    });
+
+    // Initialize tab counters when modal opens
+    $('#modal_info').on('shown.bs.modal', function() {
+        // Reset tab counters
+        $("#badge_history_count").text('0');
+        $("#badge_documents_count").text('0');
+        
+        // Ensure first tab is active
+        $('#modal_info .nav-tabs a:first').tab('show');
+    });
+
+    // Handle tab switching to ensure data is loaded
+    $('#modal_info').on('shown.bs.tab', function(e) {
+        var target = $(e.target).attr("href"); // activated tab
+        var patient_id = $("#modal_info").data('current-patient-id');
+        
+        if (patient_id) {
+            if (target === '#tab_history') {
+                // Only reload if table is empty or showing loading message
+                if ($("#tbl_patient_history tbody tr").length === 1 && 
+                    $("#tbl_patient_history tbody tr td").text().includes('Loading')) {
+                    loadPatientHistory(patient_id);
+                }
+            } else if (target === '#tab_documents') {
+                // Only reload if table is empty or showing loading message
+                if ($("#tbl_patient_files tbody tr").length === 1 && 
+                    $("#tbl_patient_files tbody tr td").text().includes('Loading')) {
+                    loadPatientFiles(patient_id);
+                }
+            }
         }
     });
     </script>
