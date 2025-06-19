@@ -732,6 +732,101 @@
         });
     }
 
+    // Function to load patient files
+    function loadPatientFiles(patient_id) {
+        $("#tbl_patient_files tbody").html('<tr><td colspan="4" align="center">Loading patient documents...</td></tr>');
+
+        $.post("<?= base_url(); ?>data_patient/get_patient_files", {
+            patient_id: patient_id
+        }, function(data) {
+            if (data.indexOf("<!DOCTYPE html>") > -1) {
+                alert("Error: Session Time-Out, You must login again to continue.");
+                location.reload(true);
+            } else {
+                let result = JSON.parse(data);
+                let tbl = "";
+
+                if (result.success === true) {
+                    if (result.files && result.files.length > 0) {
+                        $.each(result.files, function(i, file) {
+                            tbl += `<tr>
+                                        <td>${file.name}</td>
+                                        <td align='center'>${file.size}</td>
+                                        <td align='center'>${file.date}</td>
+                                        <td align='center'>
+                                            <a href='<?= base_url(); ?>data_patient/download_patient_file?patient_id=${patient_id}&filename=${encodeURIComponent(file.name)}' 
+                                               class='btn btn-xs btn-success fa fa-download' title='Download' target='_blank'></a>
+                                            <button type='button' class='btn btn-xs btn-danger fa fa-trash btn_delete_file' 
+                                                    data-patient-id='${patient_id}' data-filename='${file.name}' title='Delete'></button>
+                                        </td>
+                                    </tr>`;
+                        });
+                    } else {
+                        tbl = "<tr><td colspan='4' align='center'>No documents found</td></tr>";
+                    }
+                } else {
+                    tbl = "<tr><td colspan='4' align='center'>Error loading documents: " + (result.error || "Unknown error") + "</td></tr>";
+                }
+
+                $("#tbl_patient_files tbody").html(tbl);
+            }
+        }).fail(function() {
+            $("#tbl_patient_files tbody").html('<tr><td colspan="4" align="center">Error loading patient documents</td></tr>');
+        });
+    }
+
+    // Upload files function
+    function uploadPatientFiles(patient_id) {
+        var fileInput = document.getElementById('patient_files');
+        if (fileInput.files.length === 0) {
+            bootbox.alert("Please select files to upload.");
+            return;
+        }
+
+        var formData = new FormData();
+        formData.append('patient_id', patient_id);
+        
+        for (var i = 0; i < fileInput.files.length; i++) {
+            formData.append('patient_files[]', fileInput.files[i]);
+        }
+
+        $("#btn_upload_files").prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Uploading...');
+
+        $.ajax({
+            url: '<?= base_url(); ?>data_patient/upload_patient_files',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(data) {
+                $("#btn_upload_files").prop('disabled', false).html('<i class="fa fa-upload"></i> Upload Files');
+                
+                if (data.indexOf("<!DOCTYPE html>") > -1) {
+                    alert("Error: Session Time-Out, You must login again to continue.");
+                    location.reload(true);
+                } else {
+                    let result = JSON.parse(data);
+                    
+                    if (result.success) {
+                        toastr.success(result.message);
+                        $("#patient_files").val(''); // Clear file input
+                        loadPatientFiles(patient_id); // Reload files list
+                    } else {
+                        toastr.error(result.error || "Upload failed");
+                    }
+                    
+                    if (result.errors && result.errors.length > 0) {
+                        toastr.warning("Some files failed: " + result.errors.join(", "));
+                    }
+                }
+            },
+            error: function() {
+                $("#btn_upload_files").prop('disabled', false).html('<i class="fa fa-upload"></i> Upload Files');
+                toastr.error("Upload failed due to network error");
+            }
+        });
+    }
+
     //info
     $(document).on("click", ".btn_info", function(e) {
         e.preventDefault();
@@ -766,6 +861,11 @@
 
                     // Load patient transaction history
                     loadPatientHistory(id);
+                    // Load patient files
+                    loadPatientFiles(id);
+
+                    // Store patient ID for file operations
+                    $("#modal_info").data('current-patient-id', id);
 
                     $("#modal_info").modal();
                 }
@@ -773,6 +873,67 @@
         } else {
             bootbox.alert("Error: Critical Error Encountered!");
         }
+    });
+
+    // File upload button click
+    $(document).on("click", "#btn_upload_files", function() {
+        var patient_id = $("#modal_info").data('current-patient-id');
+        if (patient_id) {
+            uploadPatientFiles(patient_id);
+        } else {
+            bootbox.alert("Error: Unable to determine patient ID");
+        }
+    });
+
+    // Refresh files button click
+    $(document).on("click", "#btn_refresh_files", function() {
+        var patient_id = $("#modal_info").data('current-patient-id');
+        if (patient_id) {
+            loadPatientFiles(patient_id);
+        }
+    });
+
+    // Delete file button click
+    $(document).on("click", ".btn_delete_file", function() {
+        var patient_id = $(this).data('patient-id');
+        var filename = $(this).data('filename');
+        
+        bootbox.confirm({
+            message: "Are you sure you want to delete '" + filename + "'?",
+            buttons: {
+                confirm: {
+                    label: '<i class="fa fa-check"></i> Yes',
+                    className: 'btn-danger'
+                },
+                cancel: {
+                    label: '<i class="fa fa-times"></i> No',
+                    className: 'btn-default'
+                }
+            },
+            callback: function(result) {
+                if (result) {
+                    $.post("<?= base_url(); ?>data_patient/delete_patient_file", {
+                        patient_id: patient_id,
+                        filename: filename
+                    }, function(data) {
+                        if (data.indexOf("<!DOCTYPE html>") > -1) {
+                            alert("Error: Session Time-Out, You must login again to continue.");
+                            location.reload(true);
+                        } else {
+                            let result = JSON.parse(data);
+                            if (result.success) {
+                                toastr.success(result.message);
+                                loadPatientFiles(patient_id);
+                            } else {
+                                toastr.error(result.error || "Delete failed");
+                            }
+                        }
+                    }).fail(function() {
+                        toastr.error("Delete failed due to network error");
+                    });
+                }
+            }
+        });
     });
 
     //delete

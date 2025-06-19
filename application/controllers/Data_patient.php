@@ -270,4 +270,166 @@ class Data_patient extends CI_Controller
 
 		echo json_encode($result);
 	}
+
+	function upload_patient_files()
+	{
+		$result["success"] = false;
+		$patient_id = intval($this->input->post("patient_id"));
+
+		if ($patient_id) {
+			// Create upload directory if it doesn't exist
+			$upload_path = './upload/patient/' . $patient_id . '/';
+			if (!is_dir($upload_path)) {
+				if (!mkdir($upload_path, 0755, true)) {
+					$result["error"] = "Error: Could not create upload directory.";
+					echo json_encode($result);
+					return;
+				}
+			}
+
+			$config['upload_path'] = $upload_path;
+			$config['allowed_types'] = 'pdf|jpg|jpeg|png|gif|doc|docx|txt|bmp|tiff|tif';
+			$config['max_size'] = 10240; // 10MB
+			$config['encrypt_name'] = false; // Keep original filename
+			$config['overwrite'] = false; // Don't overwrite existing files
+
+			$this->load->library('upload', $config);
+
+			$uploaded_files = array();
+			$errors = array();
+
+			// Handle multiple file uploads
+			if (!empty($_FILES['patient_files']['name'][0])) {
+				$files_count = count($_FILES['patient_files']['name']);
+
+				for ($i = 0; $i < $files_count; $i++) {
+					// Skip empty file slots
+					if (empty($_FILES['patient_files']['name'][$i])) {
+						continue;
+					}
+
+					$_FILES['single_file']['name'] = $_FILES['patient_files']['name'][$i];
+					$_FILES['single_file']['type'] = $_FILES['patient_files']['type'][$i];
+					$_FILES['single_file']['tmp_name'] = $_FILES['patient_files']['tmp_name'][$i];
+					$_FILES['single_file']['error'] = $_FILES['patient_files']['error'][$i];
+					$_FILES['single_file']['size'] = $_FILES['patient_files']['size'][$i];
+
+					if ($this->upload->do_upload('single_file')) {
+						$uploaded_files[] = $this->upload->data();
+					} else {
+						$errors[] = $_FILES['single_file']['name'] . ': ' . $this->upload->display_errors('', '');
+					}
+				}
+			}
+
+			if (!empty($uploaded_files)) {
+				$result["success"] = true;
+				$result["uploaded_files"] = $uploaded_files;
+				$result["message"] = count($uploaded_files) . " file(s) uploaded successfully.";
+			}
+
+			if (!empty($errors)) {
+				$result["errors"] = $errors;
+			}
+
+			if (empty($uploaded_files) && !empty($errors)) {
+				$result["error"] = "Upload failed: " . implode(", ", $errors);
+			}
+
+			if (empty($uploaded_files) && empty($errors)) {
+				$result["error"] = "No files were selected for upload.";
+			}
+
+		} else {
+			$result["error"] = "Error: Patient ID is required!";
+		}
+
+		echo json_encode($result);
+	}
+
+	function get_patient_files()
+	{
+		$result["success"] = false;
+		$patient_id = intval($this->input->post("patient_id"));
+
+		if ($patient_id) {
+			$upload_path = './upload/patient/' . $patient_id . '/';
+			$files = array();
+
+			if (is_dir($upload_path)) {
+				$file_list = scandir($upload_path);
+				foreach ($file_list as $file) {
+					if ($file != '.' && $file != '..' && is_file($upload_path . $file)) {
+						$file_path = $upload_path . $file;
+						$files[] = array(
+							'name' => $file,
+							'size' => $this->formatBytes(filesize($file_path)),
+							'date' => date('Y-m-d H:i:s', filemtime($file_path)),
+							'path' => 'upload/patient/' . $patient_id . '/' . $file
+						);
+					}
+				}
+			}
+
+			$result["success"] = true;
+			$result["files"] = $files;
+		} else {
+			$result["error"] = "Error: Patient ID is required!";
+		}
+
+		echo json_encode($result);
+	}
+
+	function delete_patient_file()
+	{
+		$result["success"] = false;
+		$patient_id = intval($this->input->post("patient_id"));
+		$filename = $this->input->post("filename");
+
+		if ($patient_id && $filename) {
+			$file_path = './upload/patient/' . $patient_id . '/' . $filename;
+			
+			if (file_exists($file_path)) {
+				if (unlink($file_path)) {
+					$result["success"] = true;
+					$result["message"] = "File deleted successfully.";
+				} else {
+					$result["error"] = "Error: Failed to delete file.";
+				}
+			} else {
+				$result["error"] = "Error: File not found.";
+			}
+		} else {
+			$result["error"] = "Error: Patient ID and filename are required!";
+		}
+
+		echo json_encode($result);
+	}
+
+	function download_patient_file()
+	{
+		$patient_id = intval($this->input->get("patient_id"));
+		$filename = $this->input->get("filename");
+
+		if ($patient_id && $filename) {
+			$file_path = './upload/patient/' . $patient_id . '/' . $filename;
+			
+			if (file_exists($file_path)) {
+				$this->load->helper('download');
+				force_download($filename, file_get_contents($file_path));
+			} else {
+				show_404();
+			}
+		} else {
+			show_404();
+		}
+	}
+
+	private function formatBytes($size, $precision = 2)
+	{
+		$units = array('B', 'KB', 'MB', 'GB', 'TB');
+		$base = log($size, 1024);
+		return round(pow(1024, $base - floor($base)), $precision) . ' ' . $units[floor($base)];
+	}
+
 }

@@ -102,6 +102,51 @@
                     </div>
                 </div>
 
+                <!-- Patient Documents Section -->
+                <div class="row" style="margin-top: 1.5em; border-top: 2px solid #e0e0e0; padding-top: 1em;">
+                    <div class="col-md-12">
+                        <h5 class="blue">
+                            <i class="fa fa-file-o"></i> Patient Documents
+                            <small class="text-muted">(Scanned files and documents)</small>
+                        </h5>
+                        
+                        <!-- File Upload Section -->
+                        <div class="row" style="margin-bottom: 1em;">
+                            <div class="col-md-8">
+                                <input type="file" id="patient_files" class="form-control" multiple accept=".pdf,.jpg,.jpeg,.png,.gif,.doc,.docx,.txt,.bmp,.tiff,.tif" style="height: auto; padding: 6px;">
+                                <small class="text-muted">Supported formats: PDF, JPG, JPEG, PNG, GIF, DOC, DOCX, TXT, BMP, TIFF (Max: 10MB per file)</small>
+                            </div>
+                            <div class="col-md-4">
+                                <button type="button" id="btn_upload_files" class="btn btn-sm btn-success">
+                                    <i class="fa fa-upload"></i> Upload Files
+                                </button>
+                                <button type="button" id="btn_refresh_files" class="btn btn-sm btn-info">
+                                    <i class="fa fa-refresh"></i> Refresh
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Uploaded Files List -->
+                        <div style="max-height: 250px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px;">
+                            <table id="tbl_patient_files" class="table table-sm table-striped table-bordered" style="margin-bottom: 0;">
+                                <thead style="background-color: #f5f5f5;">
+                                    <tr>
+                                        <th class="text-center" style="width: 40%;">FILE NAME</th>
+                                        <th class="text-center" style="width: 15%;">SIZE</th>
+                                        <th class="text-center" style="width: 20%;">UPLOADED DATE</th>
+                                        <th class="text-center" style="width: 25%;">ACTIONS</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td colspan="4" align="center">Loading patient documents...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
             </div>
             <div class="modal-footer">
 
