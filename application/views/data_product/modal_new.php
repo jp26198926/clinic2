@@ -45,6 +45,15 @@
                             }
                             ?>
                         </select>
+                    </div>                </div>
+                <hr />
+                <div class="row" style="margin-bottom: 0.5em;">
+                    <div class="col-md-12">
+                        <label>
+                            <input type="checkbox" id="txt_is_allow_upload" class="txt_field ace" value="1" />
+                            <span class="lbl"> Allow File Upload (for lab results, images, etc.)</span>
+                        </label>
+                        <small class="text-muted">Check this box if this product/service requires file uploads (e.g., lab results, X-ray images, diagnostic reports)</small>
                     </div>
                 </div>
                 <hr />

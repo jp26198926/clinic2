@@ -102,12 +102,13 @@
                                                     <th>NORMAL AMOUNT PO</th>
                                                     <th>AFTER OFFICE AMT</th>
                                                     <th>AFTER OFFICE AMT PO</th>
+                                                    <th>ALLOW UPLOAD</th>
                                                     <th>STATUS</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 <tr>
-                                                    <td align='center' colspan='10'>Use search button to display record
+                                                    <td align='center' colspan='11'>Use search button to display record
                                                     </td>
                                                 </tr>
                                             </tbody>
@@ -270,12 +271,15 @@
                     {
                         className: "text-center " //after amount po
                     },
+                    {
+                        className: "text-center " //allow upload
+                    },
                     null //status
                 ],
                 data: dataSet,
                 "aaSorting": [],
                 "rowCallback": function(row, data, index) {
-                    if (data[11] == 1) { //deleted
+                    if (data[12] == 1) { //deleted (status_id index shifted due to new column)
                         $('td', row).addClass('danger');
                     } else {
                         $('td', row).removeClass('danger');
@@ -373,6 +377,7 @@
                 value.amount_po,
                 value.after_amount,
                 value.after_amount_po,
+                value.is_allow_upload ? '<span class="label label-success">Yes</span>' : '<span class="label label-default">No</span>',
                 status,
                 id,
                 status_id
@@ -518,6 +523,7 @@
         var amount_po = $("#txt_amount_po").val();
         var after_amount = $("#txt_after_amount").val();
         var after_amount_po = $("#txt_after_amount_po").val();
+        var is_allow_upload = $("#txt_is_allow_upload").is(":checked") ? 1 : 0;
 
         if (code && name) {
             $(".modal_error, .modal_button").hide();
@@ -531,7 +537,8 @@
                 amount: amount,
                 amount_po: amount_po,
                 after_amount: after_amount,
-                after_amount_po: after_amount_po
+                after_amount_po: after_amount_po,
+                is_allow_upload: is_allow_upload
             }, function(data) {
 
                 $('.modal_error, .modal_waiting').hide();
@@ -595,6 +602,7 @@
                     $("#txt_amount_po_update").val(data.amount_po);
                     $("#txt_after_amount_update").val(data.after_amount);
                     $("#txt_after_amount_po_update").val(data.after_amount_po);
+                    $("#txt_is_allow_upload_update").prop("checked", data.is_allow_upload == 1);
 
                     $("#modal_modify").modal();
 
@@ -626,6 +634,7 @@
         var amount_po = $("#txt_amount_po_update").val();
         var after_amount = $("#txt_after_amount_update").val();
         var after_amount_po = $("#txt_after_amount_po_update").val();
+        var is_allow_upload = $("#txt_is_allow_upload_update").is(":checked") ? 1 : 0;
 
         if (id) {
             if (code && name) {
@@ -641,7 +650,8 @@
                     amount: amount,
                     amount_po: amount_po,
                     after_amount: after_amount,
-                    after_amount_po: after_amount_po
+                    after_amount_po: after_amount_po,
+                    is_allow_upload: is_allow_upload
                 }, function(data) {
 
                     $(".modal_error, .modal_waiting").hide();
@@ -664,6 +674,7 @@
                         current_data[6] = amount_po;
                         current_data[7] = after_amount;
                         current_data[8] = after_amount_po;
+                        current_data[9] = is_allow_upload ? '<span class="label label-success">Yes</span>' : '<span class="label label-default">No</span>';
                         current_row.data(current_data).invalidate();
 
                         $("#modal_modify").modal("hide");

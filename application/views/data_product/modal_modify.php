@@ -61,10 +61,19 @@
                     <div class="col-md-3">
                         <label>After Office AMT</label>
                         <input type="text" id="txt_after_amount_update" placeholder="0.00" class="numeric txt_field_update form-control text-center" />
-                    </div>
-                    <div class="col-md-3">
+                    </div>                    <div class="col-md-3">
                         <label>After Office AMT PO</label>
                         <input type="text" id="txt_after_amount_po_update" placeholder="0.00" class="numeric txt_field_update form-control text-center" />
+                    </div>
+                </div>
+                <hr />
+                <div class="row" style="margin-bottom: 0.5em;">
+                    <div class="col-md-12">
+                        <label>
+                            <input type="checkbox" id="txt_is_allow_upload_update" class="txt_field_update ace" value="1" />
+                            <span class="lbl"> Allow File Upload (for lab results, images, etc.)</span>
+                        </label>
+                        <small class="text-muted">Check this box if this product/service requires file uploads (e.g., lab results, X-ray images, diagnostic reports)</small>
                     </div>
                 </div>
 
