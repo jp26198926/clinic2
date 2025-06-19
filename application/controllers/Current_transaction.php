@@ -1343,4 +1343,237 @@ class Current_transaction extends CI_Controller
 
 		echo json_encode($data);
 	}
+
+	// Lab Result Methods
+	function lab_upload()
+	{
+		$result = array("success" => false);
+		
+		try {
+			$transaction_id = $this->input->post("transaction_id");
+			$test_name = $this->input->post("test_name");
+			$test_date = $this->input->post("test_date");
+			$lab_provider = $this->input->post("lab_provider");
+			$notes = $this->input->post("notes");
+			
+			if (!$transaction_id || !$test_name || !$test_date) {
+				throw new Exception("Required fields are missing");
+			}
+			
+			// Create upload directory if it doesn't exist
+			$upload_path = "./upload/lab_results/" . $transaction_id . "/";
+			if (!is_dir($upload_path)) {
+				mkdir($upload_path, 0755, true);
+			}
+			
+			// Configure upload
+			$config['upload_path'] = $upload_path;
+			$config['allowed_types'] = 'pdf|jpg|jpeg|png|doc|docx';
+			$config['max_size'] = 10240; // 10MB
+			$config['encrypt_name'] = true;
+			
+			$this->load->library('upload', $config);
+			
+			$uploaded_files = array();
+			$files = $_FILES['lab_files'];
+			
+			// Handle multiple file upload
+			for ($i = 0; $i < count($files['name']); $i++) {
+				if ($files['error'][$i] == 0) {
+					$_FILES['single_file']['name'] = $files['name'][$i];
+					$_FILES['single_file']['type'] = $files['type'][$i];
+					$_FILES['single_file']['tmp_name'] = $files['tmp_name'][$i];
+					$_FILES['single_file']['error'] = $files['error'][$i];
+					$_FILES['single_file']['size'] = $files['size'][$i];
+					
+					if ($this->upload->do_upload('single_file')) {
+						$upload_data = $this->upload->data();
+						$uploaded_files[] = array(
+							'original_name' => $files['name'][$i],
+							'file_name' => $upload_data['file_name'],
+							'file_path' => $upload_path . $upload_data['file_name']
+						);
+					} else {
+						throw new Exception("Upload error: " . $this->upload->display_errors());
+					}
+				}
+			}
+			
+			if (empty($uploaded_files)) {
+				throw new Exception("No files were uploaded successfully");
+			}
+			
+			// Save to database
+			$lab_data = array(
+				'transaction_id' => $transaction_id,
+				'test_name' => $test_name,
+				'test_date' => $test_date,
+				'lab_provider' => $lab_provider,
+				'notes' => $notes,
+				'files' => json_encode($uploaded_files),
+				'created_by' => $this->uid,
+				'created_at' => date('Y-m-d H:i:s')
+			);
+			
+			$this->db->insert('lab_results', $lab_data);
+			
+			if ($this->db->affected_rows() > 0) {
+				$result["success"] = true;
+				$result["message"] = "Laboratory results uploaded successfully";
+				
+				// Write to log
+				$this->shared_model->write_to_log("Lab Upload", $this->uid, $transaction_id, 0, "", "", "Laboratory result uploaded: " . $test_name);
+			} else {
+				throw new Exception("Failed to save lab result to database");
+			}
+			
+		} catch (Exception $ex) {
+			$result["error"] = $ex->getMessage();
+		}
+		
+		echo json_encode($result);
+	}
+	
+	function lab_list()
+	{
+		$result = array("success" => false);
+		
+		try {
+			$transaction_id = $this->input->post("transaction_id");
+			
+			if (!$transaction_id) {
+				throw new Exception("Transaction ID is required");
+			}
+			
+			$this->db->select('*');
+			$this->db->from('lab_results');
+			$this->db->where('transaction_id', $transaction_id);
+			$this->db->where('deleted_at IS NULL');
+			$this->db->order_by('test_date', 'DESC');
+			
+			$query = $this->db->get();
+			$lab_results = $query->result_array();
+			
+			// Process files for each result
+			foreach ($lab_results as &$lab) {
+				if ($lab['files']) {
+					$lab['files'] = json_decode($lab['files'], true);
+				} else {
+					$lab['files'] = array();
+				}
+			}
+			
+			$result["success"] = true;
+			$result["results"] = $lab_results;
+			
+		} catch (Exception $ex) {
+			$result["error"] = $ex->getMessage();
+		}
+		
+		echo json_encode($result);
+	}
+	
+	function lab_delete()
+	{
+		$result = array("success" => false);
+		
+		try {
+			$lab_id = $this->input->post("lab_id");
+			$transaction_id = $this->input->post("transaction_id");
+			
+			if (!$lab_id || !$transaction_id) {
+				throw new Exception("Required parameters are missing");
+			}
+			
+			// Get lab result details before deletion
+			$this->db->select('*');
+			$this->db->from('lab_results');
+			$this->db->where('id', $lab_id);
+			$this->db->where('transaction_id', $transaction_id);
+			$query = $this->db->get();
+			$lab_result = $query->row();
+			
+			if (!$lab_result) {
+				throw new Exception("Lab result not found");
+			}
+			
+			// Soft delete - mark as deleted
+			$update_data = array(
+				'deleted_by' => $this->uid,
+				'deleted_at' => date('Y-m-d H:i:s')
+			);
+			
+			$this->db->where('id', $lab_id);
+			$this->db->update('lab_results', $update_data);
+			
+			if ($this->db->affected_rows() > 0) {
+				$result["success"] = true;
+				$result["message"] = "Laboratory result deleted successfully";
+				
+				// Write to log
+				$this->shared_model->write_to_log("Lab Delete", $this->uid, $transaction_id, 0, "", "", "Laboratory result deleted: " . $lab_result->test_name);
+			} else {
+				throw new Exception("Failed to delete lab result");
+			}
+			
+		} catch (Exception $ex) {
+			$result["error"] = $ex->getMessage();
+		}
+		
+		echo json_encode($result);
+	}
+	
+	function lab_download()
+	{
+		try {
+			$file_path = $this->input->get("file");
+			$transaction_id = $this->input->get("transaction_id");
+			
+			if (!$file_path || !$transaction_id) {
+				show_404();
+				return;
+			}
+			
+			// Security check - ensure file belongs to the transaction
+			$this->db->select('files');
+			$this->db->from('lab_results');
+			$this->db->where('transaction_id', $transaction_id);
+			$this->db->where('deleted_at IS NULL');
+			$query = $this->db->get();
+			
+			$file_found = false;
+			foreach ($query->result() as $lab) {
+				if ($lab->files) {
+					$files = json_decode($lab->files, true);
+					foreach ($files as $file) {
+						if ($file['file_path'] === $file_path) {
+							$file_found = true;
+							break 2;
+						}
+					}
+				}
+			}
+			
+			if (!$file_found) {
+				show_404();
+				return;
+			}
+			
+			// Check if file exists
+			if (!file_exists($file_path)) {
+				show_404();
+				return;
+			}
+			
+			// Force download
+			$this->load->helper('download');
+			$data = file_get_contents($file_path);
+			$name = basename($file_path);
+			
+			force_download($name, $data);
+			
+		} catch (Exception $ex) {
+			show_404();
+		}
+	}
 }

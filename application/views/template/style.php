@@ -87,4 +87,34 @@
 		display: block;
 	}
 
+	/* Lab Modal Styles */
+	#modal_lab .modal-dialog {
+		max-width: 95%;
+	}
+	
+	#modal_lab .table th {
+		background-color: #f5f5f5;
+		font-weight: bold;
+	}
+	
+	#modal_lab .btn_download_lab {
+		margin: 2px;
+		font-size: 11px;
+	}
+	
+	#modal_lab .upload-section {
+		background-color: #f9f9f9;
+		border-radius: 5px;
+		padding: 15px;
+	}
+	
+	#modal_lab .form-control {
+		margin-bottom: 5px;
+	}
+	
+	#modal_lab .table-responsive {
+		max-height: 400px;
+		overflow-y: auto;
+	}
+
 </style>

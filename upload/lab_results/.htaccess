@@ -1,0 +1,13 @@
+# Protect lab results directory
+
+# Only allow access through the application
+
+Order Deny,Allow
+Deny from all
+
+# Allow access to images for viewing (optional)
+
+<FilesMatch "\.(jpg|jpeg|png|pdf)$">
+Order Allow,Deny
+Allow from all
+</FilesMatch>

@@ -616,6 +616,7 @@ $total_amount_due = $subtotal_total;
 		$this->load->view("current_transaction/modal_send");
 		$this->load->view("current_transaction/modal_prescription");
 		$this->load->view("current_transaction/modal_xray");
+		$this->load->view("current_transaction/modal_lab");
 		$this->load->view("current_transaction/modal_history");
 
 		$this->load->view("template/footer");
@@ -1538,6 +1539,149 @@ $total_amount_due = $subtotal_total;
 
         }
     });
+
+    // Lab Result Functions
+    $(document).on("click", "#btn_lab", function() {
+        let transaction_id = $("#id_update").val();
+        let patient_name = $("#patient_id_update option:selected").text();
+        
+        // Set patient name in modal
+        $("#lab_patient_name").text(patient_name);
+        $("#lab_transaction_id").val(transaction_id);
+        
+        // Clear form
+        $("#lab_upload_form")[0].reset();
+        $("#lab_transaction_id").val(transaction_id);
+        
+        // Load lab results
+        load_lab_results(transaction_id);
+        
+        $("#modal_lab").modal("show");
+    });
+
+    // Lab upload form submission
+    $(document).on("submit", "#lab_upload_form", function(e) {
+        e.preventDefault();
+        
+        let transaction_id = $("#lab_transaction_id").val();
+        let test_name = $("#lab_test_name").val();
+        let test_date = $("#lab_test_date").val();
+        let files = $("#lab_files")[0].files;
+        
+        if (!test_name || !test_date || files.length === 0) {
+            alert("Please fill in all required fields and select at least one file.");
+            return;
+        }
+        
+        let formData = new FormData(this);
+        
+        $("#btn_upload_lab").prop("disabled", true).html('<i class="fa fa-spinner fa-spin"></i> Uploading...');
+        
+        $.ajax({
+            type: "POST",
+            url: "<?= base_url($module); ?>/lab_upload",
+            data: formData,
+            processData: false,
+            contentType: false,
+            dataType: "json"
+        }).done(function(data) {
+            $("#btn_upload_lab").prop("disabled", false).html('<i class="fa fa-upload"></i> Upload Results');
+            
+            if (data.success) {
+                // Clear form
+                $("#lab_upload_form")[0].reset();
+                $("#lab_transaction_id").val(transaction_id);
+                
+                // Reload lab results
+                load_lab_results(transaction_id);
+                
+                // Show success message
+                bootbox.alert("Laboratory results uploaded successfully!");
+            } else {
+                bootbox.alert("Error: " + (data.error || "Failed to upload laboratory results"));
+            }
+        }).fail(function() {
+            $("#btn_upload_lab").prop("disabled", false).html('<i class="fa fa-upload"></i> Upload Results');
+            bootbox.alert("Error: Server error occurred. Please try again.");
+        });
+    });
+
+    // Delete lab result
+    $(document).on("click", ".btn_delete_lab", function(e) {
+        e.preventDefault();
+        let lab_id = $(this).data("id");
+        let transaction_id = $("#lab_transaction_id").val();
+        
+        bootbox.confirm("Are you sure you want to delete this laboratory result?", function(result) {
+            if (result) {
+                $.post("<?= base_url($module); ?>/lab_delete", {
+                    lab_id: lab_id,
+                    transaction_id: transaction_id
+                }, function(data) {
+                    if (data.success) {
+                        load_lab_results(transaction_id);
+                        bootbox.alert("Laboratory result deleted successfully!");
+                    } else {
+                        bootbox.alert("Error: " + (data.error || "Failed to delete laboratory result"));
+                    }
+                }, "json").fail(function() {
+                    bootbox.alert("Error: Server error occurred. Please try again.");
+                });
+            }
+        });
+    });
+
+    // Download lab file
+    $(document).on("click", ".btn_download_lab", function(e) {
+        e.preventDefault();
+        let file_path = $(this).data("file");
+        let transaction_id = $("#lab_transaction_id").val();
+        
+        if (file_path) {
+            window.open("<?= base_url($module); ?>/lab_download?file=" + encodeURIComponent(file_path) + "&transaction_id=" + transaction_id, "_blank");
+        }
+    });
+
+    // Function to load lab results
+    function load_lab_results(transaction_id) {
+        $("#tbl_lab_results tbody").html('<tr><td colspan="6" class="text-center text-muted"><i class="fa fa-spinner fa-spin"></i> Loading laboratory results...</td></tr>');
+        
+        $.post("<?= base_url($module); ?>/lab_list", {
+            transaction_id: transaction_id
+        }, function(data) {
+            if (data.success && data.results && data.results.length > 0) {
+                let html = "";
+                $.each(data.results, function(index, item) {
+                    let files_html = "";
+                    if (item.files && item.files.length > 0) {
+                        $.each(item.files, function(i, file) {
+                            files_html += '<a href="#" class="btn btn-xs btn-info btn_download_lab" data-file="' + file.file_path + '" title="Download ' + file.original_name + '">' +
+                                         '<i class="fa fa-download"></i> ' + file.original_name + '</a> ';
+                        });
+                    } else {
+                        files_html = '<span class="text-muted">No files</span>';
+                    }
+                    
+                    html += '<tr>' +
+                           '<td class="text-center">' + item.test_date + '</td>' +
+                           '<td>' + item.test_name + '</td>' +
+                           '<td>' + (item.lab_provider || '-') + '</td>' +
+                           '<td>' + files_html + '</td>' +
+                           '<td class="text-center">' + item.created_at + '</td>' +
+                           '<td class="text-center">' +
+                           '<button class="btn btn-xs btn-danger btn_delete_lab" data-id="' + item.id + '" title="Delete">' +
+                           '<i class="fa fa-trash"></i></button>' +
+                           '</td>' +
+                           '</tr>';
+                });
+                $("#tbl_lab_results tbody").html(html);
+            } else {
+                $("#tbl_lab_results tbody").html('<tr><td colspan="6" class="text-center text-muted">No laboratory results found</td></tr>');
+            }
+        }, "json").fail(function() {
+            $("#tbl_lab_results tbody").html('<tr><td colspan="6" class="text-center text-danger">Error loading laboratory results</td></tr>');
+        });
+    }
 
 
     $(document).on("click", "#btn_send", function() {
