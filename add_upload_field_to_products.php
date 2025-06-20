@@ -5,11 +5,12 @@
 // Database configuration - update these with your actual database settings
 $host = 'localhost';
 $username = 'root';  // Update with your DB username
-$password = '';      // Update with your DB password  
-$database = 'clinic'; // Update with your DB name
+$password = 'astalavista';      // Update with your DB password  
+$database = 'clinic2'; // Update with your DB name
+$port = 3308;
 
 try {
-    $pdo = new PDO("mysql:host=$host;dbname=$database;charset=utf8mb4", $username, $password);
+    $pdo = new PDO("mysql:host=$host;port=$port;dbname=$database;charset=utf8mb4", $username, $password);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     
     // Read and execute the SQL migration

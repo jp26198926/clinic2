@@ -377,7 +377,7 @@
                 value.amount_po,
                 value.after_amount,
                 value.after_amount_po,
-                value.is_allow_upload ? '<span class="label label-success">Yes</span>' : '<span class="label label-default">No</span>',
+                parseInt(value.is_allow_upload) === 1 ? '<span class="label label-success">Yes</span>' : '<span class="label label-default">No</span>',
                 status,
                 id,
                 status_id
@@ -674,7 +674,7 @@
                         current_data[6] = amount_po;
                         current_data[7] = after_amount;
                         current_data[8] = after_amount_po;
-                        current_data[9] = is_allow_upload ? '<span class="label label-success">Yes</span>' : '<span class="label label-default">No</span>';
+                        current_data[9] = is_allow_upload === 1 ? '<span class="label label-success">Yes</span>' : '<span class="label label-default">No</span>';
                         current_row.data(current_data).invalidate();
 
                         $("#modal_modify").modal("hide");
