@@ -40,7 +40,7 @@
                                 </div>
                                 <div class="col-md-6">
                                     <label>Test Date <span class="text-danger">*</span></label>
-                                    <input type="date" id="lab_test_date" name="test_date" class="form-control" required>
+                                    <input type="text" id="lab_test_date" name="test_date" class="form-control datepicker" readonly required>
                                 </div>
                             </div>
                             <div class="row" style="margin-top: 10px;">
