@@ -6,10 +6,10 @@
 // require_once dirname(__FILE__) . '/index.php';
 
 // Database configuration - update these with your actual database settings
-$host = 'localhost';
+$host = 'localhost:3308';
 $username = 'root';  // Update with your DB username
-$password = '';      // Update with your DB password  
-$database = 'clinic'; // Update with your DB name
+$password = 'astalavista';      // Update with your DB password  
+$database = 'clinic2'; // Update with your DB name
 
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$database;charset=utf8mb4", $username, $password);
