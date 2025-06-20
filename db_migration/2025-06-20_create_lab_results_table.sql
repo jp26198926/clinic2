@@ -5,6 +5,7 @@
 CREATE TABLE IF NOT EXISTS `lab_results` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `transaction_id` int(11) NOT NULL,
+  `item_id` int(11) NOT NULL,
   `test_name` varchar(255) NOT NULL,
   `test_date` date NOT NULL,
   `lab_provider` varchar(255) DEFAULT NULL,
@@ -18,6 +19,7 @@ CREATE TABLE IF NOT EXISTS `lab_results` (
   `deleted_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `idx_transaction_id` (`transaction_id`),
+  KEY `idx_item_id` (`item_id`),
   KEY `idx_test_date` (`test_date`),
   KEY `idx_created_by` (`created_by`),
   KEY `idx_deleted_at` (`deleted_at`)

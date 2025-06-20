@@ -1350,18 +1350,19 @@ class Current_transaction extends CI_Controller
 		$result = array("success" => false);
 		
 		try {
+			$item_id = $this->input->post("item_id");
 			$transaction_id = $this->input->post("transaction_id");
 			$test_name = $this->input->post("test_name");
 			$test_date = $this->input->post("test_date");
 			$lab_provider = $this->input->post("lab_provider");
 			$notes = $this->input->post("notes");
 			
-			if (!$transaction_id || !$test_name || !$test_date) {
+			if (!$item_id || !$transaction_id || !$test_name || !$test_date) {
 				throw new Exception("Required fields are missing");
 			}
 			
 			// Create upload directory if it doesn't exist
-			$upload_path = "./upload/lab_results/" . $transaction_id . "/";
+			$upload_path = "./upload/lab_results/" . $transaction_id . "/" . $item_id . "/";
 			if (!is_dir($upload_path)) {
 				mkdir($upload_path, 0755, true);
 			}
@@ -1406,6 +1407,7 @@ class Current_transaction extends CI_Controller
 			// Save to database
 			$lab_data = array(
 				'transaction_id' => $transaction_id,
+				'item_id' => $item_id,
 				'test_name' => $test_name,
 				'test_date' => $test_date,
 				'lab_provider' => $lab_provider,
@@ -1439,15 +1441,15 @@ class Current_transaction extends CI_Controller
 		$result = array("success" => false);
 		
 		try {
-			$transaction_id = $this->input->post("transaction_id");
+			$item_id = $this->input->post("item_id");
 			
-			if (!$transaction_id) {
-				throw new Exception("Transaction ID is required");
+			if (!$item_id) {
+				throw new Exception("Item ID is required");
 			}
 			
 			$this->db->select('*');
 			$this->db->from('lab_results');
-			$this->db->where('transaction_id', $transaction_id);
+			$this->db->where('item_id', $item_id);
 			$this->db->where('deleted_at IS NULL');
 			$this->db->order_by('test_date', 'DESC');
 			
@@ -1479,9 +1481,9 @@ class Current_transaction extends CI_Controller
 		
 		try {
 			$lab_id = $this->input->post("lab_id");
-			$transaction_id = $this->input->post("transaction_id");
+			$item_id = $this->input->post("item_id");
 			
-			if (!$lab_id || !$transaction_id) {
+			if (!$lab_id || !$item_id) {
 				throw new Exception("Required parameters are missing");
 			}
 			
@@ -1489,7 +1491,7 @@ class Current_transaction extends CI_Controller
 			$this->db->select('*');
 			$this->db->from('lab_results');
 			$this->db->where('id', $lab_id);
-			$this->db->where('transaction_id', $transaction_id);
+			$this->db->where('item_id', $item_id);
 			$query = $this->db->get();
 			$lab_result = $query->row();
 			
@@ -1511,7 +1513,7 @@ class Current_transaction extends CI_Controller
 				$result["message"] = "Laboratory result deleted successfully";
 				
 				// Write to log
-				$this->shared_model->write_to_log("Lab Delete", $this->uid, $transaction_id, 0, "", "", "Laboratory result deleted: " . $lab_result->test_name);
+				$this->shared_model->write_to_log("Lab Delete", $this->uid, $lab_result->transaction_id, 0, "", "", "Laboratory result deleted: " . $lab_result->test_name);
 			} else {
 				throw new Exception("Failed to delete lab result");
 			}
@@ -1527,17 +1529,17 @@ class Current_transaction extends CI_Controller
 	{
 		try {
 			$file_path = $this->input->get("file");
-			$transaction_id = $this->input->get("transaction_id");
+			$item_id = $this->input->get("item_id");
 			
-			if (!$file_path || !$transaction_id) {
+			if (!$file_path || !$item_id) {
 				show_404();
 				return;
 			}
 			
-			// Security check - ensure file belongs to the transaction
+			// Security check - ensure file belongs to the item
 			$this->db->select('files');
 			$this->db->from('lab_results');
-			$this->db->where('transaction_id', $transaction_id);
+			$this->db->where('item_id', $item_id);
 			$this->db->where('deleted_at IS NULL');
 			$query = $this->db->get();
 			

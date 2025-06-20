@@ -8,6 +8,8 @@
                     <i class="fa fa-flask"></i>
                     Laboratory Results
                     <span id="lab_patient_name" class="label label-info"></span>
+                    <br>
+                    <small id="lab_product_info" class="text-muted"></small>
                 </h4>
             </div>
             <div class="modal-body">
@@ -29,6 +31,7 @@
                     <div class="col-md-12">
                         <h5><i class="fa fa-upload"></i> Upload Laboratory Results</h5>
                         <form id="lab_upload_form" enctype="multipart/form-data">
+                            <input type="hidden" id="lab_item_id" name="item_id" value="">
                             <input type="hidden" id="lab_transaction_id" name="transaction_id" value="">
                             <div class="row">
                                 <div class="col-md-6">

@@ -376,7 +376,7 @@ class Item_model extends CI_Model
 	function search_by_transaction($transaction_id)
 	{
 		$this->db->select("items.*");
-		$this->db->select("products.code product_code, products.name as product_name");
+		$this->db->select("products.code product_code, products.name as product_name, products.is_allow_upload");
 		$this->db->select("categories.category");
 		$this->db->select("uoms.code as uom_code, uoms.name as uom_name");
 		$this->db->select("item_status.status");

@@ -476,6 +476,18 @@ $total_amount_due = $subtotal_total;
                                                                                 ></i> ";
 																}
 
+																// Add upload button if product allows upload
+																if (intval($value->is_allow_upload) === 1) {
+																	$action .= "<i
+																					id='{$value->id}'
+																					class='btn_item_upload btn btn-xs btn-warning fa fa-upload'
+																					title='Upload Lab Results'
+																					data-toggle='tooltip'
+																					data-product-name='{$value->product_name}'
+																					data-item-id='{$value->id}'
+																				></i> ";
+																}
+
 																$action .= "</span>";
 															} else if (intval($value->status_id) == 4) {
 																//completed
@@ -489,6 +501,18 @@ $total_amount_due = $subtotal_total;
                                                                                     title='Delete'
                                                                                     data-toggle='tooltip'
                                                                                 ></i> ";
+																}
+
+																// Add upload button if product allows upload
+																if (intval($value->is_allow_upload) === 1) {
+																	$action .= "<i
+																					id='{$value->id}'
+																					class='btn_item_upload btn btn-xs btn-warning fa fa-upload'
+																					title='Upload Lab Results'
+																					data-toggle='tooltip'
+																					data-product-name='{$value->product_name}'
+																					data-item-id='{$value->id}'
+																				></i> ";
 																}
 
 															}
@@ -1540,21 +1564,26 @@ $total_amount_due = $subtotal_total;
         }
     });
 
-    // Lab Result Functions
-    $(document).on("click", "#btn_lab", function() {
+    // Lab Result Functions - Per Item Upload
+    $(document).on("click", ".btn_item_upload", function() {
+        let item_id = $(this).attr("id");
+        let product_name = $(this).data("product-name");
         let transaction_id = $("#id_update").val();
         let patient_name = $("#patient_id_update option:selected").text();
         
-        // Set patient name in modal
+        // Set modal information
         $("#lab_patient_name").text(patient_name);
+        $("#lab_product_info").text("Service: " + product_name);
+        $("#lab_item_id").val(item_id);
         $("#lab_transaction_id").val(transaction_id);
         
         // Clear form
         $("#lab_upload_form")[0].reset();
+        $("#lab_item_id").val(item_id);
         $("#lab_transaction_id").val(transaction_id);
         
-        // Load lab results
-        load_lab_results(transaction_id);
+        // Load lab results for this item
+        load_lab_results_by_item(item_id);
         
         $("#modal_lab").modal("show");
     });
@@ -1563,7 +1592,7 @@ $total_amount_due = $subtotal_total;
     $(document).on("submit", "#lab_upload_form", function(e) {
         e.preventDefault();
         
-        let transaction_id = $("#lab_transaction_id").val();
+        let item_id = $("#lab_item_id").val();
         let test_name = $("#lab_test_name").val();
         let test_date = $("#lab_test_date").val();
         let files = $("#lab_files")[0].files;
@@ -1590,10 +1619,11 @@ $total_amount_due = $subtotal_total;
             if (data.success) {
                 // Clear form
                 $("#lab_upload_form")[0].reset();
-                $("#lab_transaction_id").val(transaction_id);
+                $("#lab_item_id").val(item_id);
+                $("#lab_transaction_id").val($("#lab_transaction_id").val());
                 
                 // Reload lab results
-                load_lab_results(transaction_id);
+                load_lab_results_by_item(item_id);
                 
                 // Show success message
                 bootbox.alert("Laboratory results uploaded successfully!");
@@ -1610,16 +1640,16 @@ $total_amount_due = $subtotal_total;
     $(document).on("click", ".btn_delete_lab", function(e) {
         e.preventDefault();
         let lab_id = $(this).data("id");
-        let transaction_id = $("#lab_transaction_id").val();
+        let item_id = $("#lab_item_id").val();
         
         bootbox.confirm("Are you sure you want to delete this laboratory result?", function(result) {
             if (result) {
                 $.post("<?= base_url($module); ?>/lab_delete", {
                     lab_id: lab_id,
-                    transaction_id: transaction_id
+                    item_id: item_id
                 }, function(data) {
                     if (data.success) {
-                        load_lab_results(transaction_id);
+                        load_lab_results_by_item(item_id);
                         bootbox.alert("Laboratory result deleted successfully!");
                     } else {
                         bootbox.alert("Error: " + (data.error || "Failed to delete laboratory result"));
@@ -1635,19 +1665,19 @@ $total_amount_due = $subtotal_total;
     $(document).on("click", ".btn_download_lab", function(e) {
         e.preventDefault();
         let file_path = $(this).data("file");
-        let transaction_id = $("#lab_transaction_id").val();
+        let item_id = $("#lab_item_id").val();
         
         if (file_path) {
-            window.open("<?= base_url($module); ?>/lab_download?file=" + encodeURIComponent(file_path) + "&transaction_id=" + transaction_id, "_blank");
+            window.open("<?= base_url($module); ?>/lab_download?file=" + encodeURIComponent(file_path) + "&item_id=" + item_id, "_blank");
         }
     });
 
-    // Function to load lab results
-    function load_lab_results(transaction_id) {
+    // Function to load lab results by item
+    function load_lab_results_by_item(item_id) {
         $("#tbl_lab_results tbody").html('<tr><td colspan="6" class="text-center text-muted"><i class="fa fa-spinner fa-spin"></i> Loading laboratory results...</td></tr>');
         
         $.post("<?= base_url($module); ?>/lab_list", {
-            transaction_id: transaction_id
+            item_id: item_id
         }, function(data) {
             if (data.success && data.results && data.results.length > 0) {
                 let html = "";
