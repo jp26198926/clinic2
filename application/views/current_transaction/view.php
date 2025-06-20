@@ -484,6 +484,7 @@ $total_amount_due = $subtotal_total;
 																					title='Upload Lab Results'
 																					data-toggle='tooltip'
 																					data-product-name='{$value->product_name}'
+																					data-product-id='{$value->product_id}'
 																					data-item-id='{$value->id}'
 																				></i> ";
 																}
@@ -530,12 +531,11 @@ $total_amount_due = $subtotal_total;
 
 															if ($transaction_status_id > 1) {
 																echo "  <td align='center' class='text-center'>{$action}</td>";
-															} else {
-																echo "<td></td>";
-															}
-
-															echo "<tr>";
+															} else {															echo "<td></td>";
 														}
+
+														echo "</tr>";
+													}
 													} else {
 														echo "  <tr>
                                                                     <td colspan='13' align='center'>No Record</td>
@@ -663,6 +663,7 @@ $total_amount_due = $subtotal_total;
 
     <!-- inline scripts related to this page -->
     <script>
+    $(document).ready(function() {
     //functions and variables
     let subtotal_amount = 0;
     let subtotal_commission = 0;
@@ -672,6 +673,59 @@ $total_amount_due = $subtotal_total;
     let total_amount_due = 0;
 
     let new_entry_field = '';
+
+    // Initialize chosen-select
+    $('.chosen-select').chosen({
+        allow_single_deselect: true,
+        width: "100%"
+    });
+
+    // Initialize table fixed header
+    if (typeof $.fn.tableFixedHeader === 'function') {
+        $("#tbl_list").tableFixedHeader();
+    }
+
+    // Add new entry row if user has permission
+    <?php if ($role_id == 1 || $this->custom_function->module_permission("item add", $module_permission)) { ?>
+    if (new_entry_field && <?= $transaction_status_id; ?> >= 2) {
+        $("#tbl_list tbody").append(new_entry_field);
+        // Reinitialize chosen for the new select
+        $("#product_id_new").chosen({
+            allow_single_deselect: true,
+            width: "100%"
+        });
+    }
+    <?php } ?>
+
+    // Field update handlers
+    $(document).on('change', '.field_update', function() {
+        var field_name = $(this).attr('id').replace('_update', '');
+        var field_value = $(this).val();
+        var transaction_id = $("#id_update").val();
+        
+        $.post("<?= base_url($module); ?>/update_field", {
+            transaction_id: transaction_id,
+            field_name: field_name,
+            field_value: field_value,
+            [csrf_name]: csrf_hash
+        }, function(response) {
+            if (response.indexOf("<!DOCTYPE html>") > -1) {
+                alert("Error: Session Time-Out, You must login again to continue.");
+                location.reload(true);
+            } else if (response.indexOf("Error: ") > -1) {
+                bootbox.alert(response);
+            } else {
+                try {
+                    var result = JSON.parse(response);
+                    if (result.csrf_hash) {
+                        regenerate_csrf(result.csrf_hash);
+                    }
+                } catch(e) {
+                    // Response is probably just "OK" - continue
+                }
+            }
+        });
+    });
 
     <?php
 		if ($role_id == 1 || $this->custom_function->module_permission("item add", $module_permission)) {
@@ -1005,559 +1059,135 @@ $total_amount_due = $subtotal_total;
         return list;
     }
 
-    $(document).on("keyup", "#qty_new, #price_new, #commission_amount_new, #insurance_amount_new", function(e) {
-        compute_entry_manual();
-    });
-
-
-    $(document).ready(function() {
-        $("#id_update").val("<?= $transaction_id; ?>");
-        $("#lbl_transaction_no").text("<?= $transaction_no; ?>");
-        $("#insurance_id_update").trigger("change");
-
-        <?php if ($transaction_status_id == 2 || $transaction_status_id == 3) { ?>
-        $("#tbl_list tbody").append(new_entry_field);
-        <?php } ?>
-
-        $("#date_update").datepicker({
-            dateFormat: "yy-mm-dd",
-            changeMonth: true,
-            changeYear: true,
-            yearRange: "c-100:c+10",
+    // Function to load result sets for digital entry
+    function loadResultSets(product_id) {
+        if (!product_id) {
+            $('#lab_parameters_table tbody').html('<tr><td colspan="3" class="text-center text-muted">No result parameters defined for this service</td></tr>');
+            return;
+        }
+        
+        $.post("<?= base_url($module); ?>/lab_get_result_sets", {
+            product_id: product_id
+        }, function(response) {
+            if (response.success && response.result_sets && response.result_sets.length > 0) {
+                let tableBody = '';
+                response.result_sets.forEach(function(resultSet) {
+                    tableBody += `
+                        <tr>
+                            <td>
+                                <input type="hidden" name="result_set_id[]" value="${resultSet.id}">
+                                <strong>${resultSet.result_label}</strong>
+                            </td>
+                            <td>
+                                <input type="text" name="result_value[]" class="form-control" placeholder="Enter result value">
+                            </td>
+                            <td>
+                                <span class="text-muted">${resultSet.unit}</span>
+                                <br><small>Ref: ${resultSet.reference || 'N/A'}</small>
+                            </td>
+                        </tr>
+                    `;
+                });
+                $('#lab_parameters_table tbody').html(tableBody);
+            } else {
+                $('#lab_parameters_table tbody').html('<tr><td colspan="3" class="text-center text-muted">No result parameters defined for this service</td></tr>');
+            }
+        }, 'json').fail(function() {
+            $('#lab_parameters_table tbody').html('<tr><td colspan="3" class="text-center text-danger">Error loading result parameters</td></tr>');
         });
-
-        $('.chosen-select').chosen({
-            allow_single_deselect: true
-        });
-
-        $('#txt_prescription_product_id').trigger('chosen:updated');
-
-    });
+    }
 
     $(document).on("click", "#btn_add_patient", function() {
         bootbox.alert("Please goto DATA -> PATIENT, to add new patient name.")
     });
 
     $(document).on("click", "#btn_add_client", function() {
-        bootbox.alert("Please goto DATA -> CLIENT, to add new company name.")
+        bootbox.alert("Please goto DATA -> CLIENT, to add new client name.")
     });
 
-    //AUTO-SAVE
-    $(document).on("blur, change", ".field_update", function(e) {
-        e.preventDefault();
-
-        let id = $("#id_update").val();
-        let fieldname = $(this).attr("id");
-        let fieldvalue = $(this).val();
-        let fieldtext = $(this).val();
-
-        let tag = $(this).prop('tagName');
-        if (tag.toLowerCase() === "select") {
-            fieldtext = $('option:selected', this).text()
-        }
-
-        if (fieldname !== "doctor_id_update" && fieldname !== "remarks_update" && fieldname !==
-            "diagnosis_update") {
-            return; // do not continue if fieldnames are not doctor,remarks and diagnosis
-        }
-
-        if (id && fieldvalue) {
-            $.post("<?= base_url($module); ?>/auto_save", {
-                id: id,
-                fieldname: fieldname,
-                fieldvalue: fieldvalue,
-                tag: tag,
-                fieldtext: fieldtext
-            }, function(data) {
-
-                if (data.indexOf("<!DOCTYPE html>") > -1) {
-                    alert("Error: Session Time-Out, You must login again to continue.");
-                    location.reload(true);
-                } else {
-                    let result = JSON.parse(data);
-
-                    if (result["success"]) {
-                        display_logs(result["data"]);
-                    } else {
-                        bootbox.alert(result["error"]);
-                    }
-
-                }
-            });
-        }
+    // Handle lab button click
+    $(document).on("click", "#btn_lab", function() {
+        bootbox.alert("Laboratory function is managed per item. Please use the upload button next to each item that supports laboratory results.");
     });
 
-    //show history
-    $(document).on("click", "#btn_history", function() {
-        let patient_id = $("#patient_id_update").val();
-        let transaction_id = $("#id_update").val();
-
-        if (patient_id && transaction_id) {
-            $("#loading").modal();
-
-            $.post("<?= base_url($module); ?>/patient_history", {
-                patient_id: patient_id,
-                transaction_id: transaction_id
-            }, function(data) {
-                $("#loading").modal("hide");
-
-                if (data.indexOf("<!DOCTYPE html>") > -1) {
-                    alert("Error: Session Time-Out, You must login again to continue.");
-                    location.reload(true);
-                } else {
-                    let result = JSON.parse(data);
-                    let tbl = "";
-
-                    if (result.success === true) {
-
-                        if (result.records && result.records.length > 0) {
-                            $.each(result.records, function(i, record) {
-                                tbl += `<tr>
-											<td align='center'>${record.transaction_no}</td>
-											<td align='center'>${record.date}</td>
-											<td align='center'>${record.trans_type}</td>
-											<td align='center'>${record.doctor == null ? "" : record.doctor}</td>
-											<td>${record.diagnosis}</td>
-											<td align='center'>${record.status}</td>
-											<td align='center'>
-												<a href='${record.transaction_id}'  target='_blank' class='btn btn-xs btn-info fa fa-forward'> Show Transaction </a>
-											</td>
-										</tr>`;
-                            });
-                        } else {
-                            tbl = "<tr><td colspan='7' align='center'> No Record </td></tr>";
-                        }
-
-                        $("#tbl_history  tbody").html(tbl);
-                        $("#modal_history").modal();
-                    } else {
-                        bootbox.alert(result.error);
-                    }
-                }
-            });
-        } else {
-            bootbox.alert("Critical Error Encountered!");
+    // Function to update the results table display for both types
+    function updateLabResultsTable(results) {
+        var tbody = $('#tbl_lab_results tbody');
+        tbody.empty();
+        
+        if (results.length === 0) {
+            tbody.append('<tr><td colspan="7" class="text-center text-muted">No laboratory results found</td></tr>');
+            return;
         }
-    });
-
-    //INSURANCE UPDATE
-    $(document).on("change", "#insurance_id_update", function() {
-        let id = $(this).val();
-
-        if (Number(id) > 0) {
-            $.post("<?= base_url(); ?>data_insurance/search_info_row", {
-                id: id
-            }, function(data) {
-                if (data.indexOf("<!DOCTYPE html>") > -1) {
-                    alert("Error: Session Time-Out, You must login again to continue.");
-                    location.reload(true);
-                } else if (data.indexOf("Error: ") > -1) {
-                    bootbox.alert(data);
-                } else {
-                    if (data) {
-                        let result = JSON.parse(data);
-
-                        $("#hidden_insurance_value_type_id").val(result.value_type_id);
-                        $("#hidden_insurance_value").val(result.value);
-                        $("#hidden_insurance_commission_type_id").val(result.commission_type_id);
-                        $("#hidden_insurance_commission_value").val(result.commission_value);
-
-                        compute_entry();
-
-                    }
-                }
-            });
-        } else {
-            $("#hidden_insurance_value_type_id").val(0);
-            $("#hidden_insurance_value").val(0);
-            $("#hidden_insurance_commission_type_id").val(0);
-            $("#hidden_insurance_commission_value").val(0);
-
-            compute_entry();
-        }
-    });
-
-    //region transaction buttons
-    $(document).on("click", "#btn_modify", function() {
-        $("#loading").modal();
-    });
-
-    $(document).on("click", "#btn_confirm", function() {
-        let transaction_id = $("#id_update").val();
-
-        if (transaction_id) {
-            bootbox.confirm("Are you sure you want to confirm this transaction?", function(result) {
-                if (result) {
-                    $.post("<?= base_url($module); ?>/confirm", {
-                        transaction_id: transaction_id
-                    }, function(data) {
-                        location.reload(true);
+        
+        $.each(results, function(index, lab) {
+            var testDate = lab.test_date ? new Date(lab.test_date).toLocaleDateString() : '';
+            var entryDate = lab.created_at ? new Date(lab.created_at).toLocaleDateString() : '';
+            
+            var filesOrResults = '';
+            if (lab.entry_type === 'digital') {
+                var paramCount = lab.lab_parameters ? lab.lab_parameters.length : 0;
+                filesOrResults = '<span class="label label-info">' + paramCount + ' parameters</span>';
+            } else {
+                var fileCount = lab.files ? lab.files.length : 0;
+                filesOrResults = '<span class="label label-success">' + fileCount + ' files</span>';
+            }
+            
+            var actions = '';
+            if (lab.entry_type === 'digital') {
+                actions += '<button class="btn btn-sm btn-info print-digital" data-lab-id="' + lab.id + '" title="Print Results">';
+                actions += '<i class="fa fa-print"></i></button> ';
+            } else {
+                // Add download/view actions for uploaded files
+                if (lab.files && lab.files.length > 0) {
+                    $.each(lab.files, function(i, file) {
+                        actions += '<button class="btn btn-sm btn-success download-file" data-file="' + file.file_name + '" title="Download ' + file.original_name + '">';
+                        actions += '<i class="fa fa-download"></i></button> ';
                     });
                 }
-            });
-
-        } else {
-            bootbox.alert("Error: Critical Error Encountered!");
-        }
-
-    });
-
-    $(document).on("click", "#btn_payment", function() {
-        let transaction_id = $("#id_update").val();
-
-        //show loading screen
-        $("#loading").modal("show");
-
-        //get total amount due
-        //get list of payment history entries
-        $.post("<?= base_url($module); ?>/check_payment", {
-            transaction_id: transaction_id
-        }, function(data) {
-            $("#loading").modal("hide");
-
-            if (data.indexOf("<!DOCTYPE html>") > -1) {
-                alert("Error: Session Time-Out, You must login again to continue.");
-                location.reload(true);
-            } else {
-                let result = JSON.parse(data);
-
-                if (result.success == true) {
-                    $("#lbl_payment_amount_due").text(result.amount_due.toFixed(2));
-                    $("#txt_payment_pay").val(result.amount_due.toFixed(2));
-                    $("#badge_payment_count").text(result.payment_list.length);
-
-                    let table_payment = "";
-
-                    if (result.payment_list.length > 0) {
-                        $.each(result.payment_list, function(idx, payment) {
-                            table_payment += (Number(payment.status_id) == 1) ?
-                                "<tr class='danger'>" : "<tr>";
-                            table_payment += "	<td align='center'>";
-                            table_payment += "		<span id='" + payment.id +
-                                "' class='btn_payment_print fa fa-fw fa-print text-primary' title='Print'></span>";
-                            table_payment += "		<span id='" + payment.id +
-                                "' class='btn_payment_cancel fa fa-fw fa-trash text-danger' title='Cancel Payment'></span>";
-                            table_payment += "	</td>";
-                            table_payment += "	<td align='center'>" + payment.payment_no +
-                                "</td>";
-                            table_payment += "	<td align='center'>" + payment.date + "</td>";
-                            table_payment += "	<td align='center'>" + payment.payment_type +
-                                "</td>";
-                            table_payment += "	<td align='right'>" + Number(payment.amount)
-                                .toFixed(2) + "</td>";
-                            table_payment += "	<td align='center'>" + payment.reference +
-                                "</td>";
-                            table_payment += "	<td align='center'>" + payment.created
-                                .toUpperCase() + "</td>"
-                            table_payment += "	<td align='center'>" + payment.status + "</td>";
-                            table_payment += "</tr>";
-                        });
-                    } else {
-                        table_payment +=
-                            "	<tr><td align='center' colspan='8'>No Payment Done Yet</td></tr>";
-                    }
-
-                    $("#tbl_payment_list tbody").html(table_payment);
-
-                    //show payment modal window
-                    $("#modal_payment").modal("show");
-                } else {
-                    bootbox.alert(result.error);
-                }
             }
+            actions += '<button class="btn btn-sm btn-danger delete-lab" data-lab-id="' + lab.id + '" title="Delete">';
+            actions += '<i class="fa fa-trash"></i></button>';
+            
+            var row = '<tr>' +
+                '<td class="text-center">' + testDate + '</td>' +
+                '<td>' + (lab.test_name || '') + '</td>' +
+                '<td>' + (lab.lab_provider || '') + '</td>' +
+                '<td class="text-center">' + lab.display_type + '</td>' +
+                '<td class="text-center">' + filesOrResults + '</td>' +
+                '<td class="text-center">' + entryDate + '</td>' +
+                '<td class="text-center">' + actions + '</td>' +
+                '</tr>';
+            
+            tbody.append(row);
         });
+    }
 
-
-    });
-
-    $("#txt_payment_tender, #txt_payment_pay").on("keyup", function() {
-        if ($(this).val()) {
-            let pay_amount = Number($("#txt_payment_pay").val()) || 0;
-            let tender_amount = Number($("#txt_payment_tender").val()) || 0;
-            let change_amount = 0;
-
-            change_amount = Number(tender_amount) - Number(pay_amount);
-
-            $("#txt_payment_change").val(change_amount.toFixed(2));
+    // Function to load lab results by item
+    function load_lab_results_by_item(item_id) {
+        if (!item_id) {
+            $('#tbl_lab_results tbody').html('<tr><td colspan="7" class="text-center text-muted">No item selected</td></tr>');
+            return;
         }
-    });
-
-    $(document).on("click", "#btn_payment_save", function() {
-        let transaction_id = $("#id_update").val();
-        let amount_due = Number($("#lbl_payment_amount_due").text()) || 0;
-        let date = $("#txt_payment_date").val();
-        let payment_type_id = $("#txt_payment_type").val();
-        let pay_amount = Number($("#txt_payment_pay").val()) || 0;
-        let tender_amount = Number($("#txt_payment_tender").val()) || 0;
-        let change_amount = Number($("#txt_payment_change").val()) || 0;
-        let reference = $("#txt_payment_reference").val();
-        let this_modal = "#modal_payment";
-
-        if (date && payment_type_id && pay_amount > 0.01 && tender_amount > 0.01) {
-
-            if (tender_amount >= pay_amount) {
-                $(this_modal + " .modal_error").hide();
-                $(this_modal + " .modal_button").hide();
-                $(this_modal + " .modal-body").hide();
-                $(this_modal + " .modal_waiting").show();
-
-                $.post("<?= base_url($module); ?>/save_payment", {
-                    transaction_id: transaction_id,
-                    date: date,
-                    amount_due: amount_due,
-                    payment_type_id: payment_type_id,
-                    pay_amount: pay_amount,
-                    tender_amount: tender_amount,
-                    change_amount: change_amount,
-                    reference: reference
-                }, function(data) {
-                    $(this_modal + " .modal_error").hide();
-                    $(this_modal + " .modal_button").show();
-                    $(this_modal + " .modal-body").show();
-                    $(this_modal + " .modal_waiting").hide();
-
-                    if (data.indexOf("<!DOCTYPE html>") > -1) {
-                        alert("Error: Session Time-Out, You must login again to continue.");
-                        location.reload(true);
-                    } else {
-                        let result = JSON.parse(data);
-
-                        if (result.success == true) {
-                            total_paid = Number(result.total_paid);
-                            $("#lbl_total_paid").text(Number(result.total_paid).toFixed(2));
-                            $("#lbl_amount_due").text(Number(result.amount_due).toFixed(2));
-
-                            $(this_modal).modal("hide");
-                            $(".txt_payment_field").val("");
-
-                            bootbox.alert("Payment Successfully Saved!");
-
-                            display_logs(result.logs);
-
-                            window.open("<?= base_url($module); ?>/print_payment/" + result.payment_id,
-                                "_blank");
-                        } else {
-                            $(this_modal + " .modal_error_msg").text(result.error);
-                            $(this_modal + " .modal_error").stop(true, true).show().delay(15000)
-                                .fadeOut("slow");
-                        }
-                    }
-                });
+        
+        $.post("<?= base_url($module); ?>/lab_list", {
+            item_id: item_id
+        }, function(response) {
+            if (response.success && response.results) {
+                updateLabResultsTable(response.results);
             } else {
-                $(this_modal + " .modal_error_msg").text("Tender amount is less than the amount to be paid!");
-                $(this_modal + " .modal_error").stop(true, true).show().delay(15000).fadeOut("slow");
+                $('#tbl_lab_results tbody').html('<tr><td colspan="7" class="text-center text-muted">No laboratory results found</td></tr>');
             }
-
-        } else {
-            $(this_modal + " .modal_error_msg").text("Error: Fields with red asterisk are required!");
-            $(this_modal + " .modal_error").stop(true, true).show().delay(15000).fadeOut("slow");
-        }
-
-    });
-
-    $(document).on('click', '.btn_payment_cancel', function() {
-        let transaction_id = $("#id_update").val();
-        let payment_id = $(this).attr('id');
-        let this_modal = "#modal_payment";
-
-        if (transaction_id && payment_id) {
-            bootbox.confirm("Are you sure you want to cancel this payment - PMT" + payment_id.padStart(3, "0") +
-                " ?",
-                function(result) {
-                    if (result) {
-                        $(this_modal + " .modal_error").hide();
-                        $(this_modal + " .modal_button").hide();
-                        $(this_modal + " .modal-body").hide();
-                        $(this_modal + " .modal_waiting").show();
-
-                        $.post("<?= base_url($module); ?>/cancel_payment", {
-                            transaction_id: transaction_id,
-                            payment_id: payment_id
-                        }, function(data) {
-                            $(this_modal + " .modal_error").hide();
-                            $(this_modal + " .modal_button").show();
-                            $(this_modal + " .modal-body").show();
-                            $(this_modal + " .modal_waiting").hide();
-
-                            if (data.indexOf("<!DOCTYPE html>") > -1) {
-                                alert("Error: Session Time-Out, You must login again to continue.");
-                                location.reload(true);
-                            } else {
-                                let result = JSON.parse(data);
-
-                                if (result.success == true) {
-                                    let table_payment = "";
-
-                                    if (result.payment_list.length > 0) {
-                                        $.each(result.payment_list, function(idx, payment) {
-                                            table_payment += (Number(payment.status_id) ==
-                                                1) ? "<tr class='danger'>" : "<tr>";
-                                            table_payment += "	<td align='center'>";
-                                            table_payment += "		<span id='" + payment.id +
-                                                "' class='btn_payment_print fa fa-fw fa-print text-primary' title='Print'></span>";
-                                            table_payment += "		<span id='" + payment.id +
-                                                "' class='btn_payment_cancel fa fa-fw fa-trash text-danger' title='Cancel Payment'></span>";
-                                            table_payment += "	</td>";
-                                            table_payment += "	<td align='center'>" +
-                                                payment.payment_no + "</td>";
-                                            table_payment += "	<td align='center'>" +
-                                                payment.date + "</td>";
-                                            table_payment += "	<td align='center'>" +
-                                                payment.payment_type + "</td>";
-                                            table_payment += "	<td align='right'>" + Number(
-                                                payment.amount).toFixed(2) + "</td>";
-                                            table_payment += "	<td align='center'>" +
-                                                payment.reference + "</td>";
-                                            table_payment += "	<td align='center'>" +
-                                                payment.created.toUpperCase() + "</td>"
-                                            table_payment += "	<td align='center'>" +
-                                                payment.status + "</td>";
-                                            table_payment += "</tr>";
-                                        });
-                                    } else {
-                                        table_payment +=
-                                            "	<tr><td align='center' colspan='8'>No Payment Done Yet</td></tr>";
-                                    }
-
-                                    $("#lbl_total_paid").text(Number(result.total_paid).toFixed(2));
-                                    $("#lbl_amount_due").text(Number(result.amount_due).toFixed(2));
-
-                                    $("#tbl_payment_list tbody").html(table_payment);
-
-                                    display_logs(result.logs);
-
-                                } else {
-                                    bootbox.alert(result.error);
-                                }
-                            }
-                        });
-                    }
-                });
-        } else {
-            $(this_modal + " .modal_error_msg").text("Error: Critical Error Encountered!");
-            $(this_modal + " .modal_error").stop(true, true).show().delay(15000).fadeOut("slow");
-        }
-    });
-
-    $(document).on('click', '.btn_payment_print', function() {
-        let id = $(this).attr('id');
-
-        if (id) {
-            window.open("<?= base_url($module); ?>/print_payment/" + id, "_blank");
-        } else {
-            let this_modal = "#modal_payment";
-            $(this_modal + " .modal_error_msg").text("Error: Critical Error Encountered!");
-            $(this_modal + " .modal_error").stop(true, true).show().delay(15000).fadeOut("slow");
-        }
-    });
-
-    $(document).on("click", "#btn_xray", function() {
-        $("#modal_xray").modal("show");
-    });
-
-    $(document).on("change", "#xray_attachment_add", function(e) {
-        let transaction_id = $("#id_update").val();
-        let attachment = $(this).val();
-        let this_modal = "#modal_xray";
-
-        if (attachment) {
-            $(this_modal + " .modal_error").hide();
-            $(this_modal + " .modal_button").hide();
-            $(this_modal + " .modal-body").hide();
-            $(this_modal + " .modal_waiting").show();
-
-            let formData = new FormData($("#frm_xray_attachment_add")[0]);
-            formData.append("transaction_id_new", transaction_id);
-
-            $.ajax({
-                type: "POST",
-                url: "<?= base_url($module); ?>/xray_attachment_add",
-                data: formData,
-                enctype: "multipart/form-data",
-                processData: false, // tell jQuery not to process the data
-                contentType: false, // tell jQuery not to set contentType
-                dataType: "json",
-                //encode: true,
-            }).done(function(data) {
-                $(this_modal + " .modal_error").hide();
-                $(this_modal + " .modal_button").show();
-                $(this_modal + " .modal-body").show();
-                $(this_modal + " .modal_waiting").hide();
-
-                $("#xray_attachment_add").val("");
-
-                let result = data;
-
-                if (result.success === true) {
-                    $("#xray_attachment_list").html(xray_attachment_list(result.data));
-                    display_logs(result.logs);
-                } else {
-                    $(this_modal + " .modal_error").hide();
-                    $(this_modal + " .modal_error_msg").text(result.error);
-                }
-
-            }).fail(function(data) {
-                $(this_modal + " .modal_error").hide();
-                $(this_modal + " .modal_button").show();
-                $(this_modal + " .modal-body").show();
-                $(this_modal + " .modal_waiting").hide();
-
-                bootbox.alert(
-                    "Error: Server Error or Session Time-Out!, Please try again or reload the page!"
-                );
-                $("#loading").modal("hide");
-            });
-
-            e.preventDefault();
-        }
-    });
-
-    $(document).on("click", ".xray_attachment_remove", function(e) {
-        e.preventDefault();
-        let transaction_id = $("#id_update").val();
-        let filename = $(this).attr("id");
-        let this_modal = "#modal_xray";
-
-        if (filename) {
-            $(this_modal + " .modal_error").hide();
-            $(this_modal + " .modal_button").hide();
-            $(this_modal + " .modal-body").hide();
-            $(this_modal + " .modal_waiting").show();
-
-            $.post("<?= base_url($module); ?>/xray_attachment_remove", {
-                transaction_id: transaction_id,
-                filename: filename
-            }, function(data) {
-                $(this_modal + " .modal_error").hide();
-                $(this_modal + " .modal_button").show();
-                $(this_modal + " .modal-body").show();
-                $(this_modal + " .modal_waiting").hide();
-
-                if (data.indexOf("<!DOCTYPE html>") > -1) {
-                    alert("Error: Session Time-Out, You must login again to continue.");
-                    location.reload(true);
-                } else {
-
-                    let result = JSON.parse(data);
-
-                    if (result.success == true) {
-                        $("[id='list_" + filename + "']").remove();
-                        display_logs(result.logs);
-                    } else {
-                        $(this_modal + " .modal_error").hide();
-                        $(this_modal + " .modal_error_msg").text(result.error);
-                    }
-                }
-            });
-        } else {
-
-        }
-    });
+        }, 'json').fail(function() {
+            $('#tbl_lab_results tbody').html('<tr><td colspan="7" class="text-center text-danger">Error loading laboratory results</td></tr>');
+        });
+    }
 
     // Lab Result Functions - Per Item Upload
     $(document).on("click", ".btn_item_upload", function() {
         let item_id = $(this).attr("id");
         let product_name = $(this).data("product-name");
+        let product_id = $(this).data("product-id");
         let transaction_id = $("#id_update").val();
         let patient_name = $("#patient_id_update option:selected").text();
         
@@ -1567,6 +1197,18 @@ $total_amount_due = $subtotal_total;
         $("#lab_item_id").val(item_id);
         $("#lab_transaction_id").val(transaction_id);
         
+        // Set digital form values
+        $("#digital_item_id").val(item_id);
+        $("#digital_transaction_id").val(transaction_id);
+        $("#digital_test_name").val(product_name); // Set product name as test name
+        $("#digital_performed_by").val("<?php echo $ufname; ?>"); // Set current user as performed by
+        
+        // Store product_id for loading result sets
+        $("#modal_lab").data("product-id", product_id);
+        
+        // Load result sets for digital entry
+        loadResultSets(product_id);
+        
         // Clear form
         $("#lab_upload_form")[0].reset();
         $("#lab_item_id").val(item_id);
@@ -1575,1307 +1217,172 @@ $total_amount_due = $subtotal_total;
         // Load lab results for this item
         load_lab_results_by_item(item_id);
         
-        $("#modal_lab").modal("show");
+        // Show modal
+        $("#modal_lab").modal();
     });
 
-    // Lab upload form submission
-    $(document).on("submit", "#lab_upload_form", function(e) {
+    // Handle file upload form submission
+    $(document).on('submit', '#lab_upload_form', function(e) {
         e.preventDefault();
         
-        let item_id = $("#lab_item_id").val();
-        let test_name = $("#lab_test_name").val();
-        let test_date = $("#lab_test_date").val();
-        let files = $("#lab_files")[0].files;
-        
-        if (!test_name || !test_date || files.length === 0) {
-            alert("Please fill in all required fields and select at least one file.");
-            return;
-        }
-        
-        let formData = new FormData(this);
-        
-        $("#btn_upload_lab").prop("disabled", true).html('<i class="fa fa-spinner fa-spin"></i> Uploading...');
+        var formData = new FormData(this);
         
         $.ajax({
-            type: "POST",
             url: "<?= base_url($module); ?>/lab_upload",
+            type: 'POST',
             data: formData,
             processData: false,
             contentType: false,
-            dataType: "json"
-        }).done(function(data) {
-            $("#btn_upload_lab").prop("disabled", false).html('<i class="fa fa-upload"></i> Upload Results');
-            
-            if (data.success) {
-                // Clear form
-                $("#lab_upload_form")[0].reset();
-                $("#lab_item_id").val(item_id);
-                $("#lab_transaction_id").val($("#lab_transaction_id").val());
-                
-                // Reload lab results
-                load_lab_results_by_item(item_id);
-                
-                // Show success message
-                bootbox.alert("Laboratory results uploaded successfully!");
-            } else {
-                bootbox.alert("Error: " + (data.error || "Failed to upload laboratory results"));
-            }
-        }).fail(function() {
-            $("#btn_upload_lab").prop("disabled", false).html('<i class="fa fa-upload"></i> Upload Results');
-            bootbox.alert("Error: Server error occurred. Please try again.");
-        });
-    });
-
-    // Delete lab result
-    $(document).on("click", ".btn_delete_lab", function(e) {
-        e.preventDefault();
-        let lab_id = $(this).data("id");
-        let item_id = $("#lab_item_id").val();
-        
-        bootbox.confirm("Are you sure you want to delete this laboratory result?", function(result) {
-            if (result) {
-                $.post("<?= base_url($module); ?>/lab_delete", {
-                    lab_id: lab_id,
-                    item_id: item_id
-                }, function(data) {
-                    if (data.success) {
-                        load_lab_results_by_item(item_id);
-                        bootbox.alert("Laboratory result deleted successfully!");
-                    } else {
-                        bootbox.alert("Error: " + (data.error || "Failed to delete laboratory result"));
-                    }
-                }, "json").fail(function() {
-                    bootbox.alert("Error: Server error occurred. Please try again.");
-                });
+            dataType: 'json',
+            beforeSend: function() {
+                $('#btn_upload_lab').prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Uploading...');
+            },
+            success: function(response) {
+                if (response.success) {
+                    alert('Laboratory results uploaded successfully!');
+                    $('#lab_upload_form')[0].reset();
+                    load_lab_results_by_item($('#lab_item_id').val()); // Refresh the results list
+                } else {
+                    alert('Error: ' + (response.error || 'Failed to upload laboratory results'));
+                }
+            },
+            error: function() {
+                alert('Error: Failed to communicate with server');
+            },
+            complete: function() {
+                $('#btn_upload_lab').prop('disabled', false).html('<i class="fa fa-upload"></i> Upload Results');
             }
         });
     });
 
-    // Download lab file
-    $(document).on("click", ".btn_download_lab", function(e) {
-        e.preventDefault();
-        let file_path = $(this).data("file");
-        let item_id = $("#lab_item_id").val();
+    // New item save handler
+    $(document).on('click', '#item_save', function() {
+        var transaction_id = $("#id_update").val();
+        var product_id = $("#product_id_new").val();
+        var qty = $("#qty_new").val();
+        var price = $("#price_new").val();
+        var commission_amount = $("#commission_amount_new").val();
+        var insurance_amount = $("#insurance_amount_new").val();
         
-        if (file_path) {
-            window.open("<?= base_url($module); ?>/lab_download?file=" + encodeURIComponent(file_path) + "&item_id=" + item_id, "_blank");
+        if (!product_id) {
+            alert("Please select a product/service");
+            return;
         }
-    });
-
-    // Function to load lab results by item
-    function load_lab_results_by_item(item_id) {
-        $("#tbl_lab_results tbody").html('<tr><td colspan="6" class="text-center text-muted"><i class="fa fa-spinner fa-spin"></i> Loading laboratory results...</td></tr>');
         
-        $.post("<?= base_url($module); ?>/lab_list", {
-            item_id: item_id
-        }, function(data) {
-            if (data.success && data.results && data.results.length > 0) {
-                let html = "";
-                $.each(data.results, function(index, item) {
-                    let files_html = "";
-                    if (item.files && item.files.length > 0) {
-                        $.each(item.files, function(i, file) {
-                            files_html += '<a href="#" class="btn btn-xs btn-info btn_download_lab" data-file="' + file.file_path + '" title="Download ' + file.original_name + '">' +
-                                         '<i class="fa fa-download"></i> ' + file.original_name + '</a> ';
-                        });
+        if (!qty || qty <= 0) {
+            alert("Please enter a valid quantity");
+            return;
+        }
+        
+        $.post("<?= base_url($module); ?>/add_item", {
+            transaction_id: transaction_id,
+            product_id: product_id,
+            qty: qty,
+            price: price,
+            commission_amount: commission_amount,
+            insurance_amount: insurance_amount,
+            [csrf_name]: csrf_hash
+        }, function(response) {
+            if (response.indexOf("<!DOCTYPE html>") > -1) {
+                alert("Error: Session Time-Out, You must login again to continue.");
+                location.reload(true);
+            } else if (response.indexOf("Error: ") > -1) {
+                bootbox.alert(response);
+            } else {
+                try {
+                    var result = JSON.parse(response);
+                    if (result.success) {
+                        // Clear form
+                        $("#product_id_new").val("").trigger("chosen:updated");
+                        $("#category_new, #uom_new").val("");
+                        $("#qty_new").val("1");
+                        $("#price_new, #amount_new, #commission_amount_new, #insurance_amount_new, #total_new").val("0.00");
+                        
+                        // Reload page to show updated items
+                        location.reload();
                     } else {
-                        files_html = '<span class="text-muted">No files</span>';
+                        alert("Error: " + (result.error || "Failed to add item"));
                     }
                     
-                    html += '<tr>' +
-                           '<td class="text-center">' + item.test_date + '</td>' +
-                           '<td>' + item.test_name + '</td>' +
-                           '<td>' + (item.lab_provider || '-') + '</td>' +
-                           '<td>' + files_html + '</td>' +
-                           '<td class="text-center">' + item.created_at + '</td>' +
-                           '<td class="text-center">' +
-                           '<button class="btn btn-xs btn-danger btn_delete_lab" data-id="' + item.id + '" title="Delete">' +
-                           '<i class="fa fa-trash"></i></button>' +
-                           '</td>' +
-                           '</tr>';
-                });
-                $("#tbl_lab_results tbody").html(html);
-            } else {
-                $("#tbl_lab_results tbody").html('<tr><td colspan="6" class="text-center text-muted">No laboratory results found</td></tr>');
+                    if (result.csrf_hash) {
+                        regenerate_csrf(result.csrf_hash);
+                    }
+                } catch(e) {
+                    alert("Error: Invalid response from server");
+                }
             }
-        }, "json").fail(function() {
-            $("#tbl_lab_results tbody").html('<tr><td colspan="6" class="text-center text-danger">Error loading laboratory results</td></tr>');
         });
-    }
-
-
-    $(document).on("click", "#btn_send", function() {
-        $("#modal_send").modal();
     });
 
-    $(document).on("click", "#btn_send_save", function() {
-        let transaction_id = $("#id_update").val();
-        let location_id = $("#location_id_send").val();
-        let location = $("#location_id_send option:selected").text();
-        let this_modal = "#modal_send";
-
-        if (transaction_id && location_id) {
-            $(this_modal + " .modal_error").hide();
-            $(this_modal + " .modal_button").hide();
-            $(this_modal + " .modal-body").hide();
-            $(this_modal + " .modal_waiting").show();
-
-            $.post("<?= base_url($module); ?>/transfer", {
-                transaction_id: transaction_id,
-                location_id: location_id,
-                location: location
-            }, function(data) {
-                $(this_modal + " .modal_error").hide();
-                $(this_modal + " .modal_button").show();
-                $(this_modal + " .modal-body").show();
-                $(this_modal + " .modal_waiting").hide();
-
-                if (data.indexOf("<!DOCTYPE html>") > -1) {
-                    alert("Error: Session Time-Out, You must login again to continue.");
-                    location.reload(true);
-                } else {
-                    let result = JSON.parse(data);
-
-                    if (result.success == true) {
-                        $(this_modal).modal("hide");
-
-                        $("#location_id_update").val(location_id).trigger("change").trigger(
-                            "chosen:updated");
-                        $("#loading").modal();
-                        window.location = "<?= base_url($module); ?>";
-
-                    } else {
-                        $(this_modal + " .modal_error_msg").text(result.error);
-                        $(this_modal + " .modal_error").stop(true, true).show().delay(15000).fadeOut(
-                            "slow");
-                    }
-                }
-            });
-        } else {
-            $(this_modal + " .modal_error_msg").text("Error: No location selected!");
-            $(this_modal + " .modal_error").stop(true, true).show().delay(15000).fadeOut("slow");
-        }
-
-    });
-
-    $(document).on("click", "#btn_prescription", function() {
-        let transaction_id = $("#id_update").val();
-        $("#txt_prescription_instruction").val("");
-        $("#txt_prescription_product_id").val(0).focus();
-        $("#txt_prescription_qty").val("1");
-
-        if (transaction_id) {
-            $("#loading").modal();
-            $.post("<?= base_url($module); ?>/prescription_list", {
-                transaction_id: transaction_id
-            }, function(data) {
-                $("#loading").modal("hide");
-                if (data.indexOf("<!DOCTYPE html>") > -1) {
-                    alert("Error: Session Time-Out, You must login again to continue.");
-                    location.reload(true);
-                } else {
-                    let result = JSON.parse(data);
-
-                    if (result.success == true) {
-                        let tbl = "";
-
-                        if (result.data.length > 0) {
-                            let i = 0;
-                            $.each(result.data, (i, row) => {
-                                i++;
-                                tbl += `<tr>
-											<td align="center">${i}</td>
-											<td align="center">${row.product_code} - ${row.product_name} [ ${row.uom_code} ]</td>
-											<td align="center">${row.qty}</td>
-											<td><span style="white-space:pre;">${row.instruction}</span></td>
-											<td align="center">
-												<i  id="${row.id}" class="btn_prescription_delete fa fa-trash fa-fw text-danger" title="Delete"></i>
-											</td>
-										</tr>`;
-                            });
-                        } else {
-                            tbl += `<tr><td colspan="5" align="center">No Record</td></tr>`;
-                        }
-
-                        $("#tbl_prescription tbody").html(tbl);
-                        $("#modal_prescription").modal();
-
-                        // $('#txt_prescription_product_id').trigger('change').chosen().trigger('chosen:updated');
-
-                        $("#modal_prescription").on('shown.bs.modal', function() {
-							$('.chosen-select', this).chosen('destroy').chosen();
-                        });
-                    } else {
-                        bootbox.alert(error);
-                    }
-                }
-            });
-        } else {
-            bootbox.alert("Error: ")
-        }
-
-    });
-
-    $(document).on("click", "#btn_prescription_add", function(e) {
-        e.preventDefault();
-
-        let transaction_id = $("#id_update").val();
-        let this_modal = "#modal_prescription";
-
-        let product_id = $("#txt_prescription_product_id").val();
-        let product_name = $("#txt_prescription_product_id option:selected").text();
-        let qty = $("#txt_prescription_qty").val();
-        let instruction = $("#txt_prescription_instruction").val();
-
-        if (transaction_id) {
-            if (product_id && Number(qty) > 0 && instruction) {
-                let payload = $("#frm_prescription").serialize();
-                payload += "&transaction_id=" + transaction_id;
-                payload += "&product_name=" + product_name;
-
-                $(this_modal + " .modal_error").hide();
-                $(this_modal + " .modal_button").hide();
-                $(this_modal + " .modal-body").hide();
-                $(this_modal + " .modal_waiting").show();
-
-                $.post("<?= base_url($module); ?>/prescription_add", payload, function(data) {
-
-                    $(this_modal + " .modal_error").hide();
-                    $(this_modal + " .modal_button").show();
-                    $(this_modal + " .modal-body").show();
-                    $(this_modal + " .modal_waiting").hide();
-
-                    if (data.indexOf("<!DOCTYPE html>") > -1) {
-                        alert("Error: Session Time-Out, You must login again to continue.");
-                        location.reload(true);
-                    } else {
-                        let result = JSON.parse(data);
-
-                        if (result.success == true) {
-                            let tbl = "";
-
-                            if (result.data.length > 0) {
-                                let i = 0;
-                                $.each(result.data, (i, row) => {
-                                    i++;
-                                    tbl += `<tr>
-												<td align="center">${i}</td>
-												<td align="center">${row.product_code} - ${row.product_name} [ ${row.uom_code} ]</td>
-												<td align="center">${row.qty}</td>
-												<td><span style="white-space:pre;">${row.instruction}</span></td>
-												<td align="center">
-													<i  id="${row.id}" class="btn_prescription_delete fa fa-trash fa-fw text-danger" title="Delete"></i>
-												</td>
-											</tr>`;
-                                });
-                            } else {
-                                tbl += `<tr><td colspan="5" align="center">No Record</td></tr>`;
-                            }
-
-                            $("#tbl_prescription tbody").html(tbl);
-
-                            //clear fields
-                            $("#txt_prescription_instruction").val("");
-                            $("#txt_prescription_product_id").val(0).focus();
-                            $("#txt_prescription_qty").val("1");
-
-                            //display latest log in trails
-                            display_logs(result["logs"]);
-                        } else {
-                            $(this_modal + " .modal_error_msg").text(result.error);
-                            $(this_modal + " .modal_error").stop(true, true).show().delay(15000)
-                                .fadeOut("slow");
-                        }
-                    }
-                });
-            } else {
-                $(this_modal + " .modal_error_msg").text("Error: All fields are required!");
-                $(this_modal + " .modal_error").stop(true, true).show().delay(15000).fadeOut("slow");
-            }
-        } else {
-            $(this_modal + " .modal_error_msg").text("Error: Critical Error Encountered!");
-            $(this_modal + " .modal_error").stop(true, true).show().delay(15000).fadeOut("slow");
-        }
-    });
-
-    $(document).on("click", ".btn_prescription_delete", function() {
-
-        let prescription_id = $(this).attr("id");
-        let transaction_id = $("#id_update").val();
-        let this_modal = "#modal_prescription";
-
-        if (transaction_id && prescription_id) {
-
-            bootbox.prompt({
-                title: "Provide Cancel Reason!",
-                inputType: 'textarea',
-                buttons: {
-                    cancel: {
-                        label: '<i class="fa fa-times"></i> Cancel'
-                    },
-                    confirm: {
-                        label: '<i class="fa fa-check"></i> Confirm'
-                    }
-                },
-                callback: function(result) {
-
-                    if (result !== null) {
-                        if (result) {
-                            $(this_modal + " .modal_error").hide();
-                            $(this_modal + " .modal_button").hide();
-                            $(this_modal + " .modal-body").hide();
-                            $(this_modal + " .modal_waiting").show();
-
-                            $.post("<?= base_url($module); ?>/prescription_delete", {
-                                transaction_id: transaction_id,
-                                prescription_id: prescription_id,
-                                reason: result
-                            }, function(data) {
-
-                                $(this_modal + " .modal_error").hide();
-                                $(this_modal + " .modal_button").show();
-                                $(this_modal + " .modal-body").show();
-                                $(this_modal + " .modal_waiting").hide();
-
-                                if (data.indexOf("<!DOCTYPE html>") > -1) {
-                                    alert(
-                                        "Error: Session Time-Out, You must login again to continue."
-                                    );
-                                    location.reload(true);
-                                } else {
-                                    let result = JSON.parse(data);
-
-                                    if (result.success == true) {
-                                        let tbl = "";
-
-                                        if (result.data.length > 0) {
-                                            let i = 0;
-                                            $.each(result.data, (i, row) => {
-                                                i++;
-                                                tbl += `<tr>
-															<td align="center">${i}</td>
-															<td align="center">${row.product_code} - ${row.product_name} [ ${row.uom_code} ]</td>
-															<td align="center">${row.qty}</td>
-															<td><span style="white-space:pre;">${row.instruction}</span></td>
-															<td align="center">
-																<i  id="${row.id}" class="btn_prescription_delete fa fa-trash fa-fw text-danger" title="Delete"></i>
-															</td>
-														</tr>`;
-                                            });
-                                        } else {
-                                            tbl +=
-                                                `<tr><td colspan="5" align="center">No Record</td></tr>`;
-                                        }
-
-                                        $("#tbl_prescription tbody").html(tbl);
-
-                                        //clear fields
-                                        $("#txt_prescription_instruction").val("");
-                                        $("#txt_prescription_product_id").val(0);
-                                        $("#txt_prescription_qty").val("1");
-
-                                        //display latest log in trails
-                                        display_logs(result["logs"]);
-
-                                    } else {
-                                        $(this_modal + " .modal_error_msg").text(result
-                                            .error);
-                                        $(this_modal + " .modal_error").stop(true, true)
-                                            .show().delay(15000).fadeOut("slow");
-                                    }
-                                }
-                            });
-                        } else {
-                            return false;
-                        }
-                    }
-                }
-            });
-
-        } else {
-            $(this_modal + " .modal_error_msg").text("Error: Critical Error Encountered!");
-            $(this_modal + " .modal_error").stop(true, true).show().delay(15000).fadeOut("slow");
-        }
-    });
-
-    $(document).on("keypress", ".txt_field_prescription", function(e) {
-        if (e.which == 13) {
-            $("#btn_prescription_add").trigger("click");
-        }
-    });
-
-    $(document).on("click", "#btn_prescription_print", function() {
-        let transaction_id = $("#id_update").val();
-        let this_modal = "#modal_prescription";
-
-        if (transaction_id) {
-            window.open("<?= base_url($module); ?>/prescription_print/" + transaction_id, "_blank");
-        } else {
-            $(this_modal + " .modal_error_msg").text("Error: Critical Error Encountered!");
-            $(this_modal + " .modal_error").stop(true, true).show().delay(15000).fadeOut("slow");
-        }
-    });
-
-
-    $(document).on("click", "#btn_completed", function() {
-        let transaction_id = $("#id_update").val();
-
-        if (transaction_id) {
-            bootbox.confirm("Are you sure you want to mark this Transaction as completed?", function(result) {
-                if (result) {
-                    $("#loading").modal();
-
-                    $.post("<?= base_url($module); ?>/complete", {
-                        transaction_id: transaction_id
-                    }, function(data) {
-                        $("#loading").modal("hide");
-
-                        if (data.indexOf("<!DOCTYPE html>") > -1) {
-                            alert("Error: Session Time-Out, You must login again to continue.");
-                            location.reload(true);
-                        } else {
-                            let result = JSON.parse(data);
-
-                            if (result.success == true) {
-                                $("#loading").modal();
-                                location.reload(true);
-                            } else {
-                                bootbox.alert(result.error);
-                            }
-                        }
-                    });
-                }
-            });
-        } else {
-            bootbox.alert("Error: Critical Error Encountered!");
-        }
-    });
-
-    //cancel transaction
-    $(document).on("click", "#btn_transaction_cancel", function() {
-        let transaction_id = $("#id_update").val();
-
-        if (transaction_id) {
-            bootbox.prompt({
-                title: "Provide Cancel Reason!",
-                inputType: 'textarea',
-                buttons: {
-                    cancel: {
-                        label: '<i class="fa fa-times"></i> Cancel'
-                    },
-                    confirm: {
-                        label: '<i class="fa fa-check"></i> Confirm'
-                    }
-                },
-                callback: function(result) {
-
-                    if (result !== null) {
-                        if (result) {
-                            $.post("<?= base_url($module); ?>/cancel", {
-                                transaction_id: transaction_id,
-                                reason: result
-                            }, function(data) {
-                                if (data.indexOf("<!DOCTYPE html>") > -1) {
-                                    alert(
-                                        "Error: Session Time-Out, You must login again to continue."
-                                    );
-                                    location.reload(true);
-                                } else {
-                                    let result = JSON.parse(data);
-
-                                    if (result.success) {
-                                        $("#loading").modal();
-                                        location.reload();
-                                    } else {
-                                        bootbox.alert(result.error);
-                                    }
-                                }
-                            });
-                        } else {
-                            return false;
-                        }
-                    }
-                }
-            });
-
-        } else {
-            bootbox.alert("Error: Critical Error Encountered!");
-        }
-
-    });
-    //endregion transaction buttons
-
-
-    //QTY CHANGE
-    $(document).on("keyup", "#qty_new", function() {
+    // Product selection change handler for new entry
+    $(document).on('change', '#product_id_new', function() {
         compute_entry();
     });
 
-    //ITEM SELECT
-    $(document).on("change", "#product_id_new, #payment_method_id_update", function(e) {
-        e.preventDefault();
-        compute_entry();
+    // Quantity and price change handlers for new entry
+    $(document).on('change', '#qty_new, #price_new, #commission_amount_new, #insurance_amount_new', function() {
+        compute_entry_manual();
     });
 
-    //ITEM SAVE
-    $(document).on("click", "#item_save", function(e) {
-        e.preventDefault();
-
-        let transaction_id = $("#id_update").val();
-        let payment_method_id = $("#payment_method_id_update").val();
-        let product_id = $("#product_id_new").val();
-        let product = $("#product_id_new option:selected").text();
-        let uom = $("#uom_new").val();
-        let qty = $("#qty_new").val();
-        let price = $("#price_new").val();
-        let amount = $("#amount_new").val();
-        let commission_amount = $("#commission_amount_new").val();
-        let insurance_amount = $("#insurance_amount_new").val();
-        let total = $("#total_new").val();
-
-        if (transaction_id && product_id) {
-            if (payment_method_id) {
-                $("#loading").modal();
-
-                $.post("<?= base_url($module); ?>/add_item", {
-                    transaction_id: transaction_id,
-                    product_id: product_id,
-                    product: product,
-                    uom: uom,
-                    qty: qty,
-                    price: price,
-                    amount: amount,
-                    commission_amount: commission_amount,
-                    insurance_amount: insurance_amount,
-                    total: total
-                }, function(data) {
-                    $("#loading").modal("hide");
-
-                    if (data.indexOf("<!DOCTYPE html>") > -1) {
-                        alert("Error: Session Time-Out, You must login again to continue.");
-                        location.reload(true);
-                    } else {
-                        let result = JSON.parse(data);
-
-                        if (result.success == true) {
-                            $("#tbl_list tbody").html(item_list(result.result));
-                            $("#tbl_list tbody").append(new_entry_field);
-                            $("#product_id_new").trigger("select", "focus");
-
-                            $('.chosen-select').chosen({
-                                allow_single_deselect: true
-                            });
-
-                            display_total();
-                            display_logs(result.logs);
-                        } else {
-                            bootbox.alert(result.message);
-                        }
-                    }
-                });
-            } else {
-                bootbox.alert("Error: Please select a payment method first!");
-                $("#payment_method_update").trigger("select", "focus");
-            }
-
-        } else {
-            bootbox.alert("Error: Fields with * are required!");
-            $("#product_id_new").trigger("select", "focus");
-        }
+    // Item action handlers
+    $(document).on('click', '.btn_item_modify', function() {
+        var item_id = $(this).attr('id');
+        bootbox.alert("Item modification functionality not yet implemented. Item ID: " + item_id);
     });
 
-    $(document).on("keypress", ".field_new", function(e) {
-        if (e.which == 13) {
-            $("#item_save").trigger("click");
-        }
-    });
-
-    //ITEM DELETE
-    $(document).on("click", ".btn_item_cancel", function(e) {
-        e.preventDefault();
-        let id = $(this).attr("id");
-        let transaction_id = $("#id_update").val();
-
-        if (id && transaction_id) {
-            bootbox.prompt({
-                title: "Provide Cancel Reason!",
-                inputType: 'textarea',
-                buttons: {
-                    cancel: {
-                        label: '<i class="fa fa-times"></i> Cancel'
-                    },
-                    confirm: {
-                        label: '<i class="fa fa-check"></i> Confirm'
-                    }
-                },
-                callback: function(result) {
-
-                    if (result !== null) {
-                        if (result) {
-                            $("#loading").modal();
-
-                            $.post("<?= base_url($module); ?>/item_cancel", {
-                                id: id,
-                                transaction_id: transaction_id,
-                                reason: result
-                            }, function(data) {
-                                $("#loading").modal("hide");
-
-                                if (data.indexOf("<!DOCTYPE html>") > -1) {
-                                    alert(
-                                        "Error: Session Time-Out, You must login again to continue."
-                                    );
-                                    location.reload(true);
-                                } else {
-                                    let result = JSON.parse(data);
-
-                                    if (result.success == true) {
-                                        $("#tbl_list tbody").html(item_list(result.result));
-                                        $("#tbl_list tbody").append(new_entry_field);
-                                        $("#product_id_new").trigger("select", "focus");
-
-                                        $('.chosen-select').chosen({
-                                            allow_single_deselect: true
-                                        });
-
-                                        display_total();
-                                        display_logs(result.logs);
-                                    } else {
-                                        bootbox.alert(result.message);
-                                    }
-                                }
-                            });
-                        } else {
-                            return false;
-                        }
-                    }
-                }
-            });
-        }
-    });
-
-    //ITEM COMPLETED
-    $(document).on("click", ".btn_item_completed", function(e) {
-        e.preventDefault();
-        let id = $(this).attr("id");
-        let transaction_id = $("#id_update").val();
-
-        if (id && transaction_id) {
-            bootbox.confirm("Are you sure you want to mark this item as completed?", function(result) {
-                if (result) {
-                    $("#loading").modal();
-
-                    $.post("<?= base_url($module); ?>/item_complete", {
-                        id: id,
-                        transaction_id: transaction_id
-                    }, function(data) {
-                        $("#loading").modal("hide");
-
-                        if (data.indexOf("<!DOCTYPE html>") > -1) {
-                            alert("Error: Session Time-Out, You must login again to continue.");
-                            location.reload(true);
-                        } else {
-                            let result = JSON.parse(data);
-
-                            if (result.success == true) {
-                                $("#tbl_list tbody").html(item_list(result.result));
-                                $("#tbl_list tbody").append(new_entry_field);
-                                $("#product_id_new").trigger("select", "focus");
-
-                                $('.chosen-select').chosen({
-                                    allow_single_deselect: true
-                                });
-
-                                display_total();
-                                display_logs(result.logs);
-                            } else {
-                                bootbox.alert(result.message);
-                            }
-                        }
-                    });
-                }
-            });
-        }
-    });
-
-    //ITEM WORKING
-    $(document).on("click", ".btn_item_working", function(e) {
-        e.preventDefault();
-        let id = $(this).attr("id");
-        let transaction_id = $("#id_update").val();
-
-        if (id && transaction_id) {
-            bootbox.confirm("Are you sure you want to mark this item as working?", function(result) {
-                if (result) {
-                    $("#loading").modal();
-
-                    $.post("<?= base_url($module); ?>/item_working", {
-                        id: id,
-                        transaction_id: transaction_id
-                    }, function(data) {
-                        $("#loading").modal("hide");
-
-                        if (data.indexOf("<!DOCTYPE html>") > -1) {
-                            alert("Error: Session Time-Out, You must login again to continue.");
-                            location.reload(true);
-                        } else {
-                            let result = JSON.parse(data);
-
-                            if (result.success == true) {
-                                $("#tbl_list tbody").html(item_list(result.result));
-                                $("#tbl_list tbody").append(new_entry_field);
-                                $("#product_id_new").trigger("select", "focus");
-
-                                $('.chosen-select').chosen({
-                                    allow_single_deselect: true
-                                });
-
-                                display_total();
-                                display_logs(result.logs);
-                            } else {
-                                bootbox.alert(result.message);
-                            }
-                        }
-                    });
-                }
-            });
-        }
-    });
-
-    //ITEM MODIFY
-    $(document).on("click", ".btn_item_modify", function(e) {
-        e.preventDefault();
-        let id = $(this).attr("id");
-
-        if (id) {
-            $.post("<?= base_url($module); ?>/item_search_row", {
-                id: id
-            }, function(data) {
-
-                if (data.indexOf("<!DOCTYPE html>") > -1) {
-                    alert("Error: Session Time-Out, You must login again to continue.");
-                    location.reload(true);
-                } else if (data.indexOf("Error: ") > -1) {
-                    bootbox.alert(data);
+    $(document).on('click', '.btn_item_working', function() {
+        var item_id = $(this).attr('id');
+        if (confirm('Mark this item as "Working"?')) {
+            $.post("<?= base_url($module); ?>/update_item_status", {
+                item_id: item_id,
+                status: 'working',
+                [csrf_name]: csrf_hash
+            }, function(response) {
+                if (response.indexOf("Error: ") > -1) {
+                    bootbox.alert(response);
                 } else {
-                    var result = JSON.parse(data);
-
-                    //set the data to the field
-                    $.each(result, function(key, val) {
-                        if ($("#" + key + "_item_update")) {
-                            $("#" + key + "_item_update").val(val);
-                        }
-                    });
-
-                    $("#modal_modify").modal();
-
-                    $("#modal_modify").on("shown.bs.modal", function() {
-                        $("#qty_item_update").select().focus();
-                    });
+                    location.reload();
                 }
             });
-
-        } else {
-            bootbox.alert("Error: Critical Error Encountered!");
         }
     });
 
-    //ITEM TOTAL
-    $(document).on("keyup",
-        "#qty_item_update, #price_item_update, #commission_amount_item_update, #insurance_amount_item_update",
-        function() {
-            let qty = Number($("#qty_item_update").val());
-            let price = Number($("#price_item_update").val());
-            let commission_amount = Number($("#commission_amount_item_update").val());
-            let insurance_amount = Number($("#insurance_amount_item_update").val());
-
-            let amount = qty * price;
-            let deduction = commission_amount + insurance_amount;
-            let total = amount - deduction;
-
-            $("#amount_item_update").val(amount.toFixed(2));
-            $("#total_item_update").val(total.toFixed(2));
-        });
-
-    $(document).on("change",
-        "#qty_item_update, #price_item_update, #commission_amount_item_update, #insurance_amount_item_update",
-        function() {
-            let qty = Number($("#qty_item_update").val());
-            let price = Number($("#price_item_update").val());
-            let commission_amount = Number($("#commission_amount_item_update").val());
-            let insurance_amount = Number($("#insurance_amount_item_update").val());
-
-            let amount = qty * price;
-            let deduction = commission_amount + insurance_amount;
-            let total = amount - deduction;
-
-            $("#amount_item_update").val(amount.toFixed(2));
-            $("#total_item_update").val(total.toFixed(2));
-        });
-
-    //ITEM UPDATE
-    $(document).on("keypress", ".field_item_update", function(e) {
-        if (e.which == 13) {
-            $("#btn_item_update").trigger("click");
-        }
-    });
-
-    $(document).on("click", "#btn_item_update", function(e) {
-        let transaction_id = $("#transaction_id_item_update").val();
-        let id = $("#id_item_update").val();
-        let this_modal = "#modal_modify";
-
-        if (id && transaction_id) {
-
-            $(this_modal + " .modal_error").hide();
-            $(this_modal + " .modal_button").hide();
-            $(this_modal + " .modal_body").hide();
-            $(this_modal + " .modal_waiting").show();
-
-            var formData = new FormData($("#frm_item_update")[0]);
-
-            $.ajax({
-                type: "POST",
-                url: "<?= base_url($module); ?>/item_update",
-                data: formData,
-                enctype: "multipart/form-data",
-                processData: false, // tell jQuery not to process the data
-                contentType: false, // tell jQuery not to set contentType
-                dataType: "json",
-                //encode: true,
-            }).done(function(data) {
-
-                $(this_modal + " .modal_error").hide();
-                $(this_modal + " .modal_waiting").hide();
-                $(this_modal + " .modal_button").show();
-                $(this_modal + " .modal_body").show();
-
-                if (data.success === true) {
-                    $("#tbl_list tbody").html(item_list(data.records));
-                    $("#tbl_list tbody").append(new_entry_field);
-                    $("#product_id_new").trigger("select", "focus");
-
-                    $('.chosen-select').chosen({
-                        allow_single_deselect: true
-                    });
-
-                    display_total();
-                    display_logs(data.logs);
-
-                    $("#modal_modify").modal("hide")
-
+    $(document).on('click', '.btn_item_completed', function() {
+        var item_id = $(this).attr('id');
+        if (confirm('Mark this item as "Completed"?')) {
+            $.post("<?= base_url($module); ?>/update_item_status", {
+                item_id: item_id,
+                status: 'completed',
+                [csrf_name]: csrf_hash
+            }, function(response) {
+                if (response.indexOf("Error: ") > -1) {
+                    bootbox.alert(response);
                 } else {
-                    $(this_modal + " .modal_error_msg").text(data.error);
-                    $(this_modal + " .modal_error").stop(true, true).show().delay(15000).fadeOut(
-                        "slow");
-                    $("#qty_item_update").select().focus();
+                    location.reload();
                 }
-
-            }).fail(function(data) {
-                alert("Error: Server Error or Session Time-Out!, Please try again or reload the page!");
-                $(this_modal + " .modal_error").hide();
-                $(this_modal + " .modal_waiting").hide();
-                $(this_modal + " .modal_button").show();
-                $(this_modal + " .modal-body").show();
             });
-
-            e.preventDefault();
-
-        } else {
-            $(this_modal + " .modal_error_msg").text("Error: Critical Error Encountered!");
-            $(this_modal + " .modal_error").stop(true, true).show().delay(15000).fadeOut("slow");
-            $("#qty_item_update").select().focus();
         }
-
     });
 
-    // //ITEM INFO
-    // $(document).on("click", ".btn_item_info", function(e) {
-    //     e.preventDefault();
-    //     let id = $(this).attr("id");
+    $(document).on('click', '.btn_item_cancel', function() {
+        var item_id = $(this).attr('id');
+        if (confirm('Are you sure you want to cancel/delete this item?')) {
+            $.post("<?= base_url($module); ?>/cancel_item", {
+                item_id: item_id,
+                [csrf_name]: csrf_hash
+            }, function(response) {
+                if (response.indexOf("Error: ") > -1) {
+                    bootbox.alert(response);
+                } else {
+                    location.reload();
+                }
+            });
+        }
+    });
 
-    //     if (id) {
-    //         $.post("<?= base_url($module); ?>/item_search_row", {
-    //             id: id
-    //         }, function(data) {
+    }); // End of $(document).ready()
 
-    //             if (data.indexOf("<!DOCTYPE html>") > -1) {
-    //                 alert("Error: Session Time-Out, You must login again to continue.");
-    //                 location.reload(true);
-    //             } else if (data.indexOf("Error: ") > -1) {
-    //                 bootbox.alert(data);
-    //             } else {
-    //                 var result = JSON.parse(data);
-
-    //                 //set the data to the field
-    //                 $.each(result, function(key, val) {
-    //                     if ($("#" + key + "_item_info")) {
-    //                         $("#" + key + "_item_info").val(val);
-    //                     }
-    //                 });
-
-    //                 $("#modal_info").modal();
-
-    //                 $("#modal_info").on("shown.bs.modal", function() {
-    //                     $("#deleted_reason_item_info").select().focus();
-    //                 });
-    //             }
-    //         });
-
-    //     } else {
-    //         bootbox.alert("Error: Critical Error Encountered!");
-    //     }
-    // });
-
-    // //ITEM CANCEL
-    // $(document).on("click", "#btn_item_delete", function(e) {
-    //     let transaction_id = $("#transaction_id_item_info").val();
-    //     let id = $("#id_item_info").val();
-    //     let reason = $("#deleted_reason_item_info").val();
-
-    //     if (transaction_id && id) {
-    //         if (reason) {
-    //             $("#modal_info .modal_error, #modal_info .modal_button, #modal_info .modal-body").hide();
-    //             $("#modal_info .modal_waiting").show();
-
-    //             var formData = new FormData($("#frm_item_info")[0]);
-
-    //             $.ajax({
-    //                 type: "POST",
-    //                 url: "<?= base_url($module); ?>/item_delete",
-    //                 data: formData,
-    //                 enctype: "multipart/form-data",
-    //                 processData: false, // tell jQuery not to process the data
-    //                 contentType: false, // tell jQuery not to set contentType
-    //                 dataType: "json",
-    //                 //encode: true,
-    //             }).done(function(data) {
-
-    //                 $('#modal_info .modal_error, #modal_info .modal_waiting').hide();
-    //                 $('#modal_info .modal_button, #modal_info .modal-body').show();
-
-    //                 if (!data.success) {
-    //                     $("#modal_info .modal_error_msg").text(data.errors.error);
-    //                     $("#modal_info  .modal_error").stop(true, true).show().delay(15000).fadeOut(
-    //                         "slow");
-    //                 } else {
-    //                     //no error
-    //                     if (data) {
-
-    //                         $("#tbl_list tbody").html(item_list(data.result));
-
-    //                         //clear fields
-    //                         $(".field_item_info").val("");
-
-    //                         $('[data-toggle="tooltip"]').tooltip({
-    //                             html: true
-    //                         });
-    //                     }
-
-    //                     $("#modal_info").modal("hide")
-    //                 }
-    //             }).fail(function(data) {
-    //                 alert(
-    //                     "Error: Server Error or Session Time-Out!, Please try again or reload the page!"
-    //                 );
-    //                 $('#modal_info .modal_error, #modal_info .modal_waiting').hide();
-    //                 $('#modal_info .modal_button, #modal_info .modal-body').show();
-    //                 $("#deleted_reason_item_info").select().focus();
-    //             });
-
-    //             e.preventDefault();
-    //         } else {
-    //             $("#modal_info .modal_error_msg").text("Error: Please provide reason!");
-    //             $("#modal_info .modal_error").stop(true, true).show().delay(15000).fadeOut("slow");
-    //             $("#deleted_reason_item_info").select().focus();
-    //         }
-
-    //     } else {
-    //         $("#modal_info .modal_error_msg").text("Error: Critical Error Encountered!");
-    //         $("#modal_info .modal_error").stop(true, true).show().delay(15000).fadeOut("slow");
-    //         $("#deleted_reason_item_info").select().focus();
-    //     }
-
-    // });
-
-    // //cancel transaction
-    // //delete
-    // $(document).on("click", "#btn_transaction_cancel", function() {
-    //     let transaction_id = $("#id_update").val();
-
-    //     if (transaction_id) {
-    //         bootbox.prompt({
-    //             title: "Provide Cancel Reason!",
-    //             inputType: 'textarea',
-    //             buttons: {
-    //                 cancel: {
-    //                     label: '<i class="fa fa-times"></i> Cancel'
-    //                 },
-    //                 confirm: {
-    //                     label: '<i class="fa fa-check"></i> Confirm'
-    //                 }
-    //             },
-    //             callback: function(result) {
-
-    //                 if (result !== null) {
-    //                     if (result) {
-    //                         $.post("<?= base_url($module); ?>/cancel", {
-    //                             transaction_id: transaction_id,
-    //                             reason: result
-    //                         }, function(data) {
-    //                             if (data.indexOf("<!DOCTYPE html>") > -1) {
-    //                                 alert(
-    //                                     "Error: Session Time-Out, You must login again to continue."
-    //                                 );
-    //                                 location.reload(true);
-    //                             } else if (data.indexOf("Error: ") > -1) {
-    //                                 bootbox.alert(data);
-    //                             } else {
-    //                                 $("#loading").modal();
-    //                                 location.reload();
-    //                             }
-    //                         });
-    //                     } else {
-    //                         return false;
-    //                     }
-    //                 }
-    //             }
-    //         });
-
-    //     } else {
-    //         bootbox.alert("Error: Critical Error Encountered!");
-    //     }
-
-    // });
-
-    // //for dept approval
-    // $(document).on("click", "#btn_dept_approval", function(e) {
-    //     e.preventDefault();
-    //     $("#modal_dept_approval").modal();
-    // });
-
-    // $(document).on("click", "#btn_dept_approver_send", function(e) {
-    //     e.preventDefault();
-    //     let this_modal = "#modal_dept_approval";
-    //     let transaction_id = $("#id_update").val();
-    //     let approver_id = $("#txt_dept_approver").val();
-    //     let approver_name = $("#txt_dept_approver option:selected").text();
-
-    //     if (transaction_id) {
-
-    //         if (approver_id) {
-    //             $(this_modal + " .modal_error").hide();
-    //             $(this_modal + " .modal_button").hide();
-    //             $(this_modal + " .modal-body").hide();
-    //             $(this_modal + " .modal_waiting").show();
-
-    //             $.post("<?= base_url($module); ?>/for_dept_approval", {
-    //                 transaction_id: transaction_id,
-    //                 approver_id: approver_id,
-    //                 approver_name: approver_name
-    //             }, function(data) {
-    //                 $(this_modal + " .modal_button").show();
-    //                 $(this_modal + " .modal-body").show();
-    //                 $(this_modal + " .modal_waiting").hide();
-
-    //                 if (data.indexOf("<!DOCTYPE html>") > -1) {
-    //                     alert("Error: Session Time-Out, You must login again to continue.");
-    //                     location.reload(true);
-    //                 } else if (data.indexOf("Error: ") > -1) {
-    //                     $(this_modal + " .modal_error_msg").text(data);
-    //                     $(this_modal + " .modal_error").stop(true, true).show().delay(15000).fadeOut(
-    //                         "slow");
-    //                 } else {
-    //                     $(this_modal).modal("hide");
-    //                     $("#loading").modal();
-    //                     location.reload();
-    //                 }
-
-    //             });
-    //         } else {
-    //             $(this_modal + " .modal_error_msg").text("Error: Please select approver!");
-    //             $(this_modal + " .modal_error").stop(true, true).show().delay(15000).fadeOut(
-    //                 "slow");
-    //         }
-    //     } else {
-    //         $(this_modal + " .modal_error_msg").text("Error: Critical Error Encountered!");
-    //         $(this_modal + " .modal_error").stop(true, true).show().delay(15000).fadeOut(
-    //             "slow");
-    //     }
-
-    // });
-
-    // //transfer dept approval
-    // $(document).on("click", "#btn_dept_approval_transfer", function(e) {
-    //     e.preventDefault();
-    //     $("#modal_dept_approval_transfer").modal();
-    // });
-
-    // $(document).on("click", "#btn_dept_approver_transfer_send", function(e) {
-    //     e.preventDefault();
-    //     let this_modal = "#modal_dept_approval_transfer";
-
-    //     let transaction_id = $("#id_update").val();
-    //     let approver_id = $("#txt_dept_approver_transfer").val();
-    //     let approver_name = $("#txt_dept_approver_transfer option:selected").text();
-
-    //     if (transaction_id) {
-
-    //         if (approver_id) {
-    //             $(this_modal + " .modal_error").hide();
-    //             $(this_modal + " .modal_button").hide();
-    //             $(this_modal + " .modal-body").hide();
-    //             $(this_modal + " .modal_waiting").show();
-
-    //             $.post("<?= base_url($module); ?>/transfer_dept_approver", {
-    //                 transaction_id: transaction_id,
-    //                 approver_id: approver_id,
-    //                 approver_name: approver_name
-    //             }, function(data) {
-    //                 $(this_modal + " .modal_button").show();
-    //                 $(this_modal + " .modal-body").show();
-    //                 $(this_modal + " .modal_waiting").hide();
-
-    //                 if (data.indexOf("<!DOCTYPE html>") > -1) {
-    //                     alert("Error: Session Time-Out, You must login again to continue.");
-    //                     location.reload(true);
-    //                 } else if (data.indexOf("Error: ") > -1) {
-    //                     $(this_modal + " .modal_error_msg").text(data);
-    //                     $(this_modal + " .modal_error").stop(true, true).show().delay(15000).fadeOut(
-    //                         "slow");
-    //                 } else {
-    //                     $(this_modal).modal("hide");
-    //                     $("#loading").modal();
-    //                     location.reload();
-    //                 }
-
-    //             });
-    //         } else {
-    //             $(this_modal + " .modal_error_msg").text("Error: Please select approver!");
-    //             $(this_modal + " .modal_error").stop(true, true).show().delay(15000).fadeOut(
-    //                 "slow");
-    //         }
-    //     } else {
-    //         $(this_modal + " .modal_error_msg").text("Error: Critical Error Encountered!");
-    //         $(this_modal + " .modal_error").stop(true, true).show().delay(15000).fadeOut(
-    //             "slow");
-    //     }
-    // });
-
-    // //gm approval
-    // $(document).on("click", "#btn_gm_approval", function(e) {
-    //     e.preventDefault();
-    //     $("#modal_gm_approval").modal();
-    // });
-
-    // $(document).on("click", "#btn_gm_approver_send", function(e) {
-    //     e.preventDefault();
-    //     let this_modal = "#modal_gm_approval";
-    //     let transaction_id = $("#id_update").val();
-    //     let approver_id = $("#txt_gm_approver").val();
-    //     let approver_name = $("#txt_gm_approver option:selected").text();
-
-    //     if (transaction_id) {
-
-    //         if (approver_id) {
-    //             $(this_modal + " .modal_error").hide();
-    //             $(this_modal + " .modal_button").hide();
-    //             $(this_modal + " .modal-body").hide();
-    //             $(this_modal + " .modal_waiting").show();
-
-    //             $.post("<?= base_url($module); ?>/for_gm_approval", {
-    //                 transaction_id: transaction_id,
-    //                 approver_id: approver_id,
-    //                 approver_name: approver_name
-    //             }, function(data) {
-    //                 $(this_modal + " .modal_button").show();
-    //                 $(this_modal + " .modal-body").show();
-    //                 $(this_modal + " .modal_waiting").hide();
-
-    //                 if (data.indexOf("<!DOCTYPE html>") > -1) {
-    //                     alert("Error: Session Time-Out, You must login again to continue.");
-    //                     location.reload(true);
-    //                 } else if (data.indexOf("Error: ") > -1) {
-    //                     $(this_modal + " .modal_error_msg").text(data);
-    //                     $(this_modal + " .modal_error").stop(true, true).show().delay(15000).fadeOut(
-    //                         "slow");
-    //                 } else {
-    //                     $(this_modal).modal("hide");
-    //                     $("#loading").modal();
-    //                     location.reload();
-    //                 }
-
-    //             });
-    //         } else {
-    //             $(this_modal + " .modal_error_msg").text("Error: Please select approver!");
-    //             $(this_modal + " .modal_error").stop(true, true).show().delay(15000).fadeOut(
-    //                 "slow");
-    //         }
-    //     } else {
-    //         $(this_modal + " .modal_error_msg").text("Error: Critical Error Encountered!");
-    //         $(this_modal + " .modal_error").stop(true, true).show().delay(15000).fadeOut(
-    //             "slow");
-    //     }
-
-    // });
-
-    // //transfer gm approval
-    // $(document).on("click", "#btn_gm_approval_transfer", function(e) {
-    //     e.preventDefault();
-    //     $("#modal_gm_approval_transfer").modal();
-    // });
-
-    // $(document).on("click", "#btn_gm_approver_transfer_send", function(e) {
-    //     e.preventDefault();
-    //     let this_modal = "#modal_gm_approval_transfer";
-
-    //     let transaction_id = $("#id_update").val();
-    //     let approver_id = $("#txt_gm_approver_transfer").val();
-    //     let approver_name = $("#txt_gm_approver_transfer option:selected").text();
-
-    //     if (transaction_id) {
-
-    //         if (approver_id) {
-    //             $(this_modal + " .modal_error").hide();
-    //             $(this_modal + " .modal_button").hide();
-    //             $(this_modal + " .modal-body").hide();
-    //             $(this_modal + " .modal_waiting").show();
-
-    //             $.post("<?= base_url($module); ?>/transfer_gm_approver", {
-    //                 transaction_id: transaction_id,
-    //                 approver_id: approver_id,
-    //                 approver_name: approver_name
-    //             }, function(data) {
-    //                 $(this_modal + " .modal_button").show();
-    //                 $(this_modal + " .modal-body").show();
-    //                 $(this_modal + " .modal_waiting").hide();
-
-    //                 if (data.indexOf("<!DOCTYPE html>") > -1) {
-    //                     alert("Error: Session Time-Out, You must login again to continue.");
-    //                     location.reload(true);
-    //                 } else if (data.indexOf("Error: ") > -1) {
-    //                     $(this_modal + " .modal_error_msg").text(data);
-    //                     $(this_modal + " .modal_error").stop(true, true).show().delay(15000).fadeOut(
-    //                         "slow");
-    //                 } else {
-    //                     $(this_modal).modal("hide");
-    //                     $("#loading").modal();
-    //                     location.reload();
-    //                 }
-    //             });
-    //         } else {
-    //             $(this_modal + " .modal_error_msg").text("Error: Please select approver!");
-    //             $(this_modal + " .modal_error").stop(true, true).show().delay(15000).fadeOut(
-    //                 "slow");
-    //         }
-    //     } else {
-    //         $(this_modal + " .modal_error_msg").text("Error: Critical Error Encountered!");
-    //         $(this_modal + " .modal_error").stop(true, true).show().delay(15000).fadeOut(
-    //             "slow");
-    //     }
-
-    // });
-    </script>
+</script>
 
 </body>
 

@@ -107,8 +107,9 @@
                                     <!-- Basic Test Information -->
                                     <div class="row">
                                         <div class="col-md-6">
-                                            <label>Test Name/Type <span class="text-danger">*</span></label>
-                                            <input type="text" id="digital_test_name" name="test_name" class="form-control" placeholder="e.g., Complete Blood Count, Urinalysis, etc." required>
+                                            <label>Test/Service <span class="text-danger">*</span></label>
+                                            <input type="text" id="digital_test_name" name="test_name" class="form-control" readonly required>
+                                            <small class="text-muted">Based on selected product/service</small>
                                         </div>
                                         <div class="col-md-6">
                                             <label>Test Date <span class="text-danger">*</span></label>
@@ -131,28 +132,23 @@
                                     <div class="row" style="margin-top: 15px;">
                                         <div class="col-md-12">
                                             <h6><strong>Laboratory Results</strong></h6>
-                                            <div id="lab_parameters_container">
-                                                <div class="lab-parameter-row" style="margin-bottom: 10px;">
-                                                    <div class="row">
-                                                        <div class="col-md-3">
-                                                            <input type="text" name="parameter_name[]" class="form-control" placeholder="Parameter (e.g., Hemoglobin)">
-                                                        </div>
-                                                        <div class="col-md-2">
-                                                            <input type="text" name="parameter_value[]" class="form-control" placeholder="Value">
-                                                        </div>
-                                                        <div class="col-md-2">
-                                                            <input type="text" name="parameter_unit[]" class="form-control" placeholder="Unit (g/dL)">
-                                                        </div>
-                                                        <div class="col-md-3">
-                                                            <input type="text" name="reference_range[]" class="form-control" placeholder="Reference Range">
-                                                        </div>
-                                                        <div class="col-md-2">
-                                                            <button type="button" class="btn btn-success btn-sm add-parameter">
-                                                                <i class="fa fa-plus"></i>
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                </div>
+                                            <div class="table-responsive">
+                                                <table id="lab_parameters_table" class="table table-bordered table-striped">
+                                                    <thead>
+                                                        <tr class="bg-light">
+                                                            <th width="30%">Parameter</th>
+                                                            <th width="40%">Result Value <span class="text-danger">*</span></th>
+                                                            <th width="30%">Unit & Reference</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <tr>
+                                                            <td colspan="3" class="text-center text-muted">
+                                                                <i class="fa fa-spinner fa-spin"></i> Loading parameters...
+                                                            </td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
                                             </div>
                                         </div>
                                     </div>
@@ -229,49 +225,27 @@
 </div>
 
 <script>
+var base_url = "<?= base_url(); ?>";
+
 $(document).ready(function() {
-    // Add parameter row functionality
-    $(document).on('click', '.add-parameter', function() {
-        var newRow = `
-            <div class="lab-parameter-row" style="margin-bottom: 10px;">
-                <div class="row">
-                    <div class="col-md-3">
-                        <input type="text" name="parameter_name[]" class="form-control" placeholder="Parameter (e.g., Hemoglobin)">
-                    </div>
-                    <div class="col-md-2">
-                        <input type="text" name="parameter_value[]" class="form-control" placeholder="Value">
-                    </div>
-                    <div class="col-md-2">
-                        <input type="text" name="parameter_unit[]" class="form-control" placeholder="Unit (g/dL)">
-                    </div>
-                    <div class="col-md-3">
-                        <input type="text" name="reference_range[]" class="form-control" placeholder="Reference Range">
-                    </div>
-                    <div class="col-md-2">
-                        <button type="button" class="btn btn-success btn-sm add-parameter">
-                            <i class="fa fa-plus"></i>
-                        </button>
-                        <button type="button" class="btn btn-danger btn-sm remove-parameter" style="margin-left: 5px;">
-                            <i class="fa fa-minus"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `;
-        $('#lab_parameters_container').append(newRow);
+    // Initialize datepickers
+    $('.datepicker').datepicker({
+        format: 'yyyy-mm-dd',
+        autoclose: true,
+        todayHighlight: true
     });
-    
-    // Remove parameter row functionality
-    $(document).on('click', '.remove-parameter', function() {
-        $(this).closest('.lab-parameter-row').remove();
-    });
-    
+
+    // Set default dates to today
+    var today = new Date().toISOString().split('T')[0];
+    $('#lab_test_date, #digital_test_date').val(today);
     // Clear digital form
     $('#btn_clear_digital').click(function() {
         $('#lab_digital_form')[0].reset();
-        // Keep only the first parameter row
-        $('#lab_parameters_container .lab-parameter-row:not(:first)').remove();
-        $('#lab_parameters_container .lab-parameter-row:first input').val('');
+        // Clear result values but keep the parameters
+        $('#lab_parameters_table tbody input[name="result_value[]"]').val('');
+        // Restore the product name and user name
+        $('#digital_test_name').val($('#digital_test_name').data('product-name') || '');
+        $('#digital_performed_by').val($('#digital_performed_by').data('user-name') || '');
     });
     
     // Handle digital form submission
@@ -294,8 +268,10 @@ $(document).ready(function() {
                 if (response.success) {
                     alert('Digital laboratory results saved successfully!');
                     $('#lab_digital_form')[0].reset();
-                    $('#lab_parameters_container .lab-parameter-row:not(:first)').remove();
-                    $('#lab_parameters_container .lab-parameter-row:first input').val('');
+                    $('#lab_parameters_table tbody input[name="result_value[]"]').val('');
+                    // Restore the product name and user name
+                    $('#digital_test_name').val($('#digital_test_name').data('product-name') || '');
+                    $('#digital_performed_by').val($('#digital_performed_by').data('user-name') || '');
                     loadLabResults(); // Refresh the results list
                 } else {
                     alert('Error: ' + (response.error || 'Failed to save digital results'));
@@ -333,8 +309,10 @@ $(document).ready(function() {
                     
                     // Clear form
                     $('#lab_digital_form')[0].reset();
-                    $('#lab_parameters_container .lab-parameter-row:not(:first)').remove();
-                    $('#lab_parameters_container .lab-parameter-row:first input').val('');
+                    $('#lab_parameters_table tbody input[name="result_value[]"]').val('');
+                    // Restore the product name and user name
+                    $('#digital_test_name').val($('#digital_test_name').data('product-name') || '');
+                    $('#digital_performed_by').val($('#digital_performed_by').data('user-name') || '');
                     loadLabResults(); // Refresh the results list
                 } else {
                     alert('Error: ' + (response.error || 'Failed to save digital results'));
@@ -348,23 +326,97 @@ $(document).ready(function() {
             }
         });
     });
-    
-    // Sync form data between tabs
-    $('#lab_tabs a').on('shown.bs.tab', function(e) {
-        var target = $(e.target).attr("href");
-        if (target === '#digital_section') {
-            // Copy basic info from upload form to digital form if not already filled
-            if (!$('#digital_test_name').val() && $('#lab_test_name').val()) {
-                $('#digital_test_name').val($('#lab_test_name').val());
+
+    // Handle file upload form submission
+    $('#lab_upload_form').submit(function(e) {
+        e.preventDefault();
+        
+        var formData = new FormData(this);
+        
+        $.ajax({
+            url: base_url + 'current_transaction/lab_upload',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            dataType: 'json',
+            beforeSend: function() {
+                $('#btn_upload_lab').prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Uploading...');
+            },
+            success: function(response) {
+                if (response.success) {
+                    alert('Laboratory results uploaded successfully!');
+                    $('#lab_upload_form')[0].reset();
+                    loadLabResults(); // Refresh the results list
+                } else {
+                    alert('Error: ' + (response.error || 'Failed to upload laboratory results'));
+                }
+            },
+            error: function() {
+                alert('Error: Failed to communicate with server');
+            },
+            complete: function() {
+                $('#btn_upload_lab').prop('disabled', false).html('<i class="fa fa-upload"></i> Upload Results');
             }
-            if (!$('#digital_test_date').val() && $('#lab_test_date').val()) {
-                $('#digital_test_date').val($('#lab_test_date').val());
-            }
-            if (!$('#digital_provider').val() && $('#lab_provider').val()) {
-                $('#digital_provider').val($('#lab_provider').val());
-            }
-        }
+        });
     });
+    
+    // Function to load lab results for the current item
+    function loadLabResults() {
+        var itemId = $('#lab_item_id').val() || $('#digital_item_id').val();
+        if (!itemId) return;
+        
+        $.post(base_url + 'current_transaction/lab_list', {
+            item_id: itemId
+        }, function(response) {
+            if (response.success && response.results) {
+                updateLabResultsTable(response.results);
+            } else {
+                $('#tbl_lab_results tbody').html('<tr><td colspan="7" class="text-center text-muted">No laboratory results found</td></tr>');
+            }
+        }, 'json').fail(function() {
+            $('#tbl_lab_results tbody').html('<tr><td colspan="7" class="text-center text-danger">Error loading laboratory results</td></tr>');
+        });
+    }
+
+    // Function to load result sets for digital entry
+    function loadResultSets(product_id) {
+        if (!product_id) {
+            $('#lab_parameters_table tbody').html('<tr><td colspan="3" class="text-center text-muted">No result parameters defined for this service</td></tr>');
+            return;
+        }
+        
+        $.post(base_url + 'current_transaction/lab_get_result_sets', {
+            product_id: product_id
+        }, function(response) {
+            if (response.success && response.result_sets && response.result_sets.length > 0) {
+                let tableBody = '';
+                response.result_sets.forEach(function(resultSet) {
+                    tableBody += `
+                        <tr>
+                            <td>
+                                <input type="hidden" name="result_set_id[]" value="${resultSet.id}">
+                                <strong>${resultSet.result_label}</strong>
+                            </td>
+                            <td>
+                                <input type="text" name="result_value[]" class="form-control" placeholder="Enter result value">
+                            </td>
+                            <td>
+                                <span class="text-muted">${resultSet.unit}</span>
+                                <br><small>Ref: ${resultSet.reference || 'N/A'}</small>
+                            </td>
+                        </tr>
+                    `;
+                });
+                $('#lab_parameters_table tbody').html(tableBody);
+            } else {
+                $('#lab_parameters_table tbody').html('<tr><td colspan="3" class="text-center text-muted">No result parameters defined for this service</td></tr>');
+            }
+        }, 'json').fail(function() {
+            $('#lab_parameters_table tbody').html('<tr><td colspan="3" class="text-center text-danger">Error loading result parameters</td></tr>');
+        });
+    }
+    
 });
 
 // Function to update the results table display for both types
@@ -418,12 +470,38 @@ function updateLabResultsTable(results) {
         
         tbody.append(row);
     });
-}
 
-// Handle print digital results
-$(document).on('click', '.print-digital', function() {
-    var labId = $(this).data('lab-id');
-    var printUrl = base_url + 'current_transaction/lab_print_view?lab_id=' + labId;
-    window.open(printUrl, '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
-});
+    // Handle print digital results
+    $(document).on('click', '.print-digital', function() {
+        var labId = $(this).data('lab-id');
+        var printUrl = base_url + 'current_transaction/lab_print_view?lab_id=' + labId;
+        window.open(printUrl, '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
+    });
+
+    // Handle file downloads
+    $(document).on('click', '.download-file', function() {
+        var fileName = $(this).data('file');
+        var downloadUrl = base_url + 'current_transaction/lab_download_file?file=' + fileName;
+        window.open(downloadUrl, '_blank');
+    });
+
+    // Handle lab result deletion
+    $(document).on('click', '.delete-lab', function() {
+        var labId = $(this).data('lab-id');
+        if (confirm('Are you sure you want to delete this laboratory result?')) {
+            $.post(base_url + 'current_transaction/lab_delete', {
+                lab_id: labId
+            }, function(response) {
+                if (response.success) {
+                    alert('Laboratory result deleted successfully!');
+                    loadLabResults(); // Refresh the results list
+                } else {
+                    alert('Error: ' + (response.error || 'Failed to delete laboratory result'));
+                }
+            }, 'json').fail(function() {
+                alert('Error: Failed to communicate with server');
+            });
+        }
+    });
+}
 </script>
