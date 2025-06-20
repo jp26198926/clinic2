@@ -1436,6 +1436,127 @@ class Current_transaction extends CI_Controller
 		echo json_encode($result);
 	}
 	
+	function lab_save_digital()
+	{
+		$result = array("success" => false);
+		
+		try {
+			$item_id = $this->input->post("item_id");
+			$transaction_id = $this->input->post("transaction_id");
+			$test_name = $this->input->post("test_name");
+			$test_date = $this->input->post("test_date");
+			$lab_provider = $this->input->post("lab_provider");
+			$performed_by = $this->input->post("performed_by");
+			$interpretation = $this->input->post("interpretation");
+			$notes = $this->input->post("notes");
+			
+			// Process lab parameters
+			$parameter_names = $this->input->post("parameter_name");
+			$parameter_values = $this->input->post("parameter_value");
+			$parameter_units = $this->input->post("parameter_unit");
+			$reference_ranges = $this->input->post("reference_range");
+			
+			if (!$item_id || !$transaction_id || !$test_name || !$test_date) {
+				throw new Exception("Required fields are missing");
+			}
+			
+			// Build lab parameters JSON
+			$lab_parameters = array();
+			if ($parameter_names && is_array($parameter_names)) {
+				for ($i = 0; $i < count($parameter_names); $i++) {
+					if (!empty($parameter_names[$i])) {
+						$lab_parameters[] = array(
+							'name' => $parameter_names[$i],
+							'value' => isset($parameter_values[$i]) ? $parameter_values[$i] : '',
+							'unit' => isset($parameter_units[$i]) ? $parameter_units[$i] : '',
+							'reference_range' => isset($reference_ranges[$i]) ? $reference_ranges[$i] : ''
+						);
+					}
+				}
+			}
+			
+			// Save to database
+			$lab_data = array(
+				'transaction_id' => $transaction_id,
+				'item_id' => $item_id,
+				'entry_type' => 'digital',
+				'test_name' => $test_name,
+				'test_date' => $test_date,
+				'lab_provider' => $lab_provider,
+				'performed_by' => $performed_by,
+				'lab_parameters' => json_encode($lab_parameters),
+				'interpretation' => $interpretation,
+				'notes' => $notes,
+				'created_by' => $this->uid,
+				'created_at' => date('Y-m-d H:i:s')
+			);
+			
+			$this->db->insert('lab_results', $lab_data);
+			
+			if ($this->db->affected_rows() > 0) {
+				$result["success"] = true;
+				$result["message"] = "Digital laboratory results saved successfully";
+				$result["lab_id"] = $this->db->insert_id();
+				
+				// Write to log
+				$this->shared_model->write_to_log("Lab Digital Entry", $this->uid, $transaction_id, 0, "", "", "Digital laboratory result entered: " . $test_name);
+			} else {
+				throw new Exception("Failed to save digital lab result to database");
+			}
+			
+		} catch (Exception $ex) {
+			$result["error"] = $ex->getMessage();
+		}
+		
+		echo json_encode($result);
+	}
+	
+	function lab_print_digital()
+	{
+		$result = array("success" => false);
+		
+		try {
+			$lab_id = $this->input->post("lab_id");
+			
+			if (!$lab_id) {
+				throw new Exception("Lab ID is required");
+			}
+			
+			// Get lab result data
+			$this->db->select('lr.*, t.patient_name, p.product_name');
+			$this->db->from('lab_results lr');
+			$this->db->join('transaction t', 't.transaction_id = lr.transaction_id');
+			$this->db->join('transaction_item ti', 'ti.item_id = lr.item_id');
+			$this->db->join('product p', 'p.product_id = ti.product_id');
+			$this->db->where('lr.id', $lab_id);
+			$this->db->where('lr.entry_type', 'digital');
+			$this->db->where('lr.deleted_at IS NULL');
+			
+			$query = $this->db->get();
+			$lab_result = $query->row_array();
+			
+			if (!$lab_result) {
+				throw new Exception("Lab result not found");
+			}
+			
+			// Decode lab parameters
+			$lab_result['lab_parameters'] = json_decode($lab_result['lab_parameters'], true);
+			
+			// Get clinic information
+			$clinic_name = $this->config->item('company_name') ?: 'Medical Clinic';
+			
+			$data = array(
+				'lab_data' => $lab_result,
+				'clinic_name' => $clinic_name
+			);
+			
+			$this->load->view('current_transaction/lab_print_template', $data);
+			
+		} catch (Exception $ex) {
+			show_error("Error loading lab result: " . $ex->getMessage(), 500);
+		}
+	}
+	
 	function lab_list()
 	{
 		$result = array("success" => false);
@@ -1456,13 +1577,24 @@ class Current_transaction extends CI_Controller
 			$query = $this->db->get();
 			$lab_results = $query->result_array();
 			
-			// Process files for each result
+			// Process files and lab parameters for each result
 			foreach ($lab_results as &$lab) {
+				// Handle file uploads
 				if ($lab['files']) {
 					$lab['files'] = json_decode($lab['files'], true);
 				} else {
 					$lab['files'] = array();
 				}
+				
+				// Handle digital lab parameters
+				if ($lab['lab_parameters']) {
+					$lab['lab_parameters'] = json_decode($lab['lab_parameters'], true);
+				} else {
+					$lab['lab_parameters'] = array();
+				}
+				
+				// Add display type for UI
+				$lab['display_type'] = ($lab['entry_type'] == 'digital') ? 'Digital Entry' : 'File Upload';
 			}
 			
 			$result["success"] = true;

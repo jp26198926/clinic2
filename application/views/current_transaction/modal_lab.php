@@ -26,48 +26,166 @@
                     </div>
                 </div>
 
-                <!-- Upload Section -->
-                <div class="row" style="margin-bottom: 2em; border-bottom: 1px solid #ddd; padding-bottom: 1em;">
+                <!-- Tab Navigation -->
+                <div class="row">
                     <div class="col-md-12">
-                        <h5><i class="fa fa-upload"></i> Upload Laboratory Results</h5>
-                        <form id="lab_upload_form" enctype="multipart/form-data">
-                            <input type="hidden" id="lab_item_id" name="item_id" value="">
-                            <input type="hidden" id="lab_transaction_id" name="transaction_id" value="">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <label>Test Name/Type <span class="text-danger">*</span></label>
-                                    <input type="text" id="lab_test_name" name="test_name" class="form-control" placeholder="e.g., Complete Blood Count, Urinalysis, etc." required>
-                                </div>
-                                <div class="col-md-6">
-                                    <label>Test Date <span class="text-danger">*</span></label>
-                                    <input type="text" id="lab_test_date" name="test_date" class="form-control datepicker" readonly required>
-                                </div>
+                        <ul class="nav nav-tabs" id="lab_tabs" role="tablist">
+                            <li class="nav-item active">
+                                <a class="nav-link active" id="upload-tab" data-toggle="tab" href="#upload_section" role="tab">
+                                    <i class="fa fa-upload"></i> File Upload
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" id="digital-tab" data-toggle="tab" href="#digital_section" role="tab">
+                                    <i class="fa fa-keyboard-o"></i> Digital Entry
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Tab Content -->
+                <div class="tab-content" id="lab_tab_content" style="margin-top: 15px;">
+                    
+                    <!-- File Upload Tab -->
+                    <div class="tab-pane fade in active" id="upload_section" role="tabpanel">
+                        <div class="row" style="margin-bottom: 2em; border-bottom: 1px solid #ddd; padding-bottom: 1em;">
+                            <div class="col-md-12">
+                                <h5><i class="fa fa-upload"></i> Upload Laboratory Results</h5>
+                                <form id="lab_upload_form" enctype="multipart/form-data">
+                                    <input type="hidden" id="lab_item_id" name="item_id" value="">
+                                    <input type="hidden" id="lab_transaction_id" name="transaction_id" value="">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <label>Test Name/Type <span class="text-danger">*</span></label>
+                                            <input type="text" id="lab_test_name" name="test_name" class="form-control" placeholder="e.g., Complete Blood Count, Urinalysis, etc." required>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label>Test Date <span class="text-danger">*</span></label>
+                                            <input type="text" id="lab_test_date" name="test_date" class="form-control datepicker" readonly required>
+                                        </div>
+                                    </div>
+                                    <div class="row" style="margin-top: 10px;">
+                                        <div class="col-md-12">
+                                            <label>Laboratory/Provider</label>
+                                            <input type="text" id="lab_provider" name="lab_provider" class="form-control" placeholder="Laboratory name or provider">
+                                        </div>
+                                    </div>
+                                    <div class="row" style="margin-top: 10px;">
+                                        <div class="col-md-12">
+                                            <label>Notes/Comments</label>
+                                            <textarea id="lab_notes" name="notes" class="form-control" rows="2" placeholder="Additional notes about the test or results"></textarea>
+                                        </div>
+                                    </div>
+                                    <div class="row" style="margin-top: 10px;">
+                                        <div class="col-md-8">
+                                            <label>Select Files <span class="text-danger">*</span></label>
+                                            <input type="file" id="lab_files" name="lab_files[]" class="form-control" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" required>
+                                            <small class="text-muted">Supported formats: PDF, JPG, PNG, DOC, DOCX (Max 10MB per file)</small>
+                                        </div>
+                                        <div class="col-md-4" style="padding-top: 25px;">
+                                            <button type="submit" id="btn_upload_lab" class="btn btn-success">
+                                                <i class="fa fa-upload"></i> Upload Results
+                                            </button>
+                                        </div>
+                                    </div>
+                                </form>
                             </div>
-                            <div class="row" style="margin-top: 10px;">
-                                <div class="col-md-12">
-                                    <label>Laboratory/Provider</label>
-                                    <input type="text" id="lab_provider" name="lab_provider" class="form-control" placeholder="Laboratory name or provider">
-                                </div>
+                        </div>
+                    </div>
+
+                    <!-- Digital Entry Tab -->
+                    <div class="tab-pane fade" id="digital_section" role="tabpanel">
+                        <div class="row" style="margin-bottom: 2em; border-bottom: 1px solid #ddd; padding-bottom: 1em;">
+                            <div class="col-md-12">
+                                <h5><i class="fa fa-keyboard-o"></i> Digital Laboratory Results Entry</h5>
+                                <form id="lab_digital_form">
+                                    <input type="hidden" id="digital_item_id" name="item_id" value="">
+                                    <input type="hidden" id="digital_transaction_id" name="transaction_id" value="">
+                                    <input type="hidden" name="entry_type" value="digital">
+                                    
+                                    <!-- Basic Test Information -->
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <label>Test Name/Type <span class="text-danger">*</span></label>
+                                            <input type="text" id="digital_test_name" name="test_name" class="form-control" placeholder="e.g., Complete Blood Count, Urinalysis, etc." required>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label>Test Date <span class="text-danger">*</span></label>
+                                            <input type="text" id="digital_test_date" name="test_date" class="form-control datepicker" readonly required>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row" style="margin-top: 10px;">
+                                        <div class="col-md-6">
+                                            <label>Laboratory/Provider</label>
+                                            <input type="text" id="digital_provider" name="lab_provider" class="form-control" placeholder="Laboratory name or provider">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label>Performed By</label>
+                                            <input type="text" id="digital_performed_by" name="performed_by" class="form-control" placeholder="Laboratory technician/doctor name">
+                                        </div>
+                                    </div>
+
+                                    <!-- Lab Results Data -->
+                                    <div class="row" style="margin-top: 15px;">
+                                        <div class="col-md-12">
+                                            <h6><strong>Laboratory Results</strong></h6>
+                                            <div id="lab_parameters_container">
+                                                <div class="lab-parameter-row" style="margin-bottom: 10px;">
+                                                    <div class="row">
+                                                        <div class="col-md-3">
+                                                            <input type="text" name="parameter_name[]" class="form-control" placeholder="Parameter (e.g., Hemoglobin)">
+                                                        </div>
+                                                        <div class="col-md-2">
+                                                            <input type="text" name="parameter_value[]" class="form-control" placeholder="Value">
+                                                        </div>
+                                                        <div class="col-md-2">
+                                                            <input type="text" name="parameter_unit[]" class="form-control" placeholder="Unit (g/dL)">
+                                                        </div>
+                                                        <div class="col-md-3">
+                                                            <input type="text" name="reference_range[]" class="form-control" placeholder="Reference Range">
+                                                        </div>
+                                                        <div class="col-md-2">
+                                                            <button type="button" class="btn btn-success btn-sm add-parameter">
+                                                                <i class="fa fa-plus"></i>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Interpretation and Notes -->
+                                    <div class="row" style="margin-top: 15px;">
+                                        <div class="col-md-6">
+                                            <label>Clinical Interpretation</label>
+                                            <textarea id="digital_interpretation" name="interpretation" class="form-control" rows="3" placeholder="Clinical interpretation of results"></textarea>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label>Additional Notes/Comments</label>
+                                            <textarea id="digital_notes" name="notes" class="form-control" rows="3" placeholder="Additional notes or comments"></textarea>
+                                        </div>
+                                    </div>
+
+                                    <!-- Action Buttons -->
+                                    <div class="row" style="margin-top: 15px;">
+                                        <div class="col-md-12 text-center">
+                                            <button type="submit" id="btn_save_digital" class="btn btn-primary">
+                                                <i class="fa fa-save"></i> Save Digital Results
+                                            </button>
+                                            <button type="button" id="btn_save_and_print" class="btn btn-info">
+                                                <i class="fa fa-print"></i> Save & Print
+                                            </button>
+                                            <button type="button" id="btn_clear_digital" class="btn btn-warning">
+                                                <i class="fa fa-refresh"></i> Clear Form
+                                            </button>
+                                        </div>
+                                    </div>
+                                </form>
                             </div>
-                            <div class="row" style="margin-top: 10px;">
-                                <div class="col-md-12">
-                                    <label>Notes/Comments</label>
-                                    <textarea id="lab_notes" name="notes" class="form-control" rows="2" placeholder="Additional notes about the test or results"></textarea>
-                                </div>
-                            </div>
-                            <div class="row" style="margin-top: 10px;">
-                                <div class="col-md-8">
-                                    <label>Select Files <span class="text-danger">*</span></label>
-                                    <input type="file" id="lab_files" name="lab_files[]" class="form-control" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" required>
-                                    <small class="text-muted">Supported formats: PDF, JPG, PNG, DOC, DOCX (Max 10MB per file)</small>
-                                </div>
-                                <div class="col-md-4" style="padding-top: 25px;">
-                                    <button type="submit" id="btn_upload_lab" class="btn btn-success">
-                                        <i class="fa fa-upload"></i> Upload Results
-                                    </button>
-                                </div>
-                            </div>
-                        </form>
+                        </div>
                     </div>
                 </div>
 
@@ -79,17 +197,18 @@
                             <table id="tbl_lab_results" class="table table-sm table-striped table-bordered">
                                 <thead>
                                     <tr>
-                                        <th class="text-center" width="15%">Test Date</th>
-                                        <th class="text-center" width="20%">Test Name</th>
-                                        <th class="text-center" width="15%">Laboratory</th>
-                                        <th class="text-center" width="20%">Files</th>
-                                        <th class="text-center" width="15%">Uploaded Date</th>
-                                        <th class="text-center" width="15%">Actions</th>
+                                        <th class="text-center" width="12%">Test Date</th>
+                                        <th class="text-center" width="18%">Test Name</th>
+                                        <th class="text-center" width="12%">Laboratory</th>
+                                        <th class="text-center" width="10%">Type</th>
+                                        <th class="text-center" width="15%">Files/Results</th>
+                                        <th class="text-center" width="13%">Entry Date</th>
+                                        <th class="text-center" width="20%">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <tr>
-                                        <td colspan="6" class="text-center text-muted">
+                                        <td colspan="7" class="text-center text-muted">
                                             <i class="fa fa-spinner fa-spin"></i> Loading laboratory results...
                                         </td>
                                     </tr>
@@ -108,3 +227,203 @@
         </div>
     </div>
 </div>
+
+<script>
+$(document).ready(function() {
+    // Add parameter row functionality
+    $(document).on('click', '.add-parameter', function() {
+        var newRow = `
+            <div class="lab-parameter-row" style="margin-bottom: 10px;">
+                <div class="row">
+                    <div class="col-md-3">
+                        <input type="text" name="parameter_name[]" class="form-control" placeholder="Parameter (e.g., Hemoglobin)">
+                    </div>
+                    <div class="col-md-2">
+                        <input type="text" name="parameter_value[]" class="form-control" placeholder="Value">
+                    </div>
+                    <div class="col-md-2">
+                        <input type="text" name="parameter_unit[]" class="form-control" placeholder="Unit (g/dL)">
+                    </div>
+                    <div class="col-md-3">
+                        <input type="text" name="reference_range[]" class="form-control" placeholder="Reference Range">
+                    </div>
+                    <div class="col-md-2">
+                        <button type="button" class="btn btn-success btn-sm add-parameter">
+                            <i class="fa fa-plus"></i>
+                        </button>
+                        <button type="button" class="btn btn-danger btn-sm remove-parameter" style="margin-left: 5px;">
+                            <i class="fa fa-minus"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        $('#lab_parameters_container').append(newRow);
+    });
+    
+    // Remove parameter row functionality
+    $(document).on('click', '.remove-parameter', function() {
+        $(this).closest('.lab-parameter-row').remove();
+    });
+    
+    // Clear digital form
+    $('#btn_clear_digital').click(function() {
+        $('#lab_digital_form')[0].reset();
+        // Keep only the first parameter row
+        $('#lab_parameters_container .lab-parameter-row:not(:first)').remove();
+        $('#lab_parameters_container .lab-parameter-row:first input').val('');
+    });
+    
+    // Handle digital form submission
+    $('#lab_digital_form').submit(function(e) {
+        e.preventDefault();
+        
+        var formData = new FormData(this);
+        
+        $.ajax({
+            url: base_url + 'current_transaction/lab_save_digital',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            dataType: 'json',
+            beforeSend: function() {
+                $('#btn_save_digital').prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Saving...');
+            },
+            success: function(response) {
+                if (response.success) {
+                    alert('Digital laboratory results saved successfully!');
+                    $('#lab_digital_form')[0].reset();
+                    $('#lab_parameters_container .lab-parameter-row:not(:first)').remove();
+                    $('#lab_parameters_container .lab-parameter-row:first input').val('');
+                    loadLabResults(); // Refresh the results list
+                } else {
+                    alert('Error: ' + (response.error || 'Failed to save digital results'));
+                }
+            },
+            error: function() {
+                alert('Error: Failed to communicate with server');
+            },
+            complete: function() {
+                $('#btn_save_digital').prop('disabled', false).html('<i class="fa fa-save"></i> Save Digital Results');
+            }
+        });
+    });
+    
+    // Handle save and print
+    $('#btn_save_and_print').click(function() {
+        var formData = new FormData($('#lab_digital_form')[0]);
+        
+        $.ajax({
+            url: base_url + 'current_transaction/lab_save_digital',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            dataType: 'json',
+            beforeSend: function() {
+                $('#btn_save_and_print').prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Saving...');
+            },
+            success: function(response) {
+                if (response.success) {
+                    alert('Digital laboratory results saved successfully!');
+                    // Open print window
+                    var printUrl = base_url + 'current_transaction/lab_print_view?lab_id=' + response.lab_id;
+                    window.open(printUrl, '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
+                    
+                    // Clear form
+                    $('#lab_digital_form')[0].reset();
+                    $('#lab_parameters_container .lab-parameter-row:not(:first)').remove();
+                    $('#lab_parameters_container .lab-parameter-row:first input').val('');
+                    loadLabResults(); // Refresh the results list
+                } else {
+                    alert('Error: ' + (response.error || 'Failed to save digital results'));
+                }
+            },
+            error: function() {
+                alert('Error: Failed to communicate with server');
+            },
+            complete: function() {
+                $('#btn_save_and_print').prop('disabled', false).html('<i class="fa fa-print"></i> Save & Print');
+            }
+        });
+    });
+    
+    // Sync form data between tabs
+    $('#lab_tabs a').on('shown.bs.tab', function(e) {
+        var target = $(e.target).attr("href");
+        if (target === '#digital_section') {
+            // Copy basic info from upload form to digital form if not already filled
+            if (!$('#digital_test_name').val() && $('#lab_test_name').val()) {
+                $('#digital_test_name').val($('#lab_test_name').val());
+            }
+            if (!$('#digital_test_date').val() && $('#lab_test_date').val()) {
+                $('#digital_test_date').val($('#lab_test_date').val());
+            }
+            if (!$('#digital_provider').val() && $('#lab_provider').val()) {
+                $('#digital_provider').val($('#lab_provider').val());
+            }
+        }
+    });
+});
+
+// Function to update the results table display for both types
+function updateLabResultsTable(results) {
+    var tbody = $('#tbl_lab_results tbody');
+    tbody.empty();
+    
+    if (results.length === 0) {
+        tbody.append('<tr><td colspan="7" class="text-center text-muted">No laboratory results found</td></tr>');
+        return;
+    }
+    
+    $.each(results, function(index, lab) {
+        var testDate = lab.test_date ? new Date(lab.test_date).toLocaleDateString() : '';
+        var entryDate = lab.created_at ? new Date(lab.created_at).toLocaleDateString() : '';
+        
+        var filesOrResults = '';
+        if (lab.entry_type === 'digital') {
+            var paramCount = lab.lab_parameters ? lab.lab_parameters.length : 0;
+            filesOrResults = '<span class="label label-info">' + paramCount + ' parameters</span>';
+        } else {
+            var fileCount = lab.files ? lab.files.length : 0;
+            filesOrResults = '<span class="label label-success">' + fileCount + ' files</span>';
+        }
+        
+        var actions = '';
+        if (lab.entry_type === 'digital') {
+            actions += '<button class="btn btn-sm btn-info print-digital" data-lab-id="' + lab.id + '" title="Print Results">';
+            actions += '<i class="fa fa-print"></i></button> ';
+        } else {
+            // Add download/view actions for uploaded files
+            if (lab.files && lab.files.length > 0) {
+                $.each(lab.files, function(i, file) {
+                    actions += '<button class="btn btn-sm btn-success download-file" data-file="' + file.file_name + '" title="Download ' + file.original_name + '">';
+                    actions += '<i class="fa fa-download"></i></button> ';
+                });
+            }
+        }
+        actions += '<button class="btn btn-sm btn-danger delete-lab" data-lab-id="' + lab.id + '" title="Delete">';
+        actions += '<i class="fa fa-trash"></i></button>';
+        
+        var row = '<tr>' +
+            '<td class="text-center">' + testDate + '</td>' +
+            '<td>' + (lab.test_name || '') + '</td>' +
+            '<td>' + (lab.lab_provider || '') + '</td>' +
+            '<td class="text-center">' + lab.display_type + '</td>' +
+            '<td class="text-center">' + filesOrResults + '</td>' +
+            '<td class="text-center">' + entryDate + '</td>' +
+            '<td class="text-center">' + actions + '</td>' +
+            '</tr>';
+        
+        tbody.append(row);
+    });
+}
+
+// Handle print digital results
+$(document).on('click', '.print-digital', function() {
+    var labId = $(this).data('lab-id');
+    var printUrl = base_url + 'current_transaction/lab_print_view?lab_id=' + labId;
+    window.open(printUrl, '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
+});
+</script>
