@@ -476,8 +476,8 @@ $total_amount_due = $subtotal_total;
                                                                                 ></i> ";
 																}
 
-																// Add upload button if product allows upload
-																if (intval($value->is_allow_upload) === 1) {
+																// Add upload button if product allows upload AND status is PENDING or ONGOING
+																if (intval($value->is_allow_upload) === 1 && (intval($value->status_id) == 2 || intval($value->status_id) == 3)) {
 																	$action .= "<i
 																					id='{$value->id}'
 																					class='btn_item_upload btn btn-xs btn-warning fa fa-upload'
@@ -503,17 +503,7 @@ $total_amount_due = $subtotal_total;
                                                                                 ></i> ";
 																}
 
-																// Add upload button if product allows upload
-																if (intval($value->is_allow_upload) === 1) {
-																	$action .= "<i
-																					id='{$value->id}'
-																					class='btn_item_upload btn btn-xs btn-warning fa fa-upload'
-																					title='Upload Lab Results'
-																					data-toggle='tooltip'
-																					data-product-name='{$value->product_name}'
-																					data-item-id='{$value->id}'
-																				></i> ";
-																}
+																// Note: Upload button not available for completed items
 
 															}
 
