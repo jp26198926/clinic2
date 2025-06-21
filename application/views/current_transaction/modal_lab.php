@@ -58,7 +58,8 @@
                                     <div class="row">
                                         <div class="col-md-6">
                                             <label>Test Name/Type <span class="text-danger">*</span></label>
-                                            <input type="text" id="lab_test_name" name="test_name" class="form-control" placeholder="e.g., Complete Blood Count, Urinalysis, etc." required>
+                                            <input type="text" id="lab_test_name" name="test_name" class="form-control" placeholder="e.g., Complete Blood Count, Urinalysis, etc." readonly required>
+                                            <small class="text-muted">Based on selected product/service</small>
                                         </div>
                                         <div class="col-md-6">
                                             <label>Test Date <span class="text-danger">*</span></label>
@@ -66,13 +67,11 @@
                                         </div>
                                     </div>
                                     <div class="row" style="margin-top: 10px;">
-                                        <div class="col-md-12">
+                                        <div class="col-md-6">
                                             <label>Laboratory/Provider</label>
                                             <input type="text" id="lab_provider" name="lab_provider" class="form-control" placeholder="Laboratory name or provider">
                                         </div>
-                                    </div>
-                                    <div class="row" style="margin-top: 10px;">
-                                        <div class="col-md-12">
+                                        <div class="col-md-6">
                                             <label>Notes/Comments</label>
                                             <textarea id="lab_notes" name="notes" class="form-control" rows="2" placeholder="Additional notes about the test or results"></textarea>
                                         </div>

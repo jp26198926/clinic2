@@ -1446,6 +1446,9 @@ $total_amount_due = $subtotal_total;
         $("#lab_item_id").val(item_id);
         $("#lab_transaction_id").val(transaction_id);
         
+        // Set test name for file upload tab (after form reset)
+        $("#lab_test_name").val(product_name);
+        
         // Load lab results for this item
         load_lab_results_by_item(item_id);
         
