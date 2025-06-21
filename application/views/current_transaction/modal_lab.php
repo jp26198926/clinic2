@@ -117,33 +117,32 @@
                                         </div>
                                     </div>
                                     
-                                    <div class="row" style="margin-top: 10px;">
-                                        <div class="col-md-6">
-                                            <label>Laboratory/Provider</label>
-                                            <input type="text" id="digital_provider" name="lab_provider" class="form-control" placeholder="Laboratory name or provider">
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label>Performed By</label>
-                                            <input type="text" id="digital_performed_by" name="performed_by" class="form-control" placeholder="Laboratory technician/doctor name">
-                                        </div>
-                                    </div>
-
                                     <!-- Lab Results Data -->
                                     <div class="row" style="margin-top: 15px;">
                                         <div class="col-md-12">
-                                            <h6><strong>Laboratory Results</strong></h6>
+                                            <div class="row">
+                                                <div class="col-md-8">
+                                                    <h6><strong>Laboratory Results</strong></h6>
+                                                </div>
+                                                <div class="col-md-4 text-right">
+                                                    <button type="button" id="btn_add_result_set" class="btn btn-sm btn-success" title="Add New Result Parameter">
+                                                        <i class="fa fa-plus"></i> Add Result Set
+                                                    </button>
+                                                </div>
+                                            </div>
                                             <div class="table-responsive">
                                                 <table id="lab_parameters_table" class="table table-bordered table-striped">
                                                     <thead>
                                                         <tr class="bg-light">
-                                                            <th width="30%">Parameter</th>
-                                                            <th width="40%">Result Value <span class="text-danger">*</span></th>
-                                                            <th width="30%">Unit & Reference</th>
+                                                            <th width="25%">Parameter</th>
+                                                            <th width="35%">Result Value <span class="text-danger">*</span></th>
+                                                            <th width="25%">Unit & Reference</th>
+                                                            <th width="15%">Action</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>
                                                         <tr>
-                                                            <td colspan="3" class="text-center text-muted">
+                                                            <td colspan="4" class="text-center text-muted">
                                                                 <i class="fa fa-spinner fa-spin"></i> Loading parameters...
                                                             </td>
                                                         </tr>
@@ -224,6 +223,59 @@
     </div>
 </div>
 
+<!-- Add Result Set Modal (nested modal) -->
+<div id='modal_add_result_set' class="modal fade" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-md" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                <h4 class="blue bigger">
+                    <i class="fa fa-plus"></i>
+                    Add New Result Parameter
+                </h4>
+            </div>
+            <div class="modal-body">
+                <form id="add_result_set_form">
+                    <input type="hidden" id="result_set_product_id" name="product_id" value="">
+                    
+                    <div class="row">
+                        <div class="col-md-12">
+                            <label>Parameter Name <span class="text-danger">*</span></label>
+                            <input type="text" id="result_label" name="result_label" class="form-control" placeholder="e.g., Hemoglobin, White Blood Cell Count, etc." required>
+                        </div>
+                    </div>
+                    
+                    <div class="row" style="margin-top: 10px;">
+                        <div class="col-md-6">
+                            <label>Unit</label>
+                            <input type="text" id="unit" name="unit" class="form-control" placeholder="e.g., g/dL, cells/µL, mg/dL">
+                        </div>
+                        <div class="col-md-6">
+                            <label>Reference Range</label>
+                            <input type="text" id="reference" name="reference" class="form-control" placeholder="e.g., 12-16 g/dL, 4000-11000 cells/µL">
+                        </div>
+                    </div>
+                    
+                    <div class="row" style="margin-top: 10px;">
+                        <div class="col-md-12">
+                            <label>Description/Notes</label>
+                            <textarea id="description" name="description" class="form-control" rows="2" placeholder="Additional information about this parameter"></textarea>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">
+                    <i class="fa fa-times"></i> Cancel
+                </button>
+                <button type="button" id="btn_save_result_set" class="btn btn-primary">
+                    <i class="fa fa-save"></i> Save Parameter
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 var base_url = "<?= base_url(); ?>";
 
@@ -238,21 +290,46 @@ $(document).ready(function() {
     // Set default dates to today
     var today = new Date().toISOString().split('T')[0];
     $('#lab_test_date, #digital_test_date').val(today);
+
     // Clear digital form
     $('#btn_clear_digital').click(function() {
         $('#lab_digital_form')[0].reset();
         // Clear result values but keep the parameters
         $('#lab_parameters_table tbody input[name="result_value[]"]').val('');
-        // Restore the product name and user name
+        // Restore the product name
         $('#digital_test_name').val($('#digital_test_name').data('product-name') || '');
-        $('#digital_performed_by').val($('#digital_performed_by').data('user-name') || '');
     });
     
     // Handle digital form submission
     $('#lab_digital_form').submit(function(e) {
         e.preventDefault();
         
+        // Validate form before submission
+        if (!validateDigitalForm()) {
+            return false;
+        }
+        
         var formData = new FormData(this);
+        
+        // Add result parameters data
+        var resultSetIds = [];
+        var resultValues = [];
+        
+        $('#lab_parameters_table tbody tr').each(function() {
+            var resultSetId = $(this).find('input[name="result_set_id[]"]').val();
+            var resultValue = $(this).find('input[name="result_value[]"]').val();
+            
+            if (resultSetId && resultValue !== '') {
+                resultSetIds.push(resultSetId);
+                resultValues.push(resultValue);
+            }
+        });
+        
+        // Add arrays to form data
+        for (var i = 0; i < resultSetIds.length; i++) {
+            formData.append('result_set_id[]', resultSetIds[i]);
+            formData.append('result_value[]', resultValues[i]);
+        }
         
         $.ajax({
             url: base_url + 'current_transaction/lab_save_digital',
@@ -266,19 +343,18 @@ $(document).ready(function() {
             },
             success: function(response) {
                 if (response.success) {
-                    alert('Digital laboratory results saved successfully!');
+                    toastr.success('Digital laboratory results saved successfully!');
                     $('#lab_digital_form')[0].reset();
                     $('#lab_parameters_table tbody input[name="result_value[]"]').val('');
-                    // Restore the product name and user name
+                    // Restore the product name
                     $('#digital_test_name').val($('#digital_test_name').data('product-name') || '');
-                    $('#digital_performed_by').val($('#digital_performed_by').data('user-name') || '');
                     loadLabResults(); // Refresh the results list
                 } else {
-                    alert('Error: ' + (response.error || 'Failed to save digital results'));
+                    toastr.error('Error: ' + (response.error || 'Failed to save digital results'));
                 }
             },
             error: function() {
-                alert('Error: Failed to communicate with server');
+                toastr.error('Error: Failed to communicate with server');
             },
             complete: function() {
                 $('#btn_save_digital').prop('disabled', false).html('<i class="fa fa-save"></i> Save Digital Results');
@@ -288,7 +364,32 @@ $(document).ready(function() {
     
     // Handle save and print
     $('#btn_save_and_print').click(function() {
+        // Validate form before submission
+        if (!validateDigitalForm()) {
+            return false;
+        }
+        
         var formData = new FormData($('#lab_digital_form')[0]);
+        
+        // Add result parameters data
+        var resultSetIds = [];
+        var resultValues = [];
+        
+        $('#lab_parameters_table tbody tr').each(function() {
+            var resultSetId = $(this).find('input[name="result_set_id[]"]').val();
+            var resultValue = $(this).find('input[name="result_value[]"]').val();
+            
+            if (resultSetId && resultValue !== '') {
+                resultSetIds.push(resultSetId);
+                resultValues.push(resultValue);
+            }
+        });
+        
+        // Add arrays to form data
+        for (var i = 0; i < resultSetIds.length; i++) {
+            formData.append('result_set_id[]', resultSetIds[i]);
+            formData.append('result_value[]', resultValues[i]);
+        }
         
         $.ajax({
             url: base_url + 'current_transaction/lab_save_digital',
@@ -302,24 +403,28 @@ $(document).ready(function() {
             },
             success: function(response) {
                 if (response.success) {
-                    alert('Digital laboratory results saved successfully!');
+                    toastr.success('Digital laboratory results saved successfully!');
                     // Open print window
-                    var printUrl = base_url + 'current_transaction/lab_print_view?lab_id=' + response.lab_id;
-                    window.open(printUrl, '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
+                    var printUrl = base_url + 'current_transaction/lab_print_digital';
+                    var printForm = $('<form method="post" target="_blank" action="' + printUrl + '">' +
+                                     '<input type="hidden" name="lab_id" value="' + response.lab_id + '">' +
+                                     '</form>');
+                    $('body').append(printForm);
+                    printForm.submit();
+                    printForm.remove();
                     
                     // Clear form
                     $('#lab_digital_form')[0].reset();
                     $('#lab_parameters_table tbody input[name="result_value[]"]').val('');
-                    // Restore the product name and user name
+                    // Restore the product name
                     $('#digital_test_name').val($('#digital_test_name').data('product-name') || '');
-                    $('#digital_performed_by').val($('#digital_performed_by').data('user-name') || '');
                     loadLabResults(); // Refresh the results list
                 } else {
-                    alert('Error: ' + (response.error || 'Failed to save digital results'));
+                    toastr.error('Error: ' + (response.error || 'Failed to save digital results'));
                 }
             },
             error: function() {
-                alert('Error: Failed to communicate with server');
+                toastr.error('Error: Failed to communicate with server');
             },
             complete: function() {
                 $('#btn_save_and_print').prop('disabled', false).html('<i class="fa fa-print"></i> Save & Print');
@@ -345,15 +450,15 @@ $(document).ready(function() {
             },
             success: function(response) {
                 if (response.success) {
-                    alert('Laboratory results uploaded successfully!');
+                    toastr.success('Laboratory results uploaded successfully!');
                     $('#lab_upload_form')[0].reset();
                     loadLabResults(); // Refresh the results list
                 } else {
-                    alert('Error: ' + (response.error || 'Failed to upload laboratory results'));
+                    toastr.error('Error: ' + (response.error || 'Failed to upload laboratory results'));
                 }
             },
             error: function() {
-                alert('Error: Failed to communicate with server');
+                toastr.error('Error: Failed to communicate with server');
             },
             complete: function() {
                 $('#btn_upload_lab').prop('disabled', false).html('<i class="fa fa-upload"></i> Upload Results');
@@ -382,7 +487,7 @@ $(document).ready(function() {
     // Function to load result sets for digital entry
     function loadResultSets(product_id) {
         if (!product_id) {
-            $('#lab_parameters_table tbody').html('<tr><td colspan="3" class="text-center text-muted">No result parameters defined for this service</td></tr>');
+            $('#lab_parameters_table tbody').html('<tr><td colspan="4" class="text-center text-muted">No result parameters defined for this service</td></tr>');
             return;
         }
         
@@ -397,27 +502,76 @@ $(document).ready(function() {
                             <td>
                                 <input type="hidden" name="result_set_id[]" value="${resultSet.id}">
                                 <strong>${resultSet.result_label}</strong>
+                                ${resultSet.description ? '<br><small class="text-muted">' + resultSet.description + '</small>' : ''}
                             </td>
                             <td>
                                 <input type="text" name="result_value[]" class="form-control" placeholder="Enter result value">
                             </td>
                             <td>
-                                <span class="text-muted">${resultSet.unit}</span>
-                                <br><small>Ref: ${resultSet.reference || 'N/A'}</small>
+                                <span class="text-muted">${resultSet.unit || ''}</span>
+                                ${resultSet.reference ? '<br><small>Ref: ' + resultSet.reference + '</small>' : '<br><small>Ref: N/A</small>'}
+                            </td>
+                            <td class="text-center">
+                                <button type="button" class="btn btn-xs btn-danger delete-result-set" data-result-set-id="${resultSet.id}" title="Delete Parameter">
+                                    <i class="fa fa-trash"></i>
+                                </button>
                             </td>
                         </tr>
                     `;
                 });
                 $('#lab_parameters_table tbody').html(tableBody);
             } else {
-                $('#lab_parameters_table tbody').html('<tr><td colspan="3" class="text-center text-muted">No result parameters defined for this service</td></tr>');
+                $('#lab_parameters_table tbody').html(`
+                    <tr>
+                        <td colspan="4" class="text-center text-muted">
+                            No result parameters defined for this service
+                            <br><small>Click "Add Result Set" to add parameters</small>
+                        </td>
+                    </tr>
+                `);
             }
         }, 'json').fail(function() {
-            $('#lab_parameters_table tbody').html('<tr><td colspan="3" class="text-center text-danger">Error loading result parameters</td></tr>');
+            $('#lab_parameters_table tbody').html('<tr><td colspan="4" class="text-center text-danger">Error loading result parameters</td></tr>');
         });
     }
     
 });
+
+// Form validation function
+function validateDigitalForm() {
+    var testName = $('#digital_test_name').val().trim();
+    var testDate = $('#digital_test_date').val().trim();
+    var hasResults = false;
+    
+    // Check required fields
+    if (!testName) {
+        toastr.error('Test/Service name is required');
+        $('#digital_test_name').focus();
+        return false;
+    }
+    
+    if (!testDate) {
+        toastr.error('Test date is required');
+        $('#digital_test_date').focus();
+        return false;
+    }
+    
+    // Check if at least one result parameter has a value
+    $('#lab_parameters_table tbody tr').each(function() {
+        var resultValue = $(this).find('input[name="result_value[]"]').val();
+        if (resultValue && resultValue.trim() !== '') {
+            hasResults = true;
+            return false; // break out of each loop
+        }
+    });
+    
+    if (!hasResults) {
+        toastr.error('Please enter at least one result value');
+        return false;
+    }
+    
+    return true;
+}
 
 // Function to update the results table display for both types
 function updateLabResultsTable(results) {
@@ -493,13 +647,13 @@ function updateLabResultsTable(results) {
                 lab_id: labId
             }, function(response) {
                 if (response.success) {
-                    alert('Laboratory result deleted successfully!');
+                    toastr.success('Laboratory result deleted successfully!');
                     loadLabResults(); // Refresh the results list
                 } else {
-                    alert('Error: ' + (response.error || 'Failed to delete laboratory result'));
+                    toastr.error('Error: ' + (response.error || 'Failed to delete laboratory result'));
                 }
             }, 'json').fail(function() {
-                alert('Error: Failed to communicate with server');
+                toastr.error('Error: Failed to communicate with server');
             });
         }
     });

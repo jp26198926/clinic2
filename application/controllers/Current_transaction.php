@@ -1450,27 +1450,34 @@ class Current_transaction extends CI_Controller
 			$interpretation = $this->input->post("interpretation");
 			$notes = $this->input->post("notes");
 			
-			// Process lab parameters
-			$parameter_names = $this->input->post("parameter_name");
-			$parameter_values = $this->input->post("parameter_value");
-			$parameter_units = $this->input->post("parameter_unit");
-			$reference_ranges = $this->input->post("reference_range");
+			// Process lab parameters from result sets
+			$result_set_ids = $this->input->post("result_set_id");
+			$result_values = $this->input->post("result_value");
 			
 			if (!$item_id || !$transaction_id || !$test_name || !$test_date) {
 				throw new Exception("Required fields are missing");
 			}
 			
-			// Build lab parameters JSON
+			// Build lab parameters JSON from result sets
 			$lab_parameters = array();
-			if ($parameter_names && is_array($parameter_names)) {
-				for ($i = 0; $i < count($parameter_names); $i++) {
-					if (!empty($parameter_names[$i])) {
-						$lab_parameters[] = array(
-							'name' => $parameter_names[$i],
-							'value' => isset($parameter_values[$i]) ? $parameter_values[$i] : '',
-							'unit' => isset($parameter_units[$i]) ? $parameter_units[$i] : '',
-							'reference_range' => isset($reference_ranges[$i]) ? $reference_ranges[$i] : ''
-						);
+			if ($result_set_ids && is_array($result_set_ids)) {
+				for ($i = 0; $i < count($result_set_ids); $i++) {
+					if (!empty($result_set_ids[$i]) && isset($result_values[$i]) && $result_values[$i] !== '') {
+						// Get result set details
+						$this->db->select('result_label, unit, reference');
+						$this->db->from('result_sets');
+						$this->db->where('id', $result_set_ids[$i]);
+						$result_set = $this->db->get()->row_array();
+						
+						if ($result_set) {
+							$lab_parameters[] = array(
+								'result_set_id' => $result_set_ids[$i],
+								'name' => $result_set['result_label'],
+								'value' => $result_values[$i],
+								'unit' => $result_set['unit'],
+								'reference_range' => $result_set['reference']
+							);
+						}
 					}
 				}
 			}
@@ -1511,6 +1518,205 @@ class Current_transaction extends CI_Controller
 		echo json_encode($result);
 	}
 	
+	function lab_get_result_sets()
+	{
+		$result = array("success" => false);
+		
+		try {
+			$product_id = $this->input->post("product_id");
+			
+			if (!$product_id) {
+				throw new Exception("Product ID is required");
+			}
+			
+			$this->db->select('id, result_label, reference, unit, description');
+			$this->db->from('result_sets');
+			$this->db->where('product_id', $product_id);
+			$this->db->where('deleted_at IS NULL');
+			$this->db->order_by('result_label', 'ASC');
+			
+			$query = $this->db->get();
+			$result_sets = $query->result_array();
+			
+			$result["success"] = true;
+			$result["result_sets"] = $result_sets;
+			
+		} catch (Exception $ex) {
+			$result["error"] = $ex->getMessage();
+		}
+		
+		echo json_encode($result);
+	}
+	
+	function lab_save_result_set()
+	{
+		$result = array("success" => false);
+		
+		try {
+			$product_id = $this->input->post("product_id");
+			$result_label = trim($this->input->post("result_label"));
+			$unit = trim($this->input->post("unit"));
+			$reference = trim($this->input->post("reference"));
+			$description = trim($this->input->post("description"));
+			
+			// Validation
+			if (!$product_id) {
+				throw new Exception("Product ID is required");
+			}
+			
+			if (!$result_label) {
+				throw new Exception("Parameter name is required");
+			}
+			
+			// Check if product exists
+			$this->db->select('id');
+			$this->db->from('products');
+			$this->db->where('id', $product_id);
+			$this->db->where('deleted_at IS NULL');
+			$product_query = $this->db->get();
+			
+			if (!$product_query) {
+				throw new Exception("Database error: " . $this->db->error()['message']);
+			}
+			
+			$product_exists = $product_query->row();
+			
+			if (!$product_exists) {
+				throw new Exception("Product not found");
+			}
+			
+			// Check for duplicate result label for the same product
+			$this->db->select('id');
+			$this->db->from('result_sets');
+			$this->db->where('product_id', $product_id);
+			$this->db->where('result_label', $result_label);
+			$this->db->where('deleted_at IS NULL');
+			$duplicate_query = $this->db->get();
+			
+			if (!$duplicate_query) {
+				throw new Exception("Database error: " . $this->db->error()['message']);
+			}
+			
+			$duplicate = $duplicate_query->row();
+			
+			if ($duplicate) {
+				throw new Exception("A parameter with this name already exists for this product");
+			}
+			
+			// Insert new result set
+			$data = array(
+				'product_id' => $product_id,
+				'result_label' => $result_label,
+				'unit' => $unit,
+				'reference' => $reference,
+				'description' => $description,
+				'created_at' => date('Y-m-d H:i:s'),
+				'created_by' => $this->uid
+			);
+			
+			$insert_result = $this->db->insert('result_sets', $data);
+			
+			if (!$insert_result) {
+				throw new Exception("Database error: " . $this->db->error()['message']);
+			}
+			
+			if ($this->db->affected_rows() > 0) {
+				$result["success"] = true;
+				$result["result_set_id"] = $this->db->insert_id();
+				$result["message"] = "Result parameter added successfully";
+			} else {
+				throw new Exception("Failed to save result parameter");
+			}
+			
+		} catch (Exception $ex) {
+			$result["error"] = $ex->getMessage();
+		}
+		
+		echo json_encode($result);
+	}
+	
+	function lab_delete_result_set()
+	{
+		$result = array("success" => false);
+		
+		try {
+			$result_set_id = $this->input->post("result_set_id");
+			
+			if (!$result_set_id) {
+				throw new Exception("Result set ID is required");
+			}
+			
+			// Check if result set exists and user has permission
+			$this->db->select('id, product_id, result_label');
+			$this->db->from('result_sets');
+			$this->db->where('id', $result_set_id);
+			$this->db->where('deleted_at IS NULL');
+			$result_set = $this->db->get()->row();
+			
+			if (!$result_set) {
+				throw new Exception("Result parameter not found");
+			}
+			
+			// Check if this result set is being used in any lab results
+			$this->db->select('COUNT(*) as count');
+			$this->db->from('lab_result_parameters');
+			$this->db->where('result_set_id', $result_set_id);
+			$usage = $this->db->get();
+			$usage_count = $usage ? $usage->row()->count : 0;
+			
+			if ($usage_count > 0) {
+				// Get additional details about the usage
+				$this->db->select('lr.test_name, lr.test_date, CONCAT(p.fname, " ", p.lname) as patient_name');
+				$this->db->from('lab_result_parameters lrp');
+				$this->db->join('lab_results lr', 'lr.id = lrp.lab_result_id', 'left');
+				$this->db->join('transaction_items ti', 'ti.id = lr.item_id', 'left');
+				$this->db->join('transactions t', 't.id = ti.transaction_id', 'left');
+				$this->db->join('patients p', 'p.id = t.patient_id', 'left');
+				$this->db->where('lrp.result_set_id', $result_set_id);
+				$this->db->limit(3); // Show only first 3 examples
+				$usage_details = $this->db->get()->result();
+				
+				$error_message = "Cannot delete this parameter because it is used in " . $usage_count . " existing lab result" . ($usage_count > 1 ? "s" : "");
+				
+				if (!empty($usage_details)) {
+					$error_message .= ". Examples: ";
+					$examples = array();
+					foreach ($usage_details as $detail) {
+						$examples[] = $detail->test_name . " (" . $detail->patient_name . " - " . date('M d, Y', strtotime($detail->test_date)) . ")";
+					}
+					$error_message .= implode(", ", $examples);
+					if ($usage_count > 3) {
+						$error_message .= " and " . ($usage_count - 3) . " more";
+					}
+				}
+				
+				throw new Exception($error_message);
+			}
+			
+			// Soft delete the result set
+			$data = array(
+				'deleted_at' => date('Y-m-d H:i:s'),
+				'deleted_by' => $this->uid,
+				'deleted_reason' => 'User deleted from lab modal'
+			);
+			
+			$this->db->where('id', $result_set_id);
+			$this->db->update('result_sets', $data);
+			
+			if ($this->db->affected_rows() > 0) {
+				$result["success"] = true;
+				$result["message"] = "Result parameter deleted successfully";
+			} else {
+				throw new Exception("Failed to delete result parameter");
+			}
+			
+		} catch (Exception $ex) {
+			$result["error"] = $ex->getMessage();
+		}
+		
+		echo json_encode($result);
+	}
+	
 	function lab_print_digital()
 	{
 		$result = array("success" => false);
@@ -1525,9 +1731,9 @@ class Current_transaction extends CI_Controller
 			// Get lab result data
 			$this->db->select('lr.*, t.patient_name, p.product_name');
 			$this->db->from('lab_results lr');
-			$this->db->join('transaction t', 't.transaction_id = lr.transaction_id');
-			$this->db->join('transaction_item ti', 'ti.item_id = lr.item_id');
-			$this->db->join('product p', 'p.product_id = ti.product_id');
+			$this->db->join('transaction_items ti', 'ti.id = lr.item_id');
+			$this->db->join('transactions t', 't.id = ti.transaction_id');
+			$this->db->join('products p', 'p.id = ti.product_id');
 			$this->db->where('lr.id', $lab_id);
 			$this->db->where('lr.entry_type', 'digital');
 			$this->db->where('lr.deleted_at IS NULL');
@@ -1540,14 +1746,48 @@ class Current_transaction extends CI_Controller
 			}
 			
 			// Decode lab parameters
-			$lab_result['lab_parameters'] = json_decode($lab_result['lab_parameters'], true);
+			$lab_parameters = json_decode($lab_result['lab_parameters'], true);
+			if (!$lab_parameters) {
+				$lab_parameters = array();
+			}
 			
 			// Get clinic information
 			$clinic_name = $this->config->item('company_name') ?: 'Medical Clinic';
+			$clinic_address = $this->config->item('company_address') ?: '';
+			$clinic_phone = $this->config->item('company_phone') ?: '';
+			
+			// Also save lab parameters to the lab_result_parameters table if they don't exist
+			foreach ($lab_parameters as $param) {
+				if (isset($param['result_set_id'])) {
+					// Check if parameter already exists
+					$this->db->select('id');
+					$this->db->from('lab_result_parameters');
+					$this->db->where('lab_result_id', $lab_id);
+					$this->db->where('result_set_id', $param['result_set_id']);
+					$existing = $this->db->get()->row();
+					
+					if (!$existing) {
+						// Insert parameter
+						$param_data = array(
+							'lab_result_id' => $lab_id,
+							'result_set_id' => $param['result_set_id'],
+							'result_value' => $param['value'],
+							'created_at' => date('Y-m-d H:i:s'),
+							'created_by' => $this->uid
+						);
+						$this->db->insert('lab_result_parameters', $param_data);
+					}
+				}
+			}
 			
 			$data = array(
 				'lab_data' => $lab_result,
-				'clinic_name' => $clinic_name
+				'lab_parameters' => $lab_parameters,
+				'clinic_name' => $clinic_name,
+				'clinic_address' => $clinic_address,
+				'clinic_phone' => $clinic_phone,
+				'app_title' => $this->app_title,
+				'transaction_no' => str_pad($lab_result['transaction_id'], 5, "0", STR_PAD_LEFT)
 			);
 			
 			$this->load->view('current_transaction/lab_print_template', $data);
@@ -1572,142 +1812,18 @@ class Current_transaction extends CI_Controller
 			$this->db->from('lab_results');
 			$this->db->where('item_id', $item_id);
 			$this->db->where('deleted_at IS NULL');
-			$this->db->order_by('test_date', 'DESC');
+			$this->db->order_by('created_at', 'DESC');
 			
 			$query = $this->db->get();
-			$lab_results = $query->result_array();
-			
-			// Process files and lab parameters for each result
-			foreach ($lab_results as &$lab) {
-				// Handle file uploads
-				if ($lab['files']) {
-					$lab['files'] = json_decode($lab['files'], true);
-				} else {
-					$lab['files'] = array();
-				}
-				
-				// Handle digital lab parameters
-				if ($lab['lab_parameters']) {
-					$lab['lab_parameters'] = json_decode($lab['lab_parameters'], true);
-				} else {
-					$lab['lab_parameters'] = array();
-				}
-				
-				// Add display type for UI
-				$lab['display_type'] = ($lab['entry_type'] == 'digital') ? 'Digital Entry' : 'File Upload';
-			}
+			$results = $query->result_array();
 			
 			$result["success"] = true;
-			$result["results"] = $lab_results;
+			$result["data"] = $results;
 			
 		} catch (Exception $ex) {
 			$result["error"] = $ex->getMessage();
 		}
 		
 		echo json_encode($result);
-	}
-	
-	function lab_delete()
-	{
-		$result = array("success" => false);
-		
-		try {
-			$lab_id = $this->input->post("lab_id");
-			$item_id = $this->input->post("item_id");
-			
-			if (!$lab_id || !$item_id) {
-				throw new Exception("Required parameters are missing");
-			}
-			
-			// Get lab result details before deletion
-			$this->db->select('*');
-			$this->db->from('lab_results');
-			$this->db->where('id', $lab_id);
-			$this->db->where('item_id', $item_id);
-			$query = $this->db->get();
-			$lab_result = $query->row();
-			
-			if (!$lab_result) {
-				throw new Exception("Lab result not found");
-			}
-			
-			// Soft delete - mark as deleted
-			$update_data = array(
-				'deleted_by' => $this->uid,
-				'deleted_at' => date('Y-m-d H:i:s')
-			);
-			
-			$this->db->where('id', $lab_id);
-			$this->db->update('lab_results', $update_data);
-			
-			if ($this->db->affected_rows() > 0) {
-				$result["success"] = true;
-				$result["message"] = "Laboratory result deleted successfully";
-				
-				// Write to log
-				$this->shared_model->write_to_log("Lab Delete", $this->uid, $lab_result->transaction_id, 0, "", "", "Laboratory result deleted: " . $lab_result->test_name);
-			} else {
-				throw new Exception("Failed to delete lab result");
-			}
-			
-		} catch (Exception $ex) {
-			$result["error"] = $ex->getMessage();
-		}
-		
-		echo json_encode($result);
-	}
-	
-	function lab_download()
-	{
-		try {
-			$file_path = $this->input->get("file");
-			$item_id = $this->input->get("item_id");
-			
-			if (!$file_path || !$item_id) {
-				show_404();
-				return;
-			}
-			
-			// Security check - ensure file belongs to the item
-			$this->db->select('files');
-			$this->db->from('lab_results');
-			$this->db->where('item_id', $item_id);
-			$this->db->where('deleted_at IS NULL');
-			$query = $this->db->get();
-			
-			$file_found = false;
-			foreach ($query->result() as $lab) {
-				if ($lab->files) {
-					$files = json_decode($lab->files, true);
-					foreach ($files as $file) {
-						if ($file['file_path'] === $file_path) {
-							$file_found = true;
-							break 2;
-						}
-					}
-				}
-			}
-			
-			if (!$file_found) {
-				show_404();
-				return;
-			}
-			
-			// Check if file exists
-			if (!file_exists($file_path)) {
-				show_404();
-				return;
-			}
-			
-			// Force download
-			$this->load->helper('download');
-			$data = file_get_contents($file_path);
-			$name = basename($file_path);
-			
-			force_download($name, $data);
-			
-		} catch (Exception $ex) {
-			show_404();
-		}
 	}
 }
