@@ -1343,7 +1343,6 @@ class Current_transaction extends CI_Controller
 
 		echo json_encode($data);
 	}
-
 	// Lab Result Methods
 	function lab_upload()
 	{
@@ -1356,6 +1355,9 @@ class Current_transaction extends CI_Controller
 			$test_date = $this->input->post("test_date");
 			$lab_provider = $this->input->post("lab_provider");
 			$notes = $this->input->post("notes");
+			
+			// Debug logging
+			log_message('debug', 'Lab Upload - Received data: item_id=' . $item_id . ', transaction_id=' . $transaction_id . ', test_name=' . $test_name . ', test_date=' . $test_date);
 			
 			if (!$item_id || !$transaction_id || !$test_name || !$test_date) {
 				throw new Exception("Required fields are missing");
@@ -1402,12 +1404,11 @@ class Current_transaction extends CI_Controller
 			
 			if (empty($uploaded_files)) {
 				throw new Exception("No files were uploaded successfully");
-			}
-			
-			// Save to database
+			}			// Save to database
 			$lab_data = array(
 				'transaction_id' => $transaction_id,
 				'item_id' => $item_id,
+				'entry_type' => 'upload',
 				'test_name' => $test_name,
 				'test_date' => $test_date,
 				'lab_provider' => $lab_provider,
@@ -1417,11 +1418,19 @@ class Current_transaction extends CI_Controller
 				'created_at' => date('Y-m-d H:i:s')
 			);
 			
+			// Debug logging
+			log_message('debug', 'Lab Upload - Inserting data: ' . json_encode($lab_data));
+			
 			$this->db->insert('lab_results', $lab_data);
+			
+			// Debug logging
+			log_message('debug', 'Lab Upload - Affected rows: ' . $this->db->affected_rows());
+			log_message('debug', 'Lab Upload - Insert ID: ' . $this->db->insert_id());
 			
 			if ($this->db->affected_rows() > 0) {
 				$result["success"] = true;
 				$result["message"] = "Laboratory results uploaded successfully";
+				$result["insert_id"] = $this->db->insert_id(); // Add insert ID for debugging
 				
 				// Write to log
 				$this->shared_model->write_to_log("Lab Upload", $this->uid, $transaction_id, 0, "", "", "Laboratory result uploaded: " . $test_name);
@@ -1796,31 +1805,57 @@ class Current_transaction extends CI_Controller
 			show_error("Error loading lab result: " . $ex->getMessage(), 500);
 		}
 	}
-	
-	function lab_list()
+		function lab_list()
 	{
 		$result = array("success" => false);
 		
 		try {
 			$item_id = $this->input->post("item_id");
+			$transaction_id = $this->input->post("transaction_id"); // Also accept transaction_id
 			
-			if (!$item_id) {
-				throw new Exception("Item ID is required");
+			// Debug logging
+			log_message('debug', 'Lab List - Received: item_id=' . $item_id . ', transaction_id=' . $transaction_id);
+			
+			if (!$item_id && !$transaction_id) {
+				throw new Exception("Item ID or Transaction ID is required");
 			}
 			
 			$this->db->select('*');
 			$this->db->from('lab_results');
-			$this->db->where('item_id', $item_id);
+			
+			if ($item_id) {
+				$this->db->where('item_id', $item_id);
+			} elseif ($transaction_id) {
+				$this->db->where('transaction_id', $transaction_id);
+			}
+			
+			$this->db->where('deleted_at IS NULL');
+			$this->db->order_by('created_at', 'DESC');
+			
+			// Debug logging
+			log_message('debug', 'Lab List - Query: ' . $this->db->get_compiled_select());
+			$this->db->from('lab_results'); // Reset from for actual query
+			
+			if ($item_id) {
+				$this->db->where('item_id', $item_id);
+			} elseif ($transaction_id) {
+				$this->db->where('transaction_id', $transaction_id);
+			}
 			$this->db->where('deleted_at IS NULL');
 			$this->db->order_by('created_at', 'DESC');
 			
 			$query = $this->db->get();
 			$results = $query->result_array();
 			
+			// Debug logging
+			log_message('debug', 'Lab List - Found ' . count($results) . ' results');
+			log_message('debug', 'Lab List - Results: ' . json_encode($results));
+			
 			$result["success"] = true;
 			$result["data"] = $results;
 			
 		} catch (Exception $ex) {
+			log_message('error', 'Lab List - Error: ' . $ex->getMessage());
 			$result["error"] = $ex->getMessage();
 		}
 		

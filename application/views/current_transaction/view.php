@@ -1344,10 +1344,12 @@ $total_amount_due = $subtotal_total;
 
     // Function to update the results table display for both types
     function updateLabResultsTable(results) {
+        console.log('Updating lab results table with:', results); // Debug log
+        
         var tbody = $('#tbl_lab_results tbody');
         tbody.empty();
         
-        if (results.length === 0) {
+        if (!results || results.length === 0) {
             tbody.append('<tr><td colspan="7" class="text-center text-muted">No laboratory results found</td></tr>');
             return;
         }
@@ -1357,27 +1359,43 @@ $total_amount_due = $subtotal_total;
             var entryDate = lab.created_at ? new Date(lab.created_at).toLocaleDateString() : '';
             
             var filesOrResults = '';
-            if (lab.entry_type === 'digital') {
-                var paramCount = lab.lab_parameters ? lab.lab_parameters.length : 0;
-                filesOrResults = '<span class="label label-info">' + paramCount + ' parameters</span>';
-            } else {
-                var fileCount = lab.files ? lab.files.length : 0;
-                filesOrResults = '<span class="label label-success">' + fileCount + ' files</span>';
-            }
-            
             var actions = '';
+            
             if (lab.entry_type === 'digital') {
+                // Handle digital entry
+                var parameters = [];
+                try {
+                    parameters = lab.lab_parameters ? JSON.parse(lab.lab_parameters) : [];
+                } catch (e) {
+                    console.warn('Error parsing lab_parameters:', e);
+                    parameters = [];
+                }
+                var paramCount = parameters.length;
+                filesOrResults = '<span class="label label-info">' + paramCount + ' parameters</span>';
+                
                 actions += '<button class="btn btn-sm btn-info print-digital" data-lab-id="' + lab.id + '" title="Print Results">';
                 actions += '<i class="fa fa-print"></i></button> ';
             } else {
+                // Handle file upload entry
+                var files = [];
+                try {
+                    files = lab.files ? JSON.parse(lab.files) : [];
+                } catch (e) {
+                    console.warn('Error parsing files JSON:', e);
+                    files = [];
+                }
+                var fileCount = files.length;
+                filesOrResults = '<span class="label label-success">' + fileCount + ' files</span>';
+                
                 // Add download/view actions for uploaded files
-                if (lab.files && lab.files.length > 0) {
-                    $.each(lab.files, function(i, file) {
-                        actions += '<button class="btn btn-sm btn-success download-file" data-file="' + file.file_name + '" title="Download ' + file.original_name + '">';
+                if (files.length > 0) {
+                    $.each(files, function(i, file) {
+                        actions += '<button class="btn btn-sm btn-success download-file" data-file="' + file.file_name + '" data-item-id="' + lab.item_id + '" data-transaction-id="' + lab.transaction_id + '" title="Download ' + file.original_name + '">';
                         actions += '<i class="fa fa-download"></i></button> ';
                     });
                 }
             }
+            
             actions += '<button class="btn btn-sm btn-danger delete-lab" data-lab-id="' + lab.id + '" title="Delete">';
             actions += '<i class="fa fa-trash"></i></button>';
             
@@ -1385,7 +1403,7 @@ $total_amount_due = $subtotal_total;
                 '<td class="text-center">' + testDate + '</td>' +
                 '<td>' + (lab.test_name || '') + '</td>' +
                 '<td>' + (lab.lab_provider || '') + '</td>' +
-                '<td class="text-center">' + lab.display_type + '</td>' +
+                '<td class="text-center">' + (lab.display_type || lab.entry_type || 'Upload') + '</td>' +
                 '<td class="text-center">' + filesOrResults + '</td>' +
                 '<td class="text-center">' + entryDate + '</td>' +
                 '<td class="text-center">' + actions + '</td>' +
@@ -1393,24 +1411,37 @@ $total_amount_due = $subtotal_total;
             
             tbody.append(row);
         });
+        
+        console.log('Lab results table updated successfully'); // Debug log
     }
 
     // Function to load lab results by item
     function load_lab_results_by_item(item_id) {
+        console.log('Loading lab results for item_id:', item_id); // Debug log
+        
         if (!item_id) {
             $('#tbl_lab_results tbody').html('<tr><td colspan="7" class="text-center text-muted">No item selected</td></tr>');
             return;
         }
         
+        var transaction_id = $("#id_update").val();
+        console.log('Transaction ID:', transaction_id); // Debug log
+        
+        // Send both item_id and transaction_id to backend for flexibility
         $.post("<?= base_url($module); ?>/lab_list", {
-            item_id: item_id
+            item_id: item_id,
+            transaction_id: transaction_id
         }, function(response) {
-            if (response.success && response.results) {
-                updateLabResultsTable(response.results);
+            console.log('Lab results response:', response); // Debug log
+            
+            if (response.success && response.data && response.data.length > 0) {
+                updateLabResultsTable(response.data);
             } else {
+                console.log('No results found'); // Debug log
                 $('#tbl_lab_results tbody').html('<tr><td colspan="7" class="text-center text-muted">No laboratory results found</td></tr>');
             }
-        }, 'json').fail(function() {
+        }, 'json').fail(function(xhr, status, error) {
+            console.error('AJAX error loading lab results:', xhr.responseText); // Debug log
             $('#tbl_lab_results tbody').html('<tr><td colspan="7" class="text-center text-danger">Error loading laboratory results</td></tr>');
         });
     }
@@ -1437,6 +1468,7 @@ $total_amount_due = $subtotal_total;
         
         // Store product_id for loading result sets
         $("#modal_lab").data("product-id", product_id);
+        $("#modal_lab").data("current-product-name", product_name);
         
         // Load result sets for digital entry
         loadResultSets(product_id);
@@ -1473,10 +1505,33 @@ $total_amount_due = $subtotal_total;
                 $('#btn_upload_lab').prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Uploading...');
             },
             success: function(response) {
+                console.log('Upload response:', response); // Debug log
+                
                 if (response.success) {
                     toastr.success('Laboratory results uploaded successfully!');
+                    
+                    // Store item_id before resetting form
+                    var current_item_id = $('#lab_item_id').val();
+                    console.log('Current item_id before reset:', current_item_id); // Debug log
+                    
                     $('#lab_upload_form')[0].reset();
-                    load_lab_results_by_item($('#lab_item_id').val()); // Refresh the results list
+                    
+                    // Restore the item_id and transaction_id after reset
+                    $('#lab_item_id').val(current_item_id);
+                    $('#lab_transaction_id').val($("#id_update").val());
+                    
+                    // Set test name again after reset
+                    var product_name = $("#modal_lab").data("current-product-name");
+                    if (product_name) {
+                        $("#lab_test_name").val(product_name);
+                    }
+                    
+                    console.log('About to refresh lab results for item:', current_item_id); // Debug log
+                    
+                    // Refresh the results list with a small delay to ensure backend has completed
+                    setTimeout(function() {
+                        load_lab_results_by_item(current_item_id);
+                    }, 500);
                 } else {
                     toastr.error('Error: ' + (response.error || 'Failed to upload laboratory results'));
                 }
@@ -1754,162 +1809,51 @@ $total_amount_due = $subtotal_total;
         });
     });
 
-    // Add Result Set functionality
-    $(document).on('click', '#btn_add_result_set', function() {
-        console.log('Add Result Set button clicked!'); // Debug log
+    // Event handlers for lab result actions
+    $(document).on('click', '.download-file', function() {
+        var fileName = $(this).data('file');
+        var itemId = $(this).data('item-id');
+        var transactionId = $(this).data('transaction-id');
         
-        var productId = $('#modal_lab').data('product-id');
-        console.log('Product ID:', productId); // Debug log
-        
-        if (!productId) {
-            toastr.error('No product selected. Please close this modal and try again.');
-            return;
+        if (fileName && itemId && transactionId) {
+            // Create download URL
+            var downloadUrl = "<?= base_url('upload/lab_results/'); ?>" + transactionId + "/" + itemId + "/" + fileName;
+            
+            // Open download in new tab/window
+            window.open(downloadUrl, '_blank');
+        } else {
+            toastr.error("Unable to download file - missing file information");
         }
-        
-        // Set the product ID and clear the form
-        $('#result_set_product_id').val(productId);
-        if ($('#add_result_set_form').length > 0) {
-            $('#add_result_set_form')[0].reset();
-            $('#result_set_product_id').val(productId); // Restore after reset
-        }
-        
-        console.log('About to show modal...'); // Debug log
-        
-        // Show the add result set modal
-        $('#modal_add_result_set').modal('show');
     });
     
-    // Handle modal stacking for add result set
-    $('#modal_add_result_set').on('shown.bs.modal', function() {
-        // Increase z-index to appear over the lab modal
-        $(this).css('z-index', parseInt($('#modal_lab').css('z-index')) + 10);
-    });
-    
-    $('#modal_add_result_set').on('hidden.bs.modal', function() {
-        // Clear the form when modal is closed
-        $('#add_result_set_form')[0].reset();
-    });
-    
-    // Handle save result set
-    $(document).on('click', '#btn_save_result_set', function() {
-        var formData = {
-            product_id: $('#result_set_product_id').val(),
-            result_label: $('#result_label').val().trim(),
-            unit: $('#unit').val().trim(),
-            reference: $('#reference').val().trim(),
-            description: $('#description').val().trim()
-        };
+    $(document).on('click', '.delete-lab', function() {
+        var labId = $(this).data('lab-id');
+        var row = $(this).closest('tr');
         
-        // Validate required fields
-        if (!formData.result_label) {
-            toastr.error('Please enter a parameter name.');
-            $('#result_label').focus();
-            return;
-        }
-        
-        if (!formData.product_id) {
-            toastr.error('Product ID is missing. Please try again.');
-            return;
-        }
-        
-        $.ajax({
-            url: "<?= base_url($module); ?>/lab_save_result_set",
-            type: 'POST',
-            data: formData,
-            dataType: 'json',
-            beforeSend: function() {
-                $('#btn_save_result_set').prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Saving...');
-            },
-            success: function(response) {
-                if (response.success) {
-                    toastr.success('Result parameter added successfully!');
-                    $('#modal_add_result_set').modal('hide');
-                    $('#add_result_set_form')[0].reset();
-                    
-                    // Refresh the result sets for the current product
-                    loadResultSets(formData.product_id);
-                } else {
-                    toastr.error('Error: ' + (response.error || 'Failed to save result parameter'));
-                }
-            },
-            error: function() {
-                toastr.error('Error: Failed to communicate with server');
-            },
-            complete: function() {
-                $('#btn_save_result_set').prop('disabled', false).html('<i class="fa fa-save"></i> Save Parameter');
+        bootbox.confirm("Are you sure you want to delete this laboratory result?", function(confirmed) {
+            if (confirmed) {
+                $.post("<?= base_url($module); ?>/lab_delete", {
+                    lab_id: labId
+                }, function(response) {
+                    if (response.success) {
+                        toastr.success(response.message || "Laboratory result deleted successfully");
+                        row.fadeOut(function() {
+                            $(this).remove();
+                        });
+                    } else {
+                        toastr.error(response.error || "Failed to delete laboratory result");
+                    }
+                }, 'json').fail(function() {
+                    toastr.error("Error occurred while deleting laboratory result");
+                });
             }
         });
     });
-
-    // Handle delete result set
-    $(document).on('click', '.delete-result-set', function() {
-        var resultSetId = $(this).data('result-set-id');
-        var productId = $('#modal_lab').data('product-id');
-        var parameterName = $(this).closest('tr').find('td:first').text(); // Get parameter name from table
-        
-        // Use bootbox for better confirmation dialog
-        bootbox.confirm({
-            title: "Delete Result Parameter",
-            message: "Are you sure you want to delete the parameter '<strong>" + parameterName + "</strong>'?<br><br>" +
-                    "<span class='text-warning'><i class='fa fa-warning'></i> This action cannot be undone.</span><br>" +
-                    "<span class='text-info'><i class='fa fa-info-circle'></i> Deletion will fail if this parameter is used in existing lab results.</span>",
-            buttons: {
-                confirm: {
-                    label: '<i class="fa fa-trash"></i> Delete',
-                    className: 'btn-danger'
-                },
-                cancel: {
-                    label: '<i class="fa fa-times"></i> Cancel',
-                    className: 'btn-default'
-                }
-            },
-            callback: function (result) {
-                if (result) {
-                    $.ajax({
-                        url: "<?= base_url($module); ?>/lab_delete_result_set",
-                        type: 'POST',
-                        data: {
-                            result_set_id: resultSetId
-                        },
-                        dataType: 'json',
-                        beforeSend: function() {
-                            // Show loading indicator
-                            toastr.info('Checking for existing usage and deleting parameter...');
-                        },
-                        success: function(response) {
-                            if (response.success) {
-                                toastr.success('Result parameter deleted successfully!');
-                                // Refresh the result sets for the current product
-                                loadResultSets(productId);
-                            } else {
-                                // Handle specific error messages for referential integrity
-                                if (response.error && response.error.includes('used in existing lab result')) {
-                                    bootbox.alert({
-                                        title: "Cannot Delete Parameter",
-                                        message: "<div class='alert alert-warning'>" +
-                                                "<i class='fa fa-warning fa-2x pull-left'></i>" +
-                                                "<h4>Referential Integrity Constraint</h4>" +
-                                                "<p>" + response.error + "</p><br>" +
-                                                "<strong>What you can do:</strong><br>" +
-                                                "• Remove or modify the lab results that use this parameter<br>" +
-                                                "• Contact your system administrator for assistance<br>" +
-                                                "• Consider archiving instead of deleting if supported" +
-                                                "</div>",
-                                        className: "bootbox-warning"
-                                    });
-                                } else {
-                                    toastr.error('Error: ' + (response.error || 'Failed to delete result parameter'));
-                                }
-                            }
-                        },
-                        error: function(xhr, status, error) {
-                            toastr.error('Error: Failed to communicate with server. Please try again.');
-                            console.error('Delete error:', xhr.responseText);
-                        }
-                    });
-                }
-            }
-        });
+    
+    $(document).on('click', '.print-digital', function() {
+        var labId = $(this).data('lab-id');
+        // Open print preview for digital lab results
+        window.open("<?= base_url($module); ?>/lab_print/" + labId, '_blank', 'width=800,height=600');
     });
 
     }); // End of $(document).ready()
