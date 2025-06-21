@@ -571,10 +571,10 @@ $total_amount_due = $subtotal_total;
 															echo "  <td class='text-right'>{$value->total}</td>";
 															echo "  <td class='text-center'>{$status}</td>";
 
-															if ($transaction_status_id > 1) {
-																echo "  <td align='center' class='text-center'>{$action}</td>";
-															} else {															echo "<td></td>";
-														}
+															if ($transaction_status_id > 1) {														echo "  <td align='center' class='text-center'>{$action}</td>";
+													} else {
+														echo "<td></td>";
+													}
 
 														echo "</tr>";
 													}
@@ -716,6 +716,30 @@ $total_amount_due = $subtotal_total;
 
     let new_entry_field = '';
 
+    // Global AJAX error handler
+    $(document).ajaxError(function(event, jqXHR, ajaxSettings, thrownError) {
+        if (jqXHR.status === 404) {
+            toastr.error('Error: Requested resource not found (404)');
+        } else if (jqXHR.status === 500) {
+            toastr.error('Error: Internal server error (500)');
+        } else if (jqXHR.status === 0) {
+            toastr.error('Error: Network connection lost');
+        } else {
+            console.error('AJAX Error:', thrownError);
+        }
+    });
+
+    // Global AJAX setup for CSRF
+    $.ajaxSetup({
+        beforeSend: function(xhr, settings) {
+            if (settings.type === 'POST' && settings.data && typeof settings.data === 'object') {
+                if (!settings.data[csrf_name]) {
+                    settings.data[csrf_name] = csrf_hash;
+                }
+            }
+        }
+    });
+
     // Initialize chosen-select
     $('.chosen-select').chosen({
         allow_single_deselect: true,
@@ -723,7 +747,9 @@ $total_amount_due = $subtotal_total;
     });
 
     // Initialize table fixed header
-    if (typeof $.fn.tableFixedHeader === 'function') {
+    if (typeof $.fn.fixedHeader === 'function') {
+        $("#tbl_list").fixedHeader();
+    } else if (typeof $.fn.tableFixedHeader === 'function') {
         $("#tbl_list").tableFixedHeader();
     }
 
@@ -745,6 +771,50 @@ $total_amount_due = $subtotal_total;
         var field_value = $(this).val();
         var transaction_id = $("#id_update").val();
         
+        // Special handling for insurance selection
+        if (field_name === 'insurance_id') {
+            // Load insurance details when insurance is selected
+            if (field_value && field_value !== '0') {
+                $.post("<?= base_url($module); ?>/get_insurance_details", {
+                    insurance_id: field_value,
+                    [csrf_name]: csrf_hash
+                }, function(response) {
+                    if (response.indexOf("<!DOCTYPE html>") > -1) {
+                        toastr.error("Error: Session Time-Out, You must login again to continue.");
+                        location.reload(true);
+                    } else if (response.indexOf("Error: ") > -1) {
+                        bootbox.alert(response);
+                    } else {
+                        try {
+                            var insurance = JSON.parse(response);
+                            $("#hidden_insurance_value_type_id").val(insurance.value_type_id || 1);
+                            $("#hidden_insurance_value").val(insurance.value || 0);
+                            $("#hidden_insurance_commission_type_id").val(insurance.commission_type_id || 1);
+                            $("#hidden_insurance_commission_value").val(insurance.commission_value || 0);
+                            
+                            // Recompute new entry if active
+                            if ($("#product_id_new").val()) {
+                                compute_entry();
+                            }
+                        } catch(e) {
+                            console.error('Error parsing insurance details:', e);
+                        }
+                    }
+                });
+            } else {
+                // Reset insurance values when no insurance selected
+                $("#hidden_insurance_value_type_id").val(1);
+                $("#hidden_insurance_value").val(0);
+                $("#hidden_insurance_commission_type_id").val(1);
+                $("#hidden_insurance_commission_value").val(0);
+                
+                // Recompute new entry if active
+                if ($("#product_id_new").val()) {
+                    compute_entry();
+                }
+            }
+        }
+        
         $.post("<?= base_url($module); ?>/update_field", {
             transaction_id: transaction_id,
             field_name: field_name,
@@ -759,6 +829,9 @@ $total_amount_due = $subtotal_total;
             } else {
                 try {
                     var result = JSON.parse(response);
+                    if (result.success !== undefined && !result.success) {
+                        toastr.error('Error: ' + (result.error || 'Failed to update field'));
+                    }
                     if (result.csrf_hash) {
                         regenerate_csrf(result.csrf_hash);
                     }
@@ -766,6 +839,8 @@ $total_amount_due = $subtotal_total;
                     // Response is probably just "OK" - continue
                 }
             }
+        }).fail(function() {
+            toastr.error('Error: Failed to communicate with server');
         });
     });
 
@@ -902,16 +977,28 @@ $total_amount_due = $subtotal_total;
 						}
 
 						if ($role_id == 1 || $this->custom_function->module_permission("item delete", $module_permission)) {
-					?>
-                    action += `<i
+					?>                    action += `<i
                                     id = '${item.id}'
                                     class = 'btn_item_cancel btn btn-xs btn-danger fa fa-times'
                                     title = 'Delete'
                                     data-toggle = 'tooltip'
                                 ></i> `;
                     <?php
-						}
-					?>
+                        }
+                    ?>
+
+                    // Add upload button if product allows upload AND status is PENDING or ONGOING
+                    if (parseInt(item.is_allow_upload) === 1 && (parseInt(item.status_id) == 2 || parseInt(item.status_id) == 3)) {
+                        action += `<i
+                                    id='${item.id}'
+                                    class='btn_item_upload btn btn-xs btn-warning fa fa-upload'
+                                    title='Upload Lab Results'
+                                    data-toggle='tooltip'
+                                    data-product-name='${item.product_name}'
+                                    data-product-id='${item.product_id}'
+                                    data-item-id='${item.id}'
+                                ></i> `;
+                    }
 
                     action += `</span>`;
 
@@ -955,7 +1042,7 @@ $total_amount_due = $subtotal_total;
                 list += `<td></td>`;
                 <?php } ?>
 
-                list += `<tr>`;
+                list += `</tr>`;
 
                 if (parseInt(item.status_id) > 1) {
                     subtotal_amount += Number(item.amount);
@@ -1158,6 +1245,96 @@ $total_amount_due = $subtotal_total;
 
     $(document).on("click", "#btn_add_client", function() {
         bootbox.alert("Please goto DATA -> CLIENT, to add new client name.")
+    });
+
+    // Main action button handlers
+    $(document).on("click", "#btn_history", function() {
+        var transaction_id = $("#id_update").val();
+        if (transaction_id) {
+            $("#modal_history").modal('show');
+            // Load patient history data here
+        }
+    });
+
+    $(document).on("click", "#btn_send", function() {
+        var transaction_id = $("#id_update").val();
+        if (transaction_id) {
+            $("#modal_send").modal('show');
+        }
+    });
+
+    $(document).on("click", "#btn_payment", function() {
+        var transaction_id = $("#id_update").val();
+        if (transaction_id) {
+            $("#modal_payment").modal('show');
+        }
+    });
+
+    $(document).on("click", "#btn_xray", function() {
+        var transaction_id = $("#id_update").val();
+        if (transaction_id) {
+            $("#modal_xray").modal('show');
+        }
+    });
+
+    $(document).on("click", "#btn_prescription", function() {
+        var transaction_id = $("#id_update").val();
+        if (transaction_id) {
+            $("#modal_prescription").modal('show');
+        }
+    });
+
+    $(document).on("click", "#btn_completed", function() {
+        var transaction_id = $("#id_update").val();
+        if (transaction_id && confirm('Mark this transaction as completed?')) {
+            $.post("<?= base_url($module); ?>/mark_completed", {
+                transaction_id: transaction_id,
+                [csrf_name]: csrf_hash
+            }, function(response) {
+                if (response.indexOf("Error: ") > -1) {
+                    bootbox.alert(response);
+                } else {
+                    toastr.success('Transaction marked as completed');
+                    location.reload();
+                }
+            });
+        }
+    });
+
+    $(document).on("click", "#btn_transaction_cancel", function() {
+        var transaction_id = $("#id_update").val();
+        if (transaction_id) {
+            bootbox.confirm({
+                title: "Cancel Transaction",
+                message: "Are you sure you want to cancel this transaction?<br><br>" +
+                        "<span class='text-warning'><i class='fa fa-warning'></i> This action cannot be undone.</span>",
+                buttons: {
+                    confirm: {
+                        label: '<i class="fa fa-times"></i> Cancel Transaction',
+                        className: 'btn-danger'
+                    },
+                    cancel: {
+                        label: '<i class="fa fa-close"></i> Keep Transaction',
+                        className: 'btn-default'
+                    }
+                },
+                callback: function (result) {
+                    if (result) {
+                        $.post("<?= base_url($module); ?>/cancel_transaction", {
+                            transaction_id: transaction_id,
+                            [csrf_name]: csrf_hash
+                        }, function(response) {
+                            if (response.indexOf("Error: ") > -1) {
+                                bootbox.alert(response);
+                            } else {
+                                toastr.success('Transaction cancelled successfully');
+                                window.location.href = "<?= base_url($module); ?>";
+                            }
+                        });
+                    }
+                }
+            });
+        }
     });
 
     // Handle lab button click
@@ -1379,6 +1556,39 @@ $total_amount_due = $subtotal_total;
         compute_entry_manual();
     });
 
+    // Numeric input validation
+    $(document).on('input', '.numeric', function() {
+        var value = $(this).val();
+        // Allow only numbers and decimal points
+        var numericValue = value.replace(/[^0-9.]/g, '');
+        
+        // Ensure only one decimal point
+        var parts = numericValue.split('.');
+        if (parts.length > 2) {
+            numericValue = parts[0] + '.' + parts.slice(1).join('');
+        }
+        
+        $(this).val(numericValue);
+    });
+
+    // Prevent non-numeric characters in numeric fields
+    $(document).on('keypress', '.numeric', function(e) {
+        var charCode = (e.which) ? e.which : e.keyCode;
+        // Allow: backspace, delete, tab, escape, enter and decimal point
+        if (charCode == 46 || charCode == 8 || charCode == 9 || charCode == 27 || charCode == 13 ||
+            // Allow Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+            (charCode == 65 && e.ctrlKey === true) ||
+            (charCode == 67 && e.ctrlKey === true) ||
+            (charCode == 86 && e.ctrlKey === true) ||
+            (charCode == 88 && e.ctrlKey === true)) {
+            return;
+        }
+        // Ensure that it is a number and stop the keypress
+        if ((charCode < 48 || charCode > 57)) {
+            e.preventDefault();
+        }
+    });
+
     // Item action handlers
     $(document).on('click', '.btn_item_modify', function() {
         var item_id = $(this).attr('id');
@@ -1387,52 +1597,158 @@ $total_amount_due = $subtotal_total;
 
     $(document).on('click', '.btn_item_working', function() {
         var item_id = $(this).attr('id');
-        if (confirm('Mark this item as "Working"?')) {
-            $.post("<?= base_url($module); ?>/update_item_status", {
-                item_id: item_id,
-                status: 'working',
-                [csrf_name]: csrf_hash
-            }, function(response) {
-                if (response.indexOf("Error: ") > -1) {
-                    bootbox.alert(response);
-                } else {
-                    location.reload();
+        
+        bootbox.confirm({
+            title: "Update Item Status",
+            message: "Mark this item as 'Working'?",
+            buttons: {
+                confirm: {
+                    label: '<i class="fa fa-arrow-right"></i> Mark as Working',
+                    className: 'btn-info'
+                },
+                cancel: {
+                    label: '<i class="fa fa-times"></i> Cancel',
+                    className: 'btn-default'
                 }
-            });
-        }
+            },
+            callback: function (result) {
+                if (result) {
+                    $.post("<?= base_url($module); ?>/update_item_status", {
+                        item_id: item_id,
+                        status: 'working',
+                        [csrf_name]: csrf_hash
+                    }, function(response) {
+                        if (response.indexOf("<!DOCTYPE html>") > -1) {
+                            toastr.error("Error: Session Time-Out, You must login again to continue.");
+                            location.reload(true);
+                        } else if (response.indexOf("Error: ") > -1) {
+                            bootbox.alert(response);
+                        } else {
+                            try {
+                                var result = JSON.parse(response);
+                                if (result.success) {
+                                    toastr.success('Item status updated successfully');
+                                    location.reload();
+                                } else {
+                                    toastr.error('Error: ' + (result.error || 'Failed to update status'));
+                                }
+                                if (result.csrf_hash) {
+                                    regenerate_csrf(result.csrf_hash);
+                                }
+                            } catch(e) {
+                                // If response is just "OK" or simple text, treat as success
+                                toastr.success('Item status updated successfully');
+                                location.reload();
+                            }
+                        }
+                    });
+                }
+            }
+        });
     });
 
     $(document).on('click', '.btn_item_completed', function() {
         var item_id = $(this).attr('id');
-        if (confirm('Mark this item as "Completed"?')) {
-            $.post("<?= base_url($module); ?>/update_item_status", {
-                item_id: item_id,
-                status: 'completed',
-                [csrf_name]: csrf_hash
-            }, function(response) {
-                if (response.indexOf("Error: ") > -1) {
-                    bootbox.alert(response);
-                } else {
-                    location.reload();
+        
+        bootbox.confirm({
+            title: "Complete Item",
+            message: "Mark this item as 'Completed'?",
+            buttons: {
+                confirm: {
+                    label: '<i class="fa fa-check"></i> Mark as Completed',
+                    className: 'btn-success'
+                },
+                cancel: {
+                    label: '<i class="fa fa-times"></i> Cancel',
+                    className: 'btn-default'
                 }
-            });
-        }
+            },
+            callback: function (result) {
+                if (result) {
+                    $.post("<?= base_url($module); ?>/update_item_status", {
+                        item_id: item_id,
+                        status: 'completed',
+                        [csrf_name]: csrf_hash
+                    }, function(response) {
+                        if (response.indexOf("<!DOCTYPE html>") > -1) {
+                            toastr.error("Error: Session Time-Out, You must login again to continue.");
+                            location.reload(true);
+                        } else if (response.indexOf("Error: ") > -1) {
+                            bootbox.alert(response);
+                        } else {
+                            try {
+                                var result = JSON.parse(response);
+                                if (result.success) {
+                                    toastr.success('Item marked as completed successfully');
+                                    location.reload();
+                                } else {
+                                    toastr.error('Error: ' + (result.error || 'Failed to complete item'));
+                                }
+                                if (result.csrf_hash) {
+                                    regenerate_csrf(result.csrf_hash);
+                                }
+                            } catch(e) {
+                                // If response is just "OK" or simple text, treat as success
+                                toastr.success('Item marked as completed successfully');
+                                location.reload();
+                            }
+                        }
+                    });
+                }
+            }
+        });
     });
 
     $(document).on('click', '.btn_item_cancel', function() {
         var item_id = $(this).attr('id');
-        if (confirm('Are you sure you want to cancel/delete this item?')) {
-            $.post("<?= base_url($module); ?>/cancel_item", {
-                item_id: item_id,
-                [csrf_name]: csrf_hash
-            }, function(response) {
-                if (response.indexOf("Error: ") > -1) {
-                    bootbox.alert(response);
-                } else {
-                    location.reload();
+        
+        bootbox.confirm({
+            title: "Delete Item",
+            message: "Are you sure you want to cancel/delete this item?<br><br>" +
+                    "<span class='text-warning'><i class='fa fa-warning'></i> This action cannot be undone.</span>",
+            buttons: {
+                confirm: {
+                    label: '<i class="fa fa-trash"></i> Delete Item',
+                    className: 'btn-danger'
+                },
+                cancel: {
+                    label: '<i class="fa fa-times"></i> Cancel',
+                    className: 'btn-default'
                 }
-            });
-        }
+            },
+            callback: function (result) {
+                if (result) {
+                    $.post("<?= base_url($module); ?>/cancel_item", {
+                        item_id: item_id,
+                        [csrf_name]: csrf_hash
+                    }, function(response) {
+                        if (response.indexOf("<!DOCTYPE html>") > -1) {
+                            toastr.error("Error: Session Time-Out, You must login again to continue.");
+                            location.reload(true);
+                        } else if (response.indexOf("Error: ") > -1) {
+                            bootbox.alert(response);
+                        } else {
+                            try {
+                                var result = JSON.parse(response);
+                                if (result.success) {
+                                    toastr.success('Item deleted successfully');
+                                    location.reload();
+                                } else {
+                                    toastr.error('Error: ' + (result.error || 'Failed to delete item'));
+                                }
+                                if (result.csrf_hash) {
+                                    regenerate_csrf(result.csrf_hash);
+                                }
+                            } catch(e) {
+                                // If response is just "OK" or simple text, treat as success
+                                toastr.success('Item deleted successfully');
+                                location.reload();
+                            }
+                        }
+                    });
+                }
+            }
+        });
     });
 
     // Add Result Set functionality
