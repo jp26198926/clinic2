@@ -63,6 +63,59 @@ $total_amount_due = $subtotal_total;
 		background-color: #c9302c;
 		border-color: #ac2925;
 	}
+
+	/* Delete reason modal styling */
+	#modal_delete_reason .modal-header.bg-danger {
+		background-color: #d9534f !important;
+		color: white;
+		border-bottom: 1px solid #d43f3a;
+	}
+
+	#modal_delete_reason .modal-header.bg-danger .close {
+		color: white;
+		opacity: 0.8;
+		text-shadow: none;
+	}
+
+	#modal_delete_reason .modal-header.bg-danger .close:hover {
+		opacity: 1;
+	}
+
+	#modal_delete_reason .alert-warning {
+		border-left: 4px solid #f0ad4e;
+		background-color: #fcf8e3;
+		border-color: #faebcc;
+	}
+
+	#modal_delete_reason .well {
+		background-color: #f8f9fa;
+		border: 1px solid #dee2e6;
+		border-radius: 4px;
+		padding: 15px;
+		margin: 10px 0;
+	}
+
+	#modal_delete_reason .table-condensed td {
+		padding: 5px 8px;
+		border: none;
+		border-bottom: 1px solid #eee;
+	}
+
+	#modal_delete_reason .table-condensed td:first-child {
+		width: 120px;
+		font-weight: bold;
+		color: #555;
+	}
+
+	#modal_delete_reason textarea {
+		resize: vertical;
+		min-height: 80px;
+	}
+
+	#modal_delete_reason textarea:focus {
+		border-color: #d9534f;
+		box-shadow: 0 0 0 0.2rem rgba(217, 83, 79, 0.25);
+	}
 	</style>
 
 </head>
@@ -674,7 +727,49 @@ $total_amount_due = $subtotal_total;
 		$this->load->view("current_transaction/modal_xray");
 		$this->load->view("current_transaction/modal_lab");
 		$this->load->view("current_transaction/modal_history");
+		?>
 
+        <!-- Delete Reason Modal -->
+        <div id="modal_delete_reason" class="modal fade" tabindex="-1" role="dialog">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header bg-danger">
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                        <h4 class="modal-title text-white">
+                            <i class="fa fa-trash"></i>
+                            Delete Item - Reason Required
+                        </h4>
+                    </div>
+                    <div class="modal-body">
+                        <div class="alert alert-warning">
+                            <i class="fa fa-warning"></i>
+                            <strong>Warning:</strong> This action cannot be undone. Please provide a reason for deleting this item.
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="delete_reason">Reason for Deletion <span class="text-danger">*</span></label>
+                            <textarea id="delete_reason" name="delete_reason" class="form-control" rows="3" 
+                                placeholder="Please explain why this item is being deleted..." required></textarea>
+                            <small class="text-muted">This reason will be logged for audit purposes.</small>
+                        </div>
+                        
+                        <div id="delete_item_info" class="well well-sm">
+                            <!-- Item information will be populated here -->
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">
+                            <i class="fa fa-times"></i> Cancel
+                        </button>
+                        <button type="button" id="btn_confirm_delete" class="btn btn-danger">
+                            <i class="fa fa-trash"></i> Delete Item
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+		<?php
 		$this->load->view("template/footer");
 		$this->load->view("template/loading");
 		?>
@@ -1759,54 +1854,106 @@ $total_amount_due = $subtotal_total;
 
     $(document).on('click', '.btn_item_cancel', function() {
         var item_id = $(this).attr('id');
+        var $row = $(this).closest('tr');
         
-        bootbox.confirm({
-            title: "Delete Item",
-            message: "Are you sure you want to cancel/delete this item?<br><br>" +
-                    "<span class='text-warning'><i class='fa fa-warning'></i> This action cannot be undone.</span>",
-            buttons: {
-                confirm: {
-                    label: '<i class="fa fa-trash"></i> Delete Item',
-                    className: 'btn-danger'
-                },
-                cancel: {
-                    label: '<i class="fa fa-times"></i> Cancel',
-                    className: 'btn-default'
-                }
-            },
-            callback: function (result) {
-                if (result) {
-                    $.post("<?= base_url($module); ?>/cancel_item", {
-                        item_id: item_id,
-                        [csrf_name]: csrf_hash
-                    }, function(response) {
-                        if (response.indexOf("<!DOCTYPE html>") > -1) {
-                            toastr.error("Error: Session Time-Out, You must login again to continue.");
-                            location.reload(true);
-                        } else if (response.indexOf("Error: ") > -1) {
-                            bootbox.alert(response);
-                        } else {
-                            try {
-                                var result = JSON.parse(response);
-                                if (result.success) {
-                                    toastr.success('Item deleted successfully');
-                                    location.reload();
-                                } else {
-                                    toastr.error('Error: ' + (result.error || 'Failed to delete item'));
-                                }
-                                if (result.csrf_hash) {
-                                    regenerate_csrf(result.csrf_hash);
-                                }
-                            } catch(e) {
-                                // If response is just "OK" or simple text, treat as success
-                                toastr.success('Item deleted successfully');
-                                location.reload();
-                            }
-                        }
-                    });
+        // Get item information from the table row
+        var itemInfo = {
+            series: $row.find('td:eq(1)').text().trim(),
+            product: $row.find('td:eq(2)').text().trim(),
+            category: $row.find('td:eq(3)').text().trim(),
+            qty: $row.find('td:eq(4)').text().trim(),
+            price: $row.find('td:eq(6)').text().trim(),
+            total: $row.find('td:eq(10)').text().trim()
+        };
+        
+        // Populate the delete modal with item information
+        var itemInfoHtml = `
+            <h5><strong>Item to be deleted:</strong></h5>
+            <table class="table table-condensed">
+                <tr><td><strong>Series:</strong></td><td>${itemInfo.series}</td></tr>
+                <tr><td><strong>Product/Service:</strong></td><td>${itemInfo.product}</td></tr>
+                <tr><td><strong>Category:</strong></td><td>${itemInfo.category}</td></tr>
+                <tr><td><strong>Quantity:</strong></td><td>${itemInfo.qty}</td></tr>
+                <tr><td><strong>Unit Price:</strong></td><td>${itemInfo.price}</td></tr>
+                <tr><td><strong>Total:</strong></td><td>${itemInfo.total}</td></tr>
+            </table>
+        `;
+        
+        $('#delete_item_info').html(itemInfoHtml);
+        $('#delete_reason').val('');
+        
+        // Store the item_id for later use
+        $('#modal_delete_reason').data('item-id', item_id);
+        
+        // Show the modal
+        $('#modal_delete_reason').modal('show');
+    });
+
+    // Handle the confirm delete button in the modal
+    $(document).on('click', '#btn_confirm_delete', function() {
+        var item_id = $('#modal_delete_reason').data('item-id');
+        var delete_reason = $('#delete_reason').val().trim();
+        
+        // Validate that reason is provided
+        if (!delete_reason) {
+            toastr.error('Please provide a reason for deleting this item.');
+            $('#delete_reason').focus();
+            return;
+        }
+        
+        if (delete_reason.length < 10) {
+            toastr.error('Please provide a more detailed reason (at least 10 characters).');
+            $('#delete_reason').focus();
+            return;
+        }
+        
+        // Disable the button to prevent double-clicking
+        $('#btn_confirm_delete').prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Deleting...');
+        
+        $.post("<?= base_url($module); ?>/cancel_item", {
+            item_id: item_id,
+            delete_reason: delete_reason,
+            [csrf_name]: csrf_hash
+        }, function(response) {
+            if (response.indexOf("<!DOCTYPE html>") > -1) {
+                toastr.error("Error: Session Time-Out, You must login again to continue.");
+                location.reload(true);
+            } else if (response.indexOf("Error: ") > -1) {
+                $('#btn_confirm_delete').prop('disabled', false).html('<i class="fa fa-trash"></i> Delete Item');
+                bootbox.alert(response);
+            } else {
+                try {
+                    var result = JSON.parse(response);
+                    if (result.success) {
+                        $('#modal_delete_reason').modal('hide');
+                        toastr.success('Item deleted successfully');
+                        location.reload();
+                    } else {
+                        $('#btn_confirm_delete').prop('disabled', false).html('<i class="fa fa-trash"></i> Delete Item');
+                        toastr.error('Error: ' + (result.error || 'Failed to delete item'));
+                    }
+                    if (result.csrf_hash) {
+                        regenerate_csrf(result.csrf_hash);
+                    }
+                } catch(e) {
+                    // If response is just "OK" or simple text, treat as success
+                    $('#modal_delete_reason').modal('hide');
+                    toastr.success('Item deleted successfully');
+                    location.reload();
                 }
             }
+        }).fail(function() {
+            $('#btn_confirm_delete').prop('disabled', false).html('<i class="fa fa-trash"></i> Delete Item');
+            toastr.error('Network error occurred. Please try again.');
         });
+    });
+
+    // Reset modal when hidden
+    $('#modal_delete_reason').on('hidden.bs.modal', function() {
+        $('#delete_reason').val('');
+        $('#delete_item_info').html('');
+        $('#btn_confirm_delete').prop('disabled', false).html('<i class="fa fa-trash"></i> Delete Item');
+        $(this).removeData('item-id');
     });
 
     // Event handlers for lab result actions
