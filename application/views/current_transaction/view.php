@@ -846,7 +846,7 @@ $total_amount_due = $subtotal_total;
 
     <?php
 		if ($role_id == 1 || $this->custom_function->module_permission("item add", $module_permission)) {
-		?>
+	?>
     new_entry_field = `   <tr>
                                     <td colspan="2">New</td>
                                     <td>
@@ -890,7 +890,7 @@ $total_amount_due = $subtotal_total;
                                 </tr>`;
     <?php
 		}
-		?>
+	?>
 
     function display_total() {
 
