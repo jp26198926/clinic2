@@ -1869,9 +1869,10 @@ $total_amount_due = $subtotal_total;
         // Disable the button to prevent double-clicking
         $('#btn_confirm_delete').prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Deleting...');
         
-        $.post("<?= base_url($module); ?>/cancel_item", {
-            item_id: item_id,
-            delete_reason: delete_reason,
+        $.post("<?= base_url('current_transaction/item_cancel'); ?>", {
+            id: item_id,
+            transaction_id: "<?= $transaction_id; ?>",
+            reason: delete_reason,
             [csrf_name]: csrf_hash
         }, function(response) {
             if (response.indexOf("<!DOCTYPE html>") > -1) {
